@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 # ---------- Naive Minimum Variance Portfolio ---------- #
 # Uses vectors of zeros for q_vec (expected returns)
 @TradModelLibrary.register()
-class Naive_MVP:
+class NaiveMVP:
     @staticmethod
     def calculate_weights(cov: pd.DataFrame | np.ndarray) -> np.ndarray:
         """
@@ -258,6 +258,7 @@ class BaseQuadraticOptimizer:
         self.reg = float(reg)
 
 # ---------- Global Minimum Variance Portfolio ---------- #
+@TradModelLibrary.register()
 class GlobalMinimumVariance(BaseQuadraticOptimizer):
     """
     Global Minimum-Variance Portfolio estimator.
@@ -338,6 +339,7 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
 
 
 # ---------- Mean-Variance Portfolio (with internal expected-returns calc) ---------- #
+@TradModelLibrary.register()
 class MeanVariancePortfolio(BaseQuadraticOptimizer):
     """
     Mean-Variance Portfolio (Markowitz) that optionally computes expected returns.

@@ -456,7 +456,7 @@ class Evaluator:
 
 
 class CandidatesGrid:
-    models_hparams = 'models'
+    models_hparams = 'nn_models'
     losses_hparams = 'losses'
     
     def __init__(
@@ -867,16 +867,31 @@ class CandidatesGrid:
 
 
 class TradModelsTrainer:
+    models_hparams = 'trad_models'
+    
     def __init__(
-            self, model_lib: dict[str, Type], in_size: int, out_size: int, stride: int
+            self, model_lib: dict[str, Type], hparams_config: dict[str, dict[str, Any]]
         ):
         self.model_lib = model_lib
-        self._sampler = DatasetSampler(in_size, out_size, stride)
+        self.hparams_config = hparams_config
+        
+        self._sampler = DatasetSampler(
+            self.hparams_config['rolling_windows']['in_size'],
+            self.hparams_config['rolling_windows']['out_size'],
+            self.hparams_config['rolling_windows']['stride']
+        )
 
         self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
 
-    def _train_one_model(self, model_class: Type, filtered_kwargs: dict) -> pd.Series:
-        model_obj = model_class() # Any hparams can be passed here from config/hparams.json, later
+    def _train_one_model(
+            self, model_name, model_class: Type, filtered_kwargs: dict
+        ) -> pd.Series:
+
+        # Get hyperparameters of the current model
+        current_hparams = self.hparams_config[self.models_hparams].get(model_name) or {}
+        print('Model hyperparameters:\n', current_hparams)
+        
+        model_obj = model_class(**current_hparams)
         alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
         return alloc_weights
     
@@ -891,14 +906,15 @@ class TradModelsTrainer:
             'returns': returns_is
         }
 
+        # Loop over every model
         for model_name, model_class in self.model_lib.items():
             
             print('\n', '-'*10, f' Training {model_name} ', '-'*10)
             
             self.all_alloc_weights.setdefault(model_name, [])
 
+            # To inspect args of the calculate_weights method and provide it with the relevant args
             sig = inspect.signature(model_class.calculate_weights)
-            # required_params = sig.parameters.keys()
 
             filtered_kwargs = {
                 k: v for k, v in payload.items() 
@@ -908,7 +924,7 @@ class TradModelsTrainer:
             if len(filtered_kwargs) == 0:
                 raise ValueError(f'Required parameters for {model_name} do not exist in payload.')
             try:
-                alloc_weights = self._train_one_model(model_class, filtered_kwargs)
+                alloc_weights = self._train_one_model(model_name, model_class, filtered_kwargs)
 
                 if isinstance(alloc_weights, pd.Series):
                     self.all_alloc_weights[model_name].append(alloc_weights.to_numpy())

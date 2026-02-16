@@ -108,12 +108,7 @@ def run_training_pipeline(
     # Registering all Traditional models to the library
     TradModelLibrary.autodiscover(models_module)
 
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride']
-    )
+    trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
     trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
 
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
@@ -236,12 +231,7 @@ def run_training_one_model(
         # Registering all Traditional models to the library
         TradModelLibrary.autodiscover(models_module)
 
-        trad_grid = TradModelsTrainer(
-            TradModelLibrary.items(),
-            hparams_config['rolling_windows']['in_size'],
-            hparams_config['rolling_windows']['out_size'],
-            hparams_config['rolling_windows']['stride']
-        )
+        trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
         trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
 
         for trad_model_name, alloc_weights in trad_alloc_weights.items():
@@ -256,9 +246,9 @@ def run_training_one_model(
                 model=model_cls,
                 optimizer=optim.AdamW,
                 loss=loss_func,
-                model_hparams=hparams_config['models'][model_name]['model'],
-                optimizer_hparams=hparams_config['models'][model_name]['optimizer'],
-                train_hparams=hparams_config['models'][model_name]['train'],
+                model_hparams=hparams_config['nn_models'][model_name]['model'],
+                optimizer_hparams=hparams_config['nn_models'][model_name]['optimizer'],
+                train_hparams=hparams_config['nn_models'][model_name]['train'],
                 in_size=X_train.shape[2],
                 num_stocks=y_train.shape[2],
                 loss_hparams=hparams_config['losses'].get(loss_name)
@@ -305,8 +295,8 @@ def run_training_one_model(
         )
 
         print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-        print('\n', 'Compounded returns for each window:\n', total_returns)
-        print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
+        print('\n', 'COMPOUNDED RETURNS for each window:\n', total_returns)
+        print('\n', 'SHARPE RATIOS for each window:\n', total_sharpes)
 
         time_taken = round((time.time() - start_time) / 60, 3)
         print(f'Time taken for pipeline = {time_taken} mins')

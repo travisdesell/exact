@@ -857,6 +857,7 @@ def smooth_calmar_objective(
 # -------------------- Combination Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
 def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
+    #### Most Stable, for now ####
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
@@ -870,7 +871,7 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
 @LossLibrary.register(category='custom')
 def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float):
     """
-    loss = differentiable sharpe + lambda1 * smooth CVar
+    loss = RMS sharpe + lambda1 * smooth CVar
     """
     sharpe = rms_sharpe_objective(weights, returns)
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)

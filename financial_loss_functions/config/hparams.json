@@ -4,7 +4,7 @@
         "out_size": 50,
         "stride": 1
     },
-    "models": {
+    "nn_models": {
         "BaseLSTM": {
             "model": {
                 "hidden_size": 256,
@@ -52,6 +52,16 @@
         },
         "custom_loss_3" : {
             "lambda1": 0.01
+        }
+    },
+    "trad_models": {
+        "GlobalMinimumVariance": {
+            "allow_short": false
+        },
+        "MeanVariancePortfolio": {
+            "expected_returns_method": "arithmetic",
+            "risk_aversion": 1.0,
+            "allow_short": false
         }
     }
 }
