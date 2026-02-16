@@ -62,6 +62,9 @@
             "expected_returns_method": "arithmetic",
             "risk_aversion": 1.0,
             "allow_short": false
+        },
+        "NestedClusteredOptimization": {
+            "de_noise": true
         }
     }
 }

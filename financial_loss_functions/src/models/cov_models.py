@@ -2,9 +2,13 @@
 
 import numpy as np
 import pandas as pd
+from typing import Type
+from sklearn.cluster import KMeans
 from scipy.optimize import minimize
 from scipy.cluster.hierarchy import linkage
+from sklearn.neighbors import KernelDensity
 from scipy.spatial.distance import squareform
+from sklearn.metrics import silhouette_samples
 from src.models.registry import TradModelLibrary
 
 # Try cvxopt; fallback to scipy
@@ -14,8 +18,6 @@ try:
     CVXOPT_AVAILABLE = True
 except Exception:
     CVXOPT_AVAILABLE = False
-
-from scipy.optimize import minimize
 
 
 # ---------- Naive Minimum Variance Portfolio ---------- #
@@ -688,3 +690,165 @@ class HierarchialRiskParity:
         if self.weights is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
         return self.weights.copy()
+
+@TradModelLibrary.register()
+class NestedClusteredOptimization():
+    """Implementation of Nested Clustered Optimization"""
+    def __init__(self, de_noise: bool = True):
+        """
+        Initialize Implmentation of Nested Clustered Optimization which uses 
+        Global Minimum Variance Optimization for inter cluster and intra cluster
+        optimization.
+        
+        @param de_noise (bool, default = True): Apply de noising to covariance matrix
+        """
+        self.optimizer = GlobalMinimumVariance() # To use different algo, change here and 
+                                                # returns are available in self.calculate_weights.
+        self.de_noise = de_noise
+
+        self.weights = None
+    
+    def _cov2corr(self, cov):
+        # Derive correlation matrix from covariance matrix
+        std = np.sqrt(np.diag(cov))
+        corr = cov/np.outer(std,std)
+        corr[corr<-1], corr[corr>1] = -1, 1 # numerical error
+        return corr
+
+    def _getPCA(self, matrix):
+        # Get eVal, eVec from a Hermitian matrix
+        eVal, eVec = np.linalg.eigh(matrix)
+        indices = eVal.argsort()[::-1] # args for sorting eVal desc
+        eVal, eVec = eVal[indices], eVec[:,indices]
+        eVal = np.diagflat(eVal)
+        return eVal, eVec
+
+    def _mpPDF(self, var, q, pts):
+        # Marcenko- Pastur pdf
+        # q=T/N
+        eMin, eMax = var * (1-(1./q)**.5)**2, var*(1+(1./q)**.5)**2
+        eVal = np.linspace(eMin, eMax, pts)
+        pdf = q/(2*np.pi*var*eVal)*((eMax-eVal)*(eVal-eMin))**.5
+        pdf2 = pd.Series(pdf.reshape(pdf.shape[0],), index=eVal.reshape(eVal.shape[0],))
+        return pdf2
+
+    def _fitKDE(self, obs, bWidth=.25, kernel='gaussian', x=None):
+        # Fit kernel to a series of obs, and derive the prob of obs
+        # x is the arraymof values on which the fit KDE will be evaluated
+        if len(obs.shape)==1: obs=obs.reshape(-1,1)
+        kde = KernelDensity(kernel=kernel, bandwidth=bWidth).fit(obs)
+        if x is None: x=np.unique(obs).reshape(-1,1)
+        if len(x.shape)==1: x=x.reshape(-1,1)
+        logProb = kde.score_samples(x) # log (density)
+        pdf = pd.Series(np.exp(logProb), index=x.flatten())
+        return pdf
+
+    def _errPDFs(self, var, eVal, q, bWidth, pts=1000):
+        # Fit error
+        pdf0 = self._mpPDF(var, q, pts) # theoretical pdf
+        pdf1 = self._fitKDE(eVal, bWidth, x=pdf0.index.values) # empirical pdf
+        sse = np.sum((pdf1-pdf0) ** 2)
+        return sse 
+
+    def _findMaxEval(self, eVal, q, bWidth):
+        # Find max random eVal by fitting Marcenko's dist
+        out = minimize(
+            lambda *x: self._errPDFs(*x), .5,args=(eVal, q, bWidth),
+            bounds=((1E-5, 1-1E-5),)
+        )
+        if out['success']: var = out['x'][0]
+        else: var = 1
+        eMax = var * (1+(1./q)) ** 2
+        return eMax, var
+
+    def _denoisedCorr(self, eVal, eVec, nFacts):
+        # Remove noise from corr by fixing random eigenvalues
+        eVal_ = np.diag(eVal).copy()
+        eVal_[nFacts:]=eVal_[nFacts].sum()/float(eVal_.shape[0]-nFacts)
+        eVal_ = np.diag(eVal_)
+        corr1 = np.dot(eVec, eVal_).dot(eVec.T)
+        corr1 = self._cov2corr(corr1)
+        return corr1
+    
+    def _corr2cov(self, corr, std):
+        cov = corr * np.outer(std, std)
+        return cov
+    
+    def _deNoiseCov(self, cov0, q, bWidth):
+        corr0=self._cov2corr(cov0)
+        eVal0, eVec0 = self._getPCA(corr0)
+        eMax0, var0 = self._findMaxEval(np.diag(eVal0), q, bWidth)
+        nFacts0 = eVal0.shape[0]-np.diag(eVal0)[::-1].searchsorted(eMax0)
+        corr1 = self._denoisedCorr(eVal0, eVec0, nFacts0)
+        cov1 = self._corr2cov(corr1, np.diag(cov0) ** .5)
+        return cov1
+
+    def _de_noise(self, cov, T, N):
+        # De Noising
+        cols = cov.columns
+        q = T/N
+        cov = self._deNoiseCov(cov, q, bWidth=0.1)
+        cov = pd.DataFrame(cov, index=cols, columns=cols)
+        return cov
+
+    def _clusterKMeansBase(self, corr0, maxNumClusters=10, n_init=10):
+        x = ((1-corr0.fillna(0))/2.)**.5
+        silh = pd.Series(dtype=float) # observation matrix
+        for init in range(n_init):
+            for i in range(2, maxNumClusters+1):
+                kmeans_= KMeans(n_clusters=i, n_init=1)
+                kmeans_ = kmeans_.fit(x)
+                silh_ = silhouette_samples(x, kmeans_.labels_)
+                stat = (silh_.mean()/silh_.std(), silh.mean()/silh.std())
+                if np.isnan(stat[1]) or stat[0]>stat[1]:
+                    silh, kmeans = silh_, kmeans_
+        newIdx = np.argsort(kmeans.labels_)
+        corr1 = corr0.iloc[newIdx] # reorder rows
+
+        corr1=corr1.iloc[:,newIdx] # reorder columns
+        clstrs = {i:corr0.columns[np.where(kmeans.labels_==i)[0]].tolist()\
+                for i in np.unique(kmeans.labels_)
+                } # cluster members
+        silh = pd.Series(silh, index=x.index)
+        return corr1, clstrs, silh
+    
+    def _calc_nco(self, cov, mu=None, maxNumClusters=None):
+        # cov = pd.DataFrame(cov)
+        if mu is not None: mu = pd.Series(mu[:,0])
+        corr1 = self._cov2corr(cov)
+        corr1, clstrs, _ = self._clusterKMeansBase(corr1, maxNumClusters, n_init=10)
+        
+        wIntra = pd.DataFrame(0.0, index = cov.index, columns=clstrs.keys())
+        for i in clstrs:
+            cov_ = cov.loc[clstrs[i], clstrs[i]]
+            if mu is None: mu_=None
+            else: mu_ = mu.loc[clstrs[i]].values.reshape(-1,1)
+            wIntra.loc[clstrs[i], i] = self.optimizer.calculate_weights(cov_)
+        cov_ = wIntra.T.dot(np.dot(cov, wIntra)) # reduce covariance matrix
+        mu_ = (None if mu is None else wIntra.T.dot(mu))
+        wInter = pd.Series(self.optimizer.calculate_weights(cov_), index=cov_.index)
+        nco = wIntra.mul(wInter, axis=1).sum(axis=1)
+        
+        return nco
+    
+    def calculate_weights(
+            self, cov: pd.DataFrame, returns: pd.DataFrame
+        ) -> pd.Series:
+        """
+        Fit NCO model to given covariance matrix.
+
+        Parameters:
+            cov (pd.DataFrame) :  covariance matrix of returns
+            returns (pd.DataFrame): each assets returns
+        Returns:
+            weights (pd.Series) : optimized weights for the portfolio out of 1 (not 100)
+        """
+        if self.de_noise:
+            cov = self._de_noise(cov, T=returns.shape[0], N=returns.shape[1])
+        
+        self.weights = self._calc_nco(
+            cov=cov,
+            maxNumClusters=int(cov.shape[0]/2)
+        )
+
+        return self.weights
