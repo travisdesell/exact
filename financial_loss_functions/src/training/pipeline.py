@@ -174,7 +174,7 @@ def run_training_pipeline(
     print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
     time_taken = round((time.time() - start_time) / 60, 3)
-    print(f'Time taken for pipeline = {time_taken}')
+    print(f'Time taken for pipeline = {time_taken} mins')
 
 def run_training_one_model(
         paths_config: dict,
@@ -196,8 +196,8 @@ def run_training_one_model(
     print('\n', '=' * 20, ' Training One Model with One Loss ', '=' * 20)
     start_time = time.time()
 
-    if loss_cat not in ['objective', 'custom']:
-        raise ValueError('Loss category must be `objective` or `custom`.')
+    if loss_cat not in ['objectives', 'custom']:
+        raise ValueError('Loss category must be `objectives` or `custom`.')
     
     # Create plots directory if it doesnt exist
     plots_dir = (Path(paths_config['artifacts']['plots']))
@@ -211,7 +211,6 @@ def run_training_one_model(
     
     model_cls = NNModelLibrary.get(model_cat, model_name)
     loss_func = LossLibrary.get(loss_cat, loss_name)
-
 
     if model_cls and loss_func:
         # -------------------- Loading Processed Data -------------------- #
@@ -262,7 +261,7 @@ def run_training_one_model(
                 train_hparams=hparams_config['models'][model_name]['train'],
                 in_size=X_train.shape[2],
                 num_stocks=y_train.shape[2],
-                loss_hparams=hparams_config['losses'][loss_name]
+                loss_hparams=hparams_config['losses'].get(loss_name)
             )
 
             trainer.train(train_ds)
@@ -310,7 +309,7 @@ def run_training_one_model(
         print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
         time_taken = round((time.time() - start_time) / 60, 3)
-        print(f'Time taken for pipeline = {time_taken}')
+        print(f'Time taken for pipeline = {time_taken} mins')
     
     elif model_cls is None:
         raise ValueError(f'Model {model_name} of {model_cat} not found.')

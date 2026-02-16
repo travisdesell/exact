@@ -95,8 +95,8 @@ if __name__ == '__main__':
         parser.add_argument(
             '-lc',
             '--loss_cat',
-            choices=['objective', 'custom'],
-            help="Loss category must be 'objective' or 'custom'. See README in src/training."
+            choices=['objectives', 'custom'],
+            help="Loss category must be 'objectives' or 'custom'. See README in src/training."
         )
 
         args = parser.parse_args()

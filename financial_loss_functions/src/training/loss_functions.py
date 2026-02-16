@@ -94,7 +94,7 @@ def raw_sharpe_objective(
     return -sharpe.mean()
 
 @LossLibrary.register(category='objectives')
-def differentiable_sharpe_loss(
+def differentiable_sharpe_objective(
         weights: Tensor, returns: Tensor, eps: float = 1e-6
     ):
     """
@@ -160,7 +160,7 @@ def smooth_neglog_sharpe_loss(
 
 # -------------------- Sortino -------------------- #
 @LossLibrary.register(category='objectives')
-def raw_sortino_loss(
+def raw_sortino_objective(
         weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
     ):
     """
@@ -224,11 +224,6 @@ def smooth_neglog_sortino_objective(
 ) -> Tensor:
     """
     Returns a loss to MINIMIZE. Minimizing this increases Sortino.
-
-    transform:
-      - "neglog": loss = -log( softpos(sortino) + eps )  (recommended)
-      - "neg":    loss = -sortino
-      - "raw":    returns sortino.mean()  (rare; treat as reward)
     """
     # prepare weights and portfolio
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B,T)
@@ -246,8 +241,8 @@ def smooth_neglog_sortino_objective(
     mean_ret = port.mean(dim=1)  # (B,)
     sortino = mean_ret / (downside_rms + eps)  # (B,)
 
-    s_pos = softplus(sortino)  # > 0
-    return -torch.log(s_pos + eps).mean()
+    sortino_loss = torch.log(softplus(sortino) + eps) 
+    return -sortino_loss.mean()
 
 # -------------------- Max Drawdown -------------------- #
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
@@ -784,7 +779,7 @@ def raw_calmar_objective(
     calmar_per_sample = numerator / (max_dd + eps)  # (B,)
 
     # return batch-mean Calmar (no sign flip; higher is better)
-    return calmar_per_sample.mean()
+    return -calmar_per_sample.mean()
 
 @LossLibrary.register(category='objectives')
 def smooth_calmar_objective(
@@ -853,11 +848,11 @@ def smooth_calmar_objective(
 
     # stable loss: -log(calmar) if calmar>0 else penalize strongly
     if use_log_loss:
-        loss_per_batch = -torch.log(torch.clamp(calmar, min=eps) + eps)
+        loss_per_batch = torch.log(torch.clamp(calmar, min=eps) + eps)
     else:
-        loss_per_batch = -calmar
+        loss_per_batch = calmar
 
-    return loss_per_batch.mean()
+    return -loss_per_batch.mean()
 
 # -------------------- Combination Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
@@ -865,11 +860,31 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
-    sharpe = differentiable_sharpe_loss(weights, returns)
+    sharpe = differentiable_sharpe_objective(weights, returns)
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
 
     # print('Sharpe:',sharpe)
     # print('CVaR:', cvar * lambda1)
     return sharpe + lambda1 * cvar 
 
-def custom_loss_2(weights: Tensor, returns: Tensor): pass
+@LossLibrary.register(category='custom')
+def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float):
+    """
+    loss = differentiable sharpe + lambda1 * smooth CVar
+    """
+    sharpe = rms_sharpe_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+
+    # print('Sharpe:',sharpe)
+    # print('CVaR:', cvar * lambda1)
+    return sharpe + lambda1 * cvar 
+
+@LossLibrary.register(category='custom')
+def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float):
+    """
+    loss = raw sortino + lambda1 * smooth CVaR
+    """
+    sortino = raw_sortino_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+
+    return sortino + lambda1 * cvar
