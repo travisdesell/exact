@@ -37,8 +37,8 @@ def load_csv_files(paths_dict: dict[str, str]) -> dict[str, pd.DataFrame]:
 
     loaded_dfs = {}
     for name, f_path in paths_dict.items():
-        temp_df = pd.read_csv(f_path, index_col=0)
-        temp_df.index = pd.to_datetime(temp_df.index)
+        temp_df = pd.read_csv(f_path, index_col=0) # Can use parse_dates=True here,but
+        temp_df.index = pd.to_datetime(temp_df.index) #.but pd.to_datetime for control.
         loaded_dfs[name] = temp_df
 
     return loaded_dfs
