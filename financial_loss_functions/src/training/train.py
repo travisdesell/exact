@@ -579,6 +579,47 @@ class CandidatesGrid:
                 'Allocation weights already predicted. Create new instance of this class.'
             )
 
+    def _calc_total_models(self, grid_mode: str) -> int:
+        """
+        Calculate total number of models to be trained based on the grid and loss modes
+        """
+        if grid_mode == 'all':
+            len_custom_losses = len(
+                self.loss_lib['custom']['__default__']
+            ) if 'custom' in self.loss_lib else 0
+            
+            if self.loss_mode == 'custom':
+                len_losses = len_custom_losses
+            else:
+                len_losses = len(self.loss_lib['objectives']['__default__']) + \
+                    len_custom_losses
+            
+            total_train_count = (
+                    len_losses
+                ) * sum(len(models_dict) for models_dict in self.model_lib.values())
+        
+        elif grid_mode == 'one_model':
+            len_custom_losses = len(
+                self.loss_lib['custom']['__default__']
+            ) if 'custom' in self.loss_lib else 0
+            
+            if self.loss_mode == 'custom':
+                total_train_count = len_custom_losses
+            else:
+                total_train_count = (
+                    len(self.loss_lib['objectives']['__default__']) +  len_custom_losses
+                )
+        elif grid_mode == 'one_loss':
+            total_train_count = sum(
+                len(models_dict) for models_dict in self.model_lib.values()
+            )
+
+        else:
+            print('Incorrect usage of `calc_total_models` method!')
+            total_train_count = 0
+        
+        return total_train_count
+
     def train_eval_grid(
             self, train_ds: WindowDataset, val_ds: WindowDataset
         ) -> dict[str, dict[str, np.ndarray]]:
@@ -587,15 +628,9 @@ class CandidatesGrid:
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
-        len_custom_losses = len(
-            self.loss_lib['custom']['__default__']
-        ) if 'custom' in self.loss_lib else 0
-        
-        total_train_count = (
-                len(self.loss_lib['objectives']['__default__']) + len_custom_losses
-            ) * sum(len(models_dict) for models_dict in self.model_lib.values())
-        progress_count = 1
+        total_train_count = self._calc_total_models('all')
         print(f'\nTraining {total_train_count} models.')
+        progress_count = 1
         
         # Grid with custom loss functions
         if 'custom' in self.loss_lib:            
@@ -706,14 +741,9 @@ class CandidatesGrid:
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        len_custom_losses = len(
-            self.loss_lib['custom']['__default__']
-        ) if 'custom' in self.loss_lib else 0
-        total_train_count = (
-            len(self.loss_lib['objectives']['__default__']) +  len_custom_losses
-        )
-        progress_count = 1
+        total_train_count = self._calc_total_models('one_model')
         print(f'\nTraining {total_train_count} models.')
+        progress_count = 1
         
         # Grid with custom loss functions
         if 'custom' in self.loss_lib:
@@ -826,11 +856,9 @@ class CandidatesGrid:
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        total_train_count = sum(
-            len(models_dict) for models_dict in self.model_lib.values()
-        )
+        total_train_count = self._calc_total_models('one_loss')
+        print(f'\nTraining {total_train_count} models.')
         progress_count = 1
-        print(f'\nTraining {total_train_count} models.') 
         
         for category, models_dict in self.model_lib.items():
             # Loop over models

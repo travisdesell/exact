@@ -80,7 +80,7 @@ def run_training_pipeline(
     @param model str Name of the model to be run
     @param loss str Name of the loss function to be used
     """
-    print('\n', '=' * 20, ' Training Grid Pipeline ', '=' * 20)
+    print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
     # Create plots directory if it doesnt exist
@@ -188,7 +188,7 @@ def run_training_one_model(
     @param model str Name of the model to be run
     @param loss str Name of the loss function to be used
     """
-    print('\n', '=' * 20, ' Training One Model with One Loss ', '=' * 20)
+    print('\n', '=' * 40, ' Training One Model with One Loss ', '=' * 40)
     start_time = time.time()
 
     if loss_cat not in ['objectives', 'custom']:
@@ -240,7 +240,7 @@ def run_training_one_model(
         del trad_grid
 
         # -------------------- Training Neural Network -------------------- #
-        print('\n', '-'*10, f' Training {model_name} ', '-'*10)
+        print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
         try:
             trainer = Trainer(
                 model=model_cls,

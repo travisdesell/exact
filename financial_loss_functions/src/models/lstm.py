@@ -49,7 +49,7 @@ class BaseLSTM(nn.Module):
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass method
         @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
@@ -128,7 +128,7 @@ class AttentionLSTM(nn.Module):
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass method
         @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
