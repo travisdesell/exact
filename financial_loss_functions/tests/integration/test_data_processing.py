@@ -123,19 +123,33 @@ def test_processing_with_committed_sample(tmp_path):
         # Check for chronlogical date ordering
         assert processed_df.index.is_monotonic_increasing, 'Data is not chronologically sorted'
 
+        null_count = processed_df.isna().sum().sum()
+        assert null_count == 0, f'Found {null_count} NaNs in {file_name} after processing'
 
-    expected_cols = _build_expected_feats(
-        raw_files['train'],
-        features_config['common_features']
-    )
-
-    for file_name, raw_df in raw_files.items():
+    # Loop over raw files
+    for split, raw_df in raw_files.items():
+        # Build expected feature columns and check processed files
         expected_cols = _build_expected_feats(
             raw_df,
             features_config['common_features']
         )
-
-        assert set(processed_files[f'processed_{file_name}'].columns) \
+        assert set(processed_files[f'processed_{split}'].columns) \
             == set(expected_cols), 'Feature columns are different'
 
-        # pd.testing.assert_index_equal(processed_files['processed_train'].columns, pd.Index(expected_cols))
+        # Check that feature indices match target (returns) indices exactly
+        proc = processed_files[f'processed_{split}']
+        rets = processed_files[f'returns_{split}']
+        pd.testing.assert_index_equal(
+            proc.index, 
+            rets.index, 
+            obj=f'Index mismatch between features and returns in {split}'
+        )
+    
+    # Verify all processed files have identical schemas
+    train_cols = processed_files['processed_train'].columns
+    for split in ['val', 'test']:
+        pd.testing.assert_index_equal(
+            processed_files[f'processed_{split}'].columns, 
+            train_cols,
+            obj=f'Columns in {split} do not match train set'
+        )

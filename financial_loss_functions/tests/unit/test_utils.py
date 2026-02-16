@@ -12,7 +12,8 @@ from src.utils import (
     save_to_csv,
     reset_data_stage,
     load_path_config, 
-    load_config    
+    load_config,
+    extract_req_cols    
 )
 
 # ---------- Tests for create_directory ---------- #
@@ -325,3 +326,17 @@ def test_load_path_config_raises_when_default_missing(tmp_path):
     # calling without crsp_data_dir when default doesn't exist should raise FileNotFoundError
     with pytest.raises(FileNotFoundError):
         _ = load_path_config(str(config_path))
+
+# ---------- extract_req_cols ---------- #
+def test_extract_req_cols():
+    test_columns = [
+        'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sp500r'
+    ]
+    suffix = '_VOL_CHANGE'
+    test_required = [f'ABCD{suffix}', f'EFGH{suffix}']
+
+    req_cols = extract_req_cols(test_columns, suffix)
+
+    assert req_cols == test_required
+    assert 'ABCD_RET' not in req_cols
+    assert 'sp500r' not in req_cols

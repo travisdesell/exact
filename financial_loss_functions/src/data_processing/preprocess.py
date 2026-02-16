@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer, RobustScaler
+from src.utils import extract_req_cols
 
 
 class MacroCombiner:
@@ -88,6 +89,12 @@ class MacroCombiner:
 
         return macro_train, macro_val, macro_test
 
+def _handle_missing_data(df: pd.DataFrame, col_suffix: str, limit: int = 1):
+    req_cols = extract_req_cols(df.columns, col_suffix)
+
+    df[req_cols] = df[req_cols].bfill(limit=limit)
+
+    return df
 
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
@@ -129,6 +136,7 @@ def clean_inplace(
     val.drop_duplicates(subset=['date'], keep='first', inplace=True)
     test.drop_duplicates(subset=['date'], keep='first', inplace=True)
     
+    # Setting index to datetime
     train['date'] = pd.to_datetime(train['date'])
     train.set_index('date', inplace=True)
 
@@ -138,6 +146,11 @@ def clean_inplace(
     test['date'] = pd.to_datetime(test['date'])
     test.set_index('date', inplace=True)
 
+    # Handling missing data #### Add missing data handling for each col here, if needed
+    train = _handle_missing_data(train, '_BA_SPREAD')
+    val = _handle_missing_data(val, '_BA_SPREAD')
+    test = _handle_missing_data(test, '_BA_SPREAD')
+    
     return train, val, test
 
 def get_only_returns(
@@ -190,19 +203,6 @@ class Preprocessor:
         self.all_col_names = None
         self.all_tickers = None
 
-    def _extract_req_cols(self, columns_list: list, suffix: str) -> list:
-        """
-        Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
-
-        @param columns_list list List of all column names.
-        @param suffix str 
-            Suffix str to extract its respective columns. e.g., VOL_CHANGE, RETURN
-        
-        @return required_cols List of required column names for the given suffix
-        """
-        required_cols = [col for col in columns_list if suffix in col]
-        return required_cols
-
     def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
         Transforms Volume Change columns using Yeo Johnson Transformation and
@@ -216,8 +216,8 @@ class Preprocessor:
 
         @return pd.DataFrame Transformed dataset
         """
-        vol_change_cols = self._extract_req_cols(self.all_col_names, '_VOL_CHANGE')
-        turnover_cols = self._extract_req_cols(self.all_col_names, '_TURNOVER')
+        vol_change_cols = extract_req_cols(self.all_col_names, '_VOL_CHANGE')
+        turnover_cols = extract_req_cols(self.all_col_names, '_TURNOVER')
         
         # For training split
         if mode == 'fit':

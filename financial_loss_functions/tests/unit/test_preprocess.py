@@ -185,19 +185,6 @@ def test_extract_tickers(preprocessor):
     assert tickers_list == test_list, 'Only tickers should be extracted, and sorted alphabetically.'
     assert 'sp500r' not in tickers_list, 'Common features should not be in all_tickers list.'
 
-def test_extract_req_cols(preprocessor):
-    test_columns = [
-        'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sp500r'
-    ]
-    suffix = '_VOL_CHANGE'
-    test_required = [f'ABCD{suffix}', f'EFGH{suffix}']
-
-    req_cols = preprocessor._extract_req_cols(test_columns, suffix)
-
-    assert req_cols == test_required
-    assert 'ABCD_RET' not in req_cols
-    assert 'sp500r' not in req_cols
-
 def make_sample_train(n=100, seed=0):
     rng = np.random.default_rng(seed)
     dates = pd.date_range("2020-01-01", periods=n)
