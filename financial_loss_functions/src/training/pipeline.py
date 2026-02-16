@@ -20,7 +20,28 @@ from src.training.train import (
 from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-def load_processed_data(paths_config: dict) -> tuple:
+# TODO:
+# 1. Add NCO
+# 2. Add other NN models
+# 3. Add Best model ranker
+
+def _common_setup(paths_config):
+    # Create plots directory if it doesnt exist
+    plots_dir = (Path(paths_config['artifacts']['plots']))
+    create_directory(plots_dir)
+    results_dir = Path(paths_config['artifacts']['results'])
+    
+    models_module = paths_config['models_module']
+
+    # Registering all Traditional models to the library
+    TradModelLibrary.autodiscover(models_module)
+    # Registering all NN models to the library
+    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
+    # No auto discovery needed for Loss library as all functions are in one file
+    
+    return plots_dir, results_dir
+
+def _load_processed_data(paths_config: dict) -> tuple:
     
     processed_files = {
         'processed_train': Path(paths_config['processed_paths']['processed_train']),
@@ -41,7 +62,7 @@ def load_processed_data(paths_config: dict) -> tuple:
 
     return train_data, returns_train, val_data, returns_val
     
-def preprocess(
+def _preprocess(
         train_data, returns_train, val_data, returns_val, hparams_config: dict
     ) -> tuple:
     reshaper = Reshaper(
@@ -64,7 +85,6 @@ def preprocess(
 
     return X_train, y_train, X_val, y_val
 
-
 def run_training_pipeline(
         paths_config: dict,
         hparams_config: dict, 
@@ -86,17 +106,13 @@ def run_training_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    # Create plots directory if it doesnt exist
-    plots_dir = (Path(paths_config['artifacts']['plots']))
-    create_directory(plots_dir)
-    results_dir = Path(paths_config['artifacts']['results'])
-    models_module = paths_config['models_module']
+    plots_dir, results_dir = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, returns_train, val_data, returns_val = load_processed_data(paths_config)
+    train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val = preprocess(
+    X_train, y_train, X_val, y_val = _preprocess(
         train_data,
         returns_train,
         val_data,
@@ -108,9 +124,6 @@ def run_training_pipeline(
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val)
 
-    # Registering all Traditional models to the library
-    TradModelLibrary.autodiscover(models_module)
-
     trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
     trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
 
@@ -120,9 +133,6 @@ def run_training_pipeline(
     del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
-    # Registering all NN models to the library
-    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
-    # No auto discovery needed for Loss library as all functions are in one file
     
     # Converting to pytorch tensors
     train_ds = WindowDataset(X_train, y_train)
@@ -207,25 +217,18 @@ def run_training_one_model(
     if loss_cat not in ['objectives', 'custom']:
         raise ValueError('Loss category must be `objectives` or `custom`.')
     
-    # Create plots directory if it doesnt exist
-    plots_dir = (Path(paths_config['artifacts']['plots']))
-    create_directory(plots_dir)
-    results_dir = Path(paths_config['artifacts']['results'])
-    models_module = paths_config['models_module']
+    plots_dir, results_dir = _common_setup(paths_config)
     
-    # -------------------- Model and loss search -------------------- #
-    # Registering all NN models to the library
-    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
-    
+    # -------------------- Model and loss search -------------------- #    
     model_cls = NNModelLibrary.get(model_cat, model_name)
     loss_func = LossLibrary.get(loss_cat, loss_name)
 
     if model_cls and loss_func:
         # -------------------- Loading Processed Data -------------------- #
-        train_data, returns_train, val_data, returns_val = load_processed_data(paths_config)
+        train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
         
         # -------------------- Preprocessing (Reshaping) -------------------- #
-        X_train, y_train, X_val, y_val = preprocess(
+        X_train, y_train, X_val, y_val = _preprocess(
             train_data,
             returns_train,
             val_data,
@@ -240,9 +243,6 @@ def run_training_one_model(
         # -------------------- Training Tradional Models -------------------- #
         # Initializing once to compare all models together
         evaluator = Evaluator(y_val)
-        
-        # Registering all Traditional models to the library
-        TradModelLibrary.autodiscover(models_module)
 
         trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
         trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)

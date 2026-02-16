@@ -6,13 +6,15 @@ import psutil
 import inspect
 import numpy as np
 import pandas as pd
+from typing import TYPE_CHECKING
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-# from src.data_processing.dataset import Reshaper
-from src.data_processing.dataset import WindowDataset
 from src.data_processing.dataset import DatasetSampler
 from src.data_processing.preprocess import preprocessor2
-# from src.visualization.plots import train_val_losses_plot
+
+# For type hints. To avoid circular dependencies
+if TYPE_CHECKING:
+    from src.data_processing.dataset import WindowDataset
 
 if torch.mps.is_available():
     DEVICE = 'mps'
@@ -98,7 +100,7 @@ class Trainer:
 
         self.val_alloc_weights = []
     
-    def train(self, train_ds: WindowDataset):
+    def train(self, train_ds: 'WindowDataset'):
         """
         Train inistalized model using a train data split.
 
@@ -151,7 +153,7 @@ class Trainer:
         time_taken = round(end_time - start_time, 3)
         print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
 
-    def evaluate(self, val_ds: WindowDataset):
+    def evaluate(self, val_ds: 'WindowDataset'):
         """
         Evaluate the trained model using a validation data split.
         
@@ -268,8 +270,8 @@ class CandidatesGrid:
             model_class: Type,
             loss_name: str,
             loss_func: Callable,
-            train_ds: WindowDataset,
-            val_ds: WindowDataset,
+            train_ds: 'WindowDataset',
+            val_ds: 'WindowDataset',
             X_train_shape: torch.Size,
             y_train_shape: torch.Size
         ) -> np.ndarray:
@@ -298,15 +300,6 @@ class CandidatesGrid:
         )
         trainer.train(train_ds)
         trainer.evaluate(val_ds)
-
-        # loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
-        # # Plot loss curves
-        # train_val_losses_plot(
-        #     trainer.train_losses,
-        #     trainer.val_losses,
-        #     loss_plot_name,
-        #     self.results_dir / 'plots' / (loss_plot_name + '.png')
-        # )
 
         # To send all loss curves back to pipeline
         self.train_val_losses[f'{model_name}-{loss_name}'] = {
@@ -396,7 +389,7 @@ class CandidatesGrid:
         return total_train_count
 
     def train_eval_grid(
-            self, train_ds: WindowDataset, val_ds: WindowDataset
+            self, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
         ) -> dict[str, dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
@@ -504,7 +497,7 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_model(
-            self, model_name: str, train_ds: WindowDataset, val_ds: WindowDataset
+            self, model_name: str, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
         ) -> dict[str, dict[str, np.ndarray]]:
 
         self._trained_check()
@@ -617,7 +610,7 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_loss(
-            self, loss_name: str, train_ds: WindowDataset, val_ds: WindowDataset
+            self, loss_name: str, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
         ) -> dict[str, dict[str, np.ndarray]]:
         
         self._trained_check()
