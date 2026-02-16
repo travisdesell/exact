@@ -206,7 +206,9 @@ def test_attentionlstm_constructor_attributes():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        dropout=0.0
+        attention_heads = 2,
+        dropout=0.0,
+        equal_prior = False
     )
 
     assert hasattr(model, 'lstm')
@@ -226,7 +228,9 @@ def test_equal_prior_yields_uniform_when_fc_zero_attentionlstm():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        dropout=0.0
+        attention_heads = 2,
+        dropout=0.0,
+        equal_prior = True
     )
     model.eval()
 
@@ -249,7 +253,9 @@ def test_dropout_train_vs_eval_behavior_attentionlstm():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        dropout=0.5
+        attention_heads = 2,
+        dropout=0.5,
+        equal_prior = True
     )
 
     x = torch.randn(batch, seq_len, input_size)
@@ -279,7 +285,15 @@ def test_attentionlstm_output_shape_and_probability(batch, seq_len, input_size, 
     if hidden_size % 2 != 0:
         pytest.skip("hidden_size must be divisible by num_heads (2) for MultiheadAttention in this model")
 
-    model = AttentionLSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, num_stocks=num_stocks, dropout=0.2)
+    model = AttentionLSTM(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_stocks=num_stocks,
+        attention_heads = 2,
+        dropout=0.2,
+        equal_prior = False
+    )
     model.eval()  # deterministic for testing dropout
     x = torch.randn(batch, seq_len, input_size, dtype=torch.float32)
 
@@ -297,7 +311,15 @@ def test_attentionlstm_residual_and_pooling_effects():
     """
     seed_everything(3)
     batch, seq_len, input_size, hidden_size, num_layers, num_stocks = 2, 5, 6, 8, 1, 5
-    model = AttentionLSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, num_stocks=num_stocks, dropout=0.0)
+    model = AttentionLSTM(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_stocks=num_stocks,
+        attention_heads = 2,
+        dropout=0.0,
+        equal_prior = False
+    )
     model.eval()
     x = torch.zeros(batch, seq_len, input_size, dtype=torch.float32)
 
@@ -322,7 +344,15 @@ def test_attentionlstm_grad_flow_and_input_sensitivity():
     batch, seq_len, input_size, hidden_size, num_layers, num_stocks = 3, 10, 4, 8, 1, 5
     assert hidden_size % 2 == 0  # needed for num_heads=2
 
-    model = AttentionLSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, num_stocks=num_stocks, dropout=0.0)
+    model = AttentionLSTM(
+        input_size=input_size,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_stocks=num_stocks,
+        attention_heads = 2,
+        dropout=0.0,
+        equal_prior = False
+    )
     model.train()
 
     x1 = torch.randn(batch, seq_len, input_size, dtype=torch.float32)

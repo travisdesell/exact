@@ -6,14 +6,13 @@ import psutil
 import inspect
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import matplotlib.pyplot as plt
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 # from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.dataset import DatasetSampler
 from src.data_processing.preprocess import preprocessor2
+# from src.visualization.plots import train_val_losses_plot
 
 if torch.mps.is_available():
     DEVICE = 'mps'
@@ -223,236 +222,7 @@ class Trainer:
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
         
-def train_val_losses_plot(
-    train_losses: list[float],
-    val_losses: list[float],
-    title: str,
-    output_path: str,
-    plot: bool = False,
-    sharey: bool = False,          # set True to use same y-axis for easier comparison
-    figsize: tuple = (12, 4)
-):
-    """Plot training and validation loss curves"""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, sharey=sharey)
 
-    # Left: train loss
-    ax1.plot(train_losses, linestyle='-')
-    ax1.set_xlabel('Epoch')
-    ax1.set_ylabel('Loss')
-    ax1.set_title('Train Loss')
-    ax1.grid(True)
-
-    # Right: validation loss
-    ax2.plot(val_losses, linestyle='-')
-    ax2.set_xlabel('Epoch')
-    ax2.set_title('Validation Loss')
-    ax2.grid(True)
-
-    # Overall title centered above subplots
-    fig.suptitle(title)
-
-    # Tight layout so title and labels don't overlap
-    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-
-    # Save and optionally show
-    fig.savefig(output_path, dpi=300, bbox_inches='tight')
-    if plot:
-        plt.show()
-
-    plt.close('all')
-    plt.clf()
-    plt.cla()
-
-
-class Evaluator:
-    """
-    Class to evaulate and compare all generated weights from all models/methods,
-    for all windows againsts each other as well as benchmarks.
-    """
-    def __init__(self, eval_returns: np.ndarray):
-        """
-        Initialize Evaluator instance to evaulate and compare all generated weights.
-
-        @param eval_returns np.ndarray
-            Daily returns which are used to evulate all methods/models
-        """
-        # Returns by window
-        self.eval_returns = eval_returns
-
-        # Different Weights
-        self.eq_weights = None
-        
-        # Returns for each window
-        self.all_daily_returns = {} # Add all returns for every window
-
-    @staticmethod
-    def _equal_weight_pf(num_tickers: int) -> np.ndarray:
-        """
-        Calculates simple equal weights for a portfolio
-        weight for each stock = 1/num_tickers
-        
-        @param num_tickers int number of tickers in the dataset
-
-        @return np.array equal weight portfolio allocation weights
-        """
-        return np.full((num_tickers), 1/num_tickers)
-
-    @staticmethod
-    def _cumulative_return(returns_arr: np.ndarray) -> np.float64:
-        """Calculate cummulative returns for given window"""
-        return np.prod(1 + returns_arr) - 1
-    
-    @staticmethod
-    def _basic_sharpe(
-            returns_arr: np.ndarray, risk_free_rate: float = 0.0
-        ) -> np.float64:
-        """
-        Calculates non-annualized sharpe for given window.
-        
-        @param returns_arr np.array (n,)
-            array of discrete returns for each time step
-        @param risk_free_rate float
-            Risk free rate for window used for returns. Default = 0.0
-        """
-        mean_ret = np.mean(returns_arr)
-        std_ret = np.std(returns_arr)
-
-        return (mean_ret - risk_free_rate) / std_ret
-
-    def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
-        """
-        Calculates daily returns for the given portfolio weights for each given window.
-        Portfolio Weights (n,) x Returns (T, n) = weighted returns.
-
-        @param eval_weights np.ndarray
-            Portfolio allocation weights for which weighted returns need to be calculated
-        @param model_name str
-            Name of the model which generated the portfolio allocation weights
-        """
-        
-        pf_daily_returns = []
-        
-        # Iterating over window samples
-        for i in range(eval_weights.shape[0]):
-            weights = eval_weights[i]  # Shape: (50,)
-            returns = self.eval_returns[i]  # Shape: (50, 50) - time steps x assets
-            
-            # Calculate daily portfolio returns (dot product at each time step)
-            daily_returns = np.dot(returns, weights)
-            pf_daily_returns.append(daily_returns) # Shape: (50,)
-            
-        self.all_daily_returns[model_name] = np.array(pf_daily_returns)
-    
-    def _daily_rets_calcd_check(self):
-        if not self.all_daily_returns:
-            raise ValueError(
-                'No daily returns calculated.',
-                'Run calc_pf_daily_rets and calc_eq_wt_daily_rets first.'
-            )
-
-    def calc_eq_wt_daily_rets(self): 
-        """
-        Calculates daily returns for the Equal Weighted portfolio for each given window.
-        """
-        # For equal weight portfolio
-        self.eq_weights = self._equal_weight_pf(self.eval_returns.shape[2])
-        
-        eq_wt_daily_returns = []
-        
-        for i in range(self.eval_returns.shape[0]):
-            returns = self.eval_returns[i]  # Shape: (50, 50)
-            daily_returns = np.dot(returns, self.eq_weights)
-            eq_wt_daily_returns.append(daily_returns)  # Shape: (50,)
-
-        self.all_daily_returns['Equal Weight'] = np.array(eq_wt_daily_returns)
-
-    def calc_total_performance(self, metric: str) -> pd.DataFrame:
-        """
-        Calculate per-window performance of all portfolios (incl. Equal Weight)
-        based on given metric. 
-
-        @param metric str
-            String name of the metric to be calculated. `returns` or `sharpe`
-
-        @return Dict[str, list]
-            Dictionary containing calculated performance metric for each validation window
-        """
-        self._daily_rets_calcd_check()
-        
-        total_perfomances = {}
-        for model, all_rets in self.all_daily_returns.items():
-            model_rets = []
-            for i in range(all_rets.shape[0]):
-                if metric == 'returns':
-                    window_metric = self._cumulative_return(all_rets[i])
-                elif metric == 'sharpe':
-                    window_metric = self._basic_sharpe(all_rets[i])
-                
-                model_rets.append(round(window_metric, 4))
-            
-            total_perfomances[model] = model_rets
-        
-        return pd.DataFrame(total_perfomances)
-
-    def plot_windowed_comparison(self, output_path: str, plot: bool=False):
-        # for pf_type, array in self.all_daily_returns.items():
-        self._daily_rets_calcd_check()
-        
-        cmap = plt.get_cmap('tab20') # or 'tab20', 'gist_rainbow'
-        
-        n_windows = next(iter(self.all_daily_returns.values())).shape[0]
-        n_cols = min(3, n_windows)
-        n_rows = (n_windows + n_cols - 1) // n_cols
-        
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
-        if n_rows == 1 and n_cols == 1:
-            axes = np.array([axes])
-        axes = axes.flatten()
-        
-        # Plotting loop for each window
-        for window_idx in range(n_windows):
-            ax = axes[window_idx]
-            for i, (pf_type, daily_returns) in enumerate(self.all_daily_returns.items()):
-                ax.plot(
-                    daily_returns[window_idx],
-                    label=pf_type,
-                    color=cmap(i % 20), # Using a 20-color map
-                    alpha=0.7,
-                    linewidth=1
-                )
-            ax.set_title(f'Window {window_idx + 1}')
-            ax.grid(True, alpha=0.3)
-
-        # 1. CLEAN UP MAIN PLOT
-        for i in range(n_windows, len(axes)):
-            axes[i].set_visible(False)
-        
-        plt.tight_layout()
-        fig.savefig(output_path, dpi=300, bbox_inches='tight')
-
-        # 2. CREATE SEPARATE LEGEND FILE
-        # Extract handles and labels from the LAST used axis
-        handles, labels = ax.get_legend_handles_labels()
-        
-        # Create a small figure just for the legend
-        # Adjust figsize based on how many portfolios you have
-        fig_leg = plt.figure(figsize=(3, len(labels) * 0.2)) 
-        legend = fig_leg.legend(handles, labels, loc='center', frameon=False, ncol=1)
-        
-        # Remove all axis info so it's just the legend
-        plt.axis('off')
-        
-        # Generate legend path (e.g., 'path/to/plot_legend.png')
-        base, ext = os.path.splitext(output_path)
-        legend_path = f'{base}_legend{ext}'
-        
-        # Save with bbox_inches='tight' to crop the white space
-        fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
-
-        if plot:
-            plt.show()
-        
-        plt.close('all')
 
 
 class CandidatesGrid:
@@ -464,7 +234,6 @@ class CandidatesGrid:
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
-            results_dir: str | Path,
             loss_mode: str = 'all',
             enable_diagnostics: bool = False
         ):
@@ -478,7 +247,6 @@ class CandidatesGrid:
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
-        self.results_dir = results_dir
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -487,6 +255,7 @@ class CandidatesGrid:
         self.enable_diagnostics = enable_diagnostics
         
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
+        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
     
     def required_reshapes(self, train_data, returns_train, val_data, returns_val):
         # Implement different reshaping for different models if needed.
@@ -530,14 +299,20 @@ class CandidatesGrid:
         trainer.train(train_ds)
         trainer.evaluate(val_ds)
 
-        loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
-        # Plot loss curves
-        train_val_losses_plot(
-            trainer.train_losses,
-            trainer.val_losses,
-            loss_plot_name,
-            self.results_dir / 'plots' / (loss_plot_name + '.png')
-        )
+        # loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
+        # # Plot loss curves
+        # train_val_losses_plot(
+        #     trainer.train_losses,
+        #     trainer.val_losses,
+        #     loss_plot_name,
+        #     self.results_dir / 'plots' / (loss_plot_name + '.png')
+        # )
+
+        # To send all loss curves back to pipeline
+        self.train_val_losses[f'{model_name}-{loss_name}'] = {
+            'train': trainer.train_losses,
+            'val':trainer.val_losses
+        }
 
         alloc_weights = trainer.get_val_alloc_weights()
         # trainer.device_cleanup()
@@ -892,6 +667,9 @@ class CandidatesGrid:
                     progress_count += 1
 
         return self.all_alloc_weights
+    
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        return self.train_val_losses
 
 
 class TradModelsTrainer:

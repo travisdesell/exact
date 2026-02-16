@@ -2,12 +2,15 @@ import time
 from torch import optim
 from pathlib import Path
 from src.utils import create_directory
+from src.evaluation.evaluator import Evaluator
 from src.data_processing.dataset import Reshaper
-from src.training.train import train_val_losses_plot
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
+from src.visualization.plots import (
+    train_val_losses_plot, 
+    plot_windowed_comparison
+)
 from src.training.train import (
-    Evaluator,
     CandidatesGrid,
     TradModelsTrainer,
     Trainer
@@ -129,7 +132,6 @@ def run_training_pipeline(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
-        results_dir = results_dir,
         loss_mode = loss_mode
     )
     if grid_mode == 'all':
@@ -143,6 +145,17 @@ def run_training_pipeline(
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
+    # Plot training and validation loss curves
+    nn_train_loss_curves = candidates_grid.get_train_val_losses()
+    for model_loss, model_loss_curves in nn_train_loss_curves.items():
+        loss_plot_name = model_loss + ' Loss Curves'
+        train_val_losses_plot(
+            model_loss_curves['train'],
+            model_loss_curves['val'],
+            loss_plot_name,
+            plots_dir / (loss_plot_name + '.png')
+        )
+
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for loss_name, models_dict in nn_alloc_weights.items():
@@ -154,9 +167,9 @@ def run_training_pipeline(
     # Overall Evaluation/Comparison starts here
     evaluator.calc_eq_wt_daily_rets()
     
-    evaluator.plot_windowed_comparison(
-        plots_dir /
-        (f'Daily Returns' + '.png')
+    plot_windowed_comparison(
+        evaluator.get_all_daily_returns(),
+        plots_dir / (f'Daily Returns' + '.png')
     )
 
     total_returns = evaluator.calc_total_performance('returns')
@@ -264,7 +277,7 @@ def run_training_one_model(
                 trainer.train_losses,
                 trainer.val_losses,
                 loss_plot_name,
-                Path(paths_config['artifacts']['plots']) / (loss_plot_name + '.png')
+                plots_dir / (loss_plot_name + '.png')
             )
 
             alloc_weights = trainer.get_val_alloc_weights()
@@ -280,7 +293,8 @@ def run_training_one_model(
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
         
-        evaluator.plot_windowed_comparison(
+        plot_windowed_comparison(
+            evaluator.get_all_daily_returns(),
             plots_dir /
             (f'Daily Returns_{model_name}-{loss_name}' + '.png')
         )
