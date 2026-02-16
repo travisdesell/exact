@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from typing import Type
 from sklearn.cluster import KMeans
 from scipy.optimize import minimize
 from scipy.cluster.hierarchy import linkage

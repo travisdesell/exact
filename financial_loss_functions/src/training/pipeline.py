@@ -21,9 +21,9 @@ from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# 1. Add NCO
-# 2. Add other NN models
-# 3. Add Best model ranker
+# 1. Add other NN models
+# 2. Add Best model ranker
+# 3. Unit test NCO
 
 def _common_setup(paths_config):
     # Create plots directory if it doesnt exist

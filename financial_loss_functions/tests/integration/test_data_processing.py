@@ -14,9 +14,11 @@ def _get_raw_files_names():
     )['raw_files']
     return raw_files_dict
 
-def _build_expected_feats(df: pd.DataFrame, common_feats: list[str]):
+def _build_expected_feats(
+        df: pd.DataFrame, common_feats: list[str]
+    ) -> tuple[list, list]:
     """Extract tickers and features from full DataFrame column names."""
-    tickers = []
+    expected_tickers = []
     features = []
 
     def _split_col(col: str) -> tuple[str, str]:
@@ -29,26 +31,24 @@ def _build_expected_feats(df: pd.DataFrame, common_feats: list[str]):
     for col in df.columns:
         if col != 'date' and col not in common_feats:
             t, f = _split_col(col)
-            tickers.append(t)
+            expected_tickers.append(t)
             features.append(f)
 
-    tickers = sorted(set(tickers)) # Important to sort
+    expected_tickers = sorted(set(expected_tickers)) # Important to sort
     # features.extend(common_feats)
     features = set(features) # Important to sort
     
 
-    expected_columns = []
-    for ticker in tickers:
+    expected_all_feats = []
+    for ticker in expected_tickers:
         for feat in features:
-            expected_columns.append(f'{ticker}_{feat}')
+            expected_all_feats.append(f'{ticker}_{feat}')
     
-    for ticker in tickers:
+    for ticker in expected_tickers:
         for com_feat in common_feats:
-            expected_columns.append(f'{ticker}_{com_feat}')
+            expected_all_feats.append(f'{ticker}_{com_feat}')
 
-    print(tickers)
-    print(features)
-    return expected_columns
+    return expected_all_feats, expected_tickers
 
     # Deterministic order for reshaping
     # cols_per_ticker = [
@@ -129,12 +129,21 @@ def test_processing_with_committed_sample(tmp_path):
     # Loop over raw files
     for split, raw_df in raw_files.items():
         # Build expected feature columns and check processed files
-        expected_cols = _build_expected_feats(
+        expected_cols, expected_tickers = _build_expected_feats(
             raw_df,
             features_config['common_features']
         )
+
+        # Check if all features match
+        assert len(list(processed_files[f'processed_{split}'].columns)) \
+            == len(expected_cols), f'Lengths of feature columns in processed {split} do not match'
+        
         assert set(processed_files[f'processed_{split}'].columns) \
-            == set(expected_cols), 'Feature columns are different'
+            == set(expected_cols), f'Feature columns are different {split}'
+
+        # Check if returns features match (will be only ticker symbol)
+        assert set(processed_files[f'returns_{split}'].columns) \
+            == set(expected_tickers), f'Returns columns in {split} do not match'
 
         # Check that feature indices match target (returns) indices exactly
         proc = processed_files[f'processed_{split}']
