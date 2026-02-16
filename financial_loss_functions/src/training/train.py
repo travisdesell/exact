@@ -16,19 +16,6 @@ from src.data_processing.preprocess import preprocessor2
 if TYPE_CHECKING:
     from src.data_processing.dataset import WindowDataset
 
-if torch.mps.is_available():
-    DEVICE = 'mps'
-    # DEVICE = torch.device(device_name)
-    print('Using mps for GPU acceleration.')
-elif torch.cuda.is_available():
-    DEVICE = 'cuda'
-    # DEVICE = torch.device(device_name)
-    print('Using cuda for GPU acceleration.')
-else:
-    DEVICE = 'cpu'
-    # DEVICE = torch.device('cpu')
-    print('No GPU acceleration. Using CPU.')
-
 
 class Trainer:
     """
@@ -44,8 +31,8 @@ class Trainer:
         train_hparams: dict[str, Any],      # Generic training params (epochs, batch_size, etc.)
         in_size: int,
         num_stocks: int,
-        loss_hparams: dict[str, Any] | None = None,
-        device_name: str = DEVICE
+        device: torch.device | str,
+        loss_hparams: dict[str, Any] | None = None
     ):
         """
         Initialize Trainer instance to train given model.
@@ -69,8 +56,16 @@ class Trainer:
         @param num_stocks int
             Number of stocks, i.e, number of output nodes 
         """
-        self.device_name = device_name
-        self.device = torch.device(device_name)
+
+        if isinstance(device, torch.device) :
+            self.device = device
+        elif isinstance(device, str):
+            self.device = torch.device(device)
+        else:
+            raise ValueError(
+                'Incorrect type provided for torch device, must be `str` or `torch.device`.'
+            )
+        
         print('Model hyperparameters:\n', model_hparams)
         print('Optimizer hyperparameters:\n', optimizer_hparams)
         print('Training hyperparameters:\n', train_hparams)
@@ -211,21 +206,19 @@ class Trainer:
             print('Model must be trained and validated.')
             return None
     
-    def device_cleanup(self):
-        if self.device_name == 'mps':
-            try:
-                # Empty MPS cache
-                torch.mps.empty_cache()
+    # def device_cleanup(self):
+    #     if self.device_name == 'mps':
+    #         try:
+    #             # Empty MPS cache
+    #             torch.mps.empty_cache()
             
-            except Exception as e:
-                print(f'MPS cleanup not available. Error: {e}')
+    #         except Exception as e:
+    #             print(f'MPS cleanup not available. Error: {e}')
             
-        elif self.device_name == 'cuda':
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+    #     elif self.device_name == 'cuda':
+    #         torch.cuda.empty_cache()
+    #         torch.cuda.ipc_collect()
         
-
-
 
 class CandidatesGrid:
     models_hparams = 'nn_models'
@@ -236,6 +229,7 @@ class CandidatesGrid:
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
             loss_mode: str = 'all',
             enable_diagnostics: bool = False
         ):
@@ -255,6 +249,8 @@ class CandidatesGrid:
         else:
             self.loss_mode = loss_mode
         self.enable_diagnostics = enable_diagnostics
+
+        self.torch_device = torch_device
         
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
@@ -294,9 +290,10 @@ class CandidatesGrid:
             train_hparams=self.hparams_config[
                 self.models_hparams
             ][model_name]['train'],
-            loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             in_size=X_train_shape[2],
-            num_stocks=y_train_shape[2]
+            num_stocks=y_train_shape[2],
+            loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
+            device=self.torch_device
         )
         trainer.train(train_ds)
         trainer.evaluate(val_ds)

@@ -1,11 +1,11 @@
 import time
 from torch import optim
 from pathlib import Path
-from src.utils import create_directory
 from src.evaluation.evaluator import Evaluator
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
+from src.utils import create_directory, get_best_device
 from src.visualization.plots import (
     train_val_losses_plot, 
     plot_windowed_comparison
@@ -38,8 +38,10 @@ def _common_setup(paths_config):
     # Registering all NN models to the library
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
+
+    best_device = get_best_device()
     
-    return plots_dir, results_dir
+    return plots_dir, results_dir, best_device
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -77,7 +79,6 @@ def _preprocess(
     print('X_train shpe:', X_train.shape)
     print('y_train shape:', y_train.shape)
 
-
     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
     print('-'*10, ' val shapes ', '-'*10)
     print('X_val shape', X_val.shape)
@@ -106,7 +107,7 @@ def run_training_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, results_dir = _common_setup(paths_config)
+    plots_dir, results_dir, best_device = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
@@ -142,6 +143,7 @@ def run_training_pipeline(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
+        torch_device=best_device,
         loss_mode = loss_mode
     )
     if grid_mode == 'all':
@@ -217,7 +219,7 @@ def run_training_one_model(
     if loss_cat not in ['objectives', 'custom']:
         raise ValueError('Loss category must be `objectives` or `custom`.')
     
-    plots_dir, results_dir = _common_setup(paths_config)
+    plots_dir, results_dir, best_device = _common_setup(paths_config)
     
     # -------------------- Model and loss search -------------------- #    
     model_cls = NNModelLibrary.get(model_cat, model_name)
@@ -264,7 +266,8 @@ def run_training_one_model(
                 train_hparams=hparams_config['nn_models'][model_name]['train'],
                 in_size=X_train.shape[2],
                 num_stocks=y_train.shape[2],
-                loss_hparams=hparams_config['losses'].get(loss_name)
+                loss_hparams=hparams_config['losses'].get(loss_name),
+                device=best_device
             )
 
             trainer.train(train_ds)
