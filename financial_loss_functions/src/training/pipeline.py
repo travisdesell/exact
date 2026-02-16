@@ -1,3 +1,4 @@
+import time
 from torch import optim
 from pathlib import Path
 from src.utils import create_directory
@@ -80,6 +81,7 @@ def run_training_pipeline(
     @param loss str Name of the loss function to be used
     """
     print('\n', '=' * 20, ' Training Grid Pipeline ', '=' * 20)
+    start_time = time.time()
     
     # Create plots directory if it doesnt exist
     plots_dir = (Path(paths_config['artifacts']['plots']))
@@ -171,6 +173,9 @@ def run_training_pipeline(
     print('\n', 'Compounded returns for each window:\n', total_returns)
     print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
 
+    time_taken = round((time.time() - start_time) / 60, 3)
+    print(f'Time taken for pipeline = {time_taken}')
+
 def run_training_one_model(
         paths_config: dict,
         hparams_config: dict,
@@ -189,6 +194,7 @@ def run_training_one_model(
     @param loss str Name of the loss function to be used
     """
     print('\n', '=' * 20, ' Training One Model with One Loss ', '=' * 20)
+    start_time = time.time()
 
     if loss_cat not in ['objective', 'custom']:
         raise ValueError('Loss category must be `objective` or `custom`.')
@@ -302,6 +308,9 @@ def run_training_one_model(
         print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
         print('\n', 'Compounded returns for each window:\n', total_returns)
         print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
+
+        time_taken = round((time.time() - start_time) / 60, 3)
+        print(f'Time taken for pipeline = {time_taken}')
     
     elif model_cls is None:
         raise ValueError(f'Model {model_name} of {model_cat} not found.')

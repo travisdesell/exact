@@ -872,11 +872,4 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     # print('CVaR:', cvar * lambda1)
     return sharpe + lambda1 * cvar 
 
-def combined_loss_2():
-    pass
-
-def combined_loss_3():
-    pass
-
-def combined_loss_4():
-    pass
+def custom_loss_2(weights: Tensor, returns: Tensor): pass

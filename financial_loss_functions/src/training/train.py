@@ -586,10 +586,13 @@ class CandidatesGrid:
         self._trained_check()
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
-
+        
+        len_custom_losses = len(
+            self.loss_lib['custom']['__default__']
+        ) if 'custom' in self.loss_lib else 0
+        
         total_train_count = (
-                len(self.loss_lib['objectives']['__default__']) + \
-                    len(self.loss_lib['custom']['__default__']) if 'custom' in self.loss_lib else 0
+                len(self.loss_lib['objectives']['__default__']) + len_custom_losses
             ) * sum(len(models_dict) for models_dict in self.model_lib.values())
         progress_count = 1
         print(f'\nTraining {total_train_count} models.')
@@ -703,9 +706,11 @@ class CandidatesGrid:
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
+        len_custom_losses = len(
+            self.loss_lib['custom']['__default__']
+        ) if 'custom' in self.loss_lib else 0
         total_train_count = (
-            len(self.loss_lib['objectives']['__default__']) + \
-                len(self.loss_lib['custom']['__default__']) if 'custom' in self.loss_lib else 0
+            len(self.loss_lib['objectives']['__default__']) +  len_custom_losses
         )
         progress_count = 1
         print(f'\nTraining {total_train_count} models.')
