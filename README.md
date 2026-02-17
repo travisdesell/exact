@@ -158,7 +158,11 @@ Given the above options for loading and using training and validation data, we c
 
 The following command line options control the neuroevolution search process itself.
 
-* `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
+* The training process is bounded by one or both of the following parameters:
+
+	* `--max_genomes <int>` specifies how many genomes (RNNs or GPs) to evaluate before terminating the run. Note that EXAMM/EXA-GP use an asynchronous strategy with steady state populations so there are no explicit generations.
+	
+	* `--max_wallclock_seconds <int>` specifies a wallclock time cap, in seconds, for the entire EXAMM/EXA-GP run. Before generating the next genome the algorithms verifies if the time passed is within the limit. If it exceeds the `max_wallclock_seconds` parameter, then the training stops. It is disabled by default.
 
 * `--min_recurrent_depth <int>` and `--max_recurrent_depth <int>` specify the possible range of time skip values for recurrent connections added to the evolved networks.  Default values are 1 and 10. Adding in deeper recurrent connections has been shown to improve forecasting performance, and in some cases even outperform memory cells[^examm_deep_recurrent].
 
@@ -214,7 +218,30 @@ EXAMM allows for genomes to be initialized using uniform random, Xavier, Kaiming
 
 The following allow control of the neural network training hyperparameters:
 
-* `--bp_iterations <int>` specifies how many backpropagation epochs should be done per genome.
+* `--backprop_iterations_type <str>` specifies how the number of back propagation epoch per genome (`bp_iterations`) changes with the increase of the total number of epochs (`total_bp_epochs`). Available options include:
+	* **Default: `const`**  
+		Uses a fixed number of backpropagation epochs for every genome. 
+		* `--bp_iterations <int>` specifies how many backpropagation epochs are run per genome.
+	* **`random`**
+		For each genome, the number of backpropagation epochs is chosen uniformly at random within defined range (between `bp_min` and `bp_max`).
+		* `--bp_min` minimum number of epochs per genome (defaults to `0`).
+		* `--bp_max` maximum number of epochs per genome (required parameter; if `bp_iterations` is defined and `bp_max` is not, then it defaults to `bp_iterations`; if neither is provided, returns fatal error).
+	* **`scaled`** 
+		For each genome, the number of backpropagation epochs is increased proportionately to the number of generated genomes and is defined by:
+
+```math
+bp_{\text{iter}} =
+\min\!\left(bp_{\max}, \left\lfloor (\text{bp_{slope}} \cdot generated_genomes)^{\text{bp_{exponent}}} \right\rfloor + bp_{\min}\right)
+```
+
+where:
+
+	* `bp_iter` is the number of backpropagation epochs assigned to the next genome,
+	* `generated_genomes` is the cumulative number of generated genomes so far,
+	* `--bp_slope` controls the growth rate of backpropagation epochs,
+	* `--bp_exponent` controls the curvature of the growth,
+	* `--bp_min` is the minimum number of epochs per genome (defaults to `0`),
+	* `--bp_max` caps the maximum number of epochs per genome (defaults to `-1`; values smaller than zero disable the cap).
 
 [^pascanu_gradient_scaling]: Razvan Pascanu, Tomas Mikolov and Yoshio Bengio. **[On the Difficulty of Training Recurrent Neural Networks](http://proceedings.mlr.press/v28/pascanu13.pdf).** <em>The International Conference on Machine Learning (ICML 2013)</em>. 2013.
 
@@ -311,6 +338,19 @@ The `.bin` file is a serialized binary of the network, the `.txt` file is a text
 
 * `--generate_op_log` if this flag is specified (default false), an additional operation log file will be generated which will track for every genome how it was generated (i.e., which mutation or crossover operation(s) were used) as well has how many nodes of what type (e.g., LSTM, GRU, MGU, etc) were generated and used. This is turned off by default as generating this log file is somewhat slow and can degrade performance.
 
+* `--genome_size_log` if this flag is specified (default 0), an additional operation
+log will be generated which will track enabled/disabled nodes, edges, rec edges, weights and type of nodes for generated, global best, island global best and island genomes.
+
+* `--growth_phase_genomes` if this flag is specificed, it enables a phased schedule based on the number of generated genomes (not generation ID). It sets how many consecutive genomes run in the growth phase, where structural add/enable ops are favored (e.g., add_*/enable_* rates = 1, disable_*/merge_* = 0). Default 0 disables phasing.
+
+* `--reduction_phase_genomes` if this integer flag is > 0 and --growth_phase_genomes > 0, adds a reduction (shrink) phase each cycle. It sets how many consecutive genomes run with pruning favored (add_*/enable_* = 0, disable_*/merge_* = 1). Default 0 means no shrink phase.
+
+* `--is_harada_selection` If this integer flag is 1 (or > 0), the algorithm will use Harada's Frequency-based parent selection[^harada_selection] to reduce evaluation time bias.
+
+[^harada_selection] Tomohiro Harada. **[A frequency-based parent selection for reducing the effect of evaluation time bias in asynchronous parallel multi-objective evolutionary algorithms.]** *Natural Computing 24.2 (2025)*. pp 211-225.
+
+
+* `--harada_selection_ratio` This decimal (floating-point) value determines the percentage of the population used for the candidate pool. It should be between 0.0 and 1.0. The paper typically recommends values around 0.2 or 0.3 (20-30%).
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 

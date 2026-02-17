@@ -44,11 +44,16 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
     vector<Species*> Neat_Species;
     RNN_Genome* global_best_genome;
 
+    // possible node type values for NN size logs
+    std::vector<std::string> possible_node_types;
+
+    int32_t is_harada_selection;
+
    public:
     NeatSpeciationStrategy(
         double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate,
         RNN_Genome* _seed_genome, double _species_threshold, double _fitness_threshold, double _neat_c1,
-        double _neat_c2, double _neat_c3
+        double _neat_c2, double _neat_c3, std::vector<std::string> possible_node_types, int32_t is_harada_selection
     );
     /**
      * \return the number of generated genomes.
@@ -131,6 +136,40 @@ class NeatSpeciationStrategy : public SpeciationStrategy {
      * Gets speciation strategy information values for logs
      */
     string get_strategy_information_values() const;
+
+    string get_size_information_headers();
+
+    string get_size_information_values();
+
+    /**
+     * Gets speciation strategy information headers for best genome size logs.
+     */
+    string get_best_genome_size_information_headers();
+
+    /**
+     * Gets speciation strategy information values for best genome size logs.
+     */
+    string get_best_genome_size_information_values();
+
+    /**
+     * Gets speciation strategy information values for global best genome size logs.
+     */
+    string get_global_best_genome_size_information_values();
+
+    /**
+     * Gets speciation strategy information headers for global best genome size logs.
+     */
+    string get_global_best_genome_size_information_headers();
+
+    /**
+     * Get the complete generate genome headers
+     */
+    string generate_genome_size_headers();
+
+    /**
+     * Get the complete generate genome values
+     */
+    string generate_genome_size_values(RNN_Genome* new_genome, int32_t generated_genomes);
 
     RNN_Genome* get_global_best_genome();
 

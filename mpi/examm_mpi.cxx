@@ -63,20 +63,33 @@ void receive_work_request(int32_t source) {
 RNN_Genome* receive_genome_from(int32_t source) {
     MPI_Status status;
     int32_t length_message[1];
+    
+    // Receive the Total Length first
     MPI_Recv(length_message, 1, MPI_INT, source, GENOME_LENGTH_TAG, MPI_COMM_WORLD, &status);
-
     int32_t length = length_message[0];
 
-    Log::debug("receiving genome of length: %d from: %d\n", length, source);
+    Log::info("receiving genome of length: %d from: %d\n", length, source);
 
+    // Allocate memory for the full message
     char* genome_str = new char[length + 1];
 
-    Log::debug("receiving genome from: %d\n", source);
-    MPI_Recv(genome_str, length, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
+    // Receive Data in 32KB Chunks
+    // Loop until we have collected all 'length' bytes
+    int32_t offset = 0;
+    int32_t chunk_size = 32768;
+
+    while (offset < length) {
+        int32_t recv_size = length - offset;
+        if (recv_size > chunk_size) {
+            recv_size = chunk_size;
+        }
+
+        // Receive directly into the correct position in the buffer
+        MPI_Recv(genome_str + offset, recv_size, MPI_CHAR, source, GENOME_TAG, MPI_COMM_WORLD, &status);
+        offset += recv_size;
+    }
 
     genome_str[length] = '\0';
-
-    Log::trace("genome_str:\n%s\n", genome_str);
 
     RNN_Genome* genome = new RNN_Genome(genome_str, length);
 
@@ -92,12 +105,26 @@ void send_genome_to(int32_t target, RNN_Genome* genome) {
 
     Log::debug("sending genome of length: %d to: %d\n", length, target);
 
+    // Send the Total Length
     int32_t length_message[1];
     length_message[0] = length;
     MPI_Send(length_message, 1, MPI_INT, target, GENOME_LENGTH_TAG, MPI_COMM_WORLD);
 
-    Log::debug("sending genome to: %d\n", target);
-    MPI_Send(byte_array, length, MPI_CHAR, target, GENOME_TAG, MPI_COMM_WORLD);
+    // Send Data in 32KB Chunks
+    // This bypasses the cluster's message size limit
+    int32_t offset = 0;
+    int32_t chunk_size = 32768; // 32KB chunk size is safe for all MPIs
+
+    while (offset < length) {
+        int32_t send_size = length - offset;
+        if (send_size > chunk_size) {
+            send_size = chunk_size;
+        }
+        
+        // Send the specific chunk
+        MPI_Send(byte_array + offset, send_size, MPI_CHAR, target, GENOME_TAG, MPI_COMM_WORLD);
+        offset += send_size;
+    }
 
     free(byte_array);
 }

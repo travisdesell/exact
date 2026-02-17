@@ -45,22 +45,31 @@ using std::to_string;
 EXAMM::~EXAMM() {
     delete weight_rules;
     delete genome_property;
+    if (genome_stats_log_file != NULL) {
+        genome_stats_log_file->close();
+        delete genome_stats_log_file;
+    }
 }
 
 EXAMM::EXAMM(
-    int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
+    int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, SpeciationStrategy* _speciation_strategy,
+    WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio
 )
     : island_size(_island_size),
       number_islands(_number_islands),
       max_genomes(_max_genomes),
+      max_wallclock_seconds(_max_wallclock_seconds),
       speciation_strategy(_speciation_strategy),
       weight_rules(_weight_rules),
       genome_property(_genome_property),
       output_directory(_output_directory),
       save_genome_option(_save_genome_option),
       generate_op_log(_generate_op_log),
-      generate_visualization_json(_generate_visualization_json)
+      generate_visualization_json(_generate_visualization_json),
+      growth_phase_genomes(_growth_phase_genomes),
+      reduction_phase_genomes(_reduction_phase_genomes),
+      genome_size_log(_genome_size_log)
 {
     total_bp_epochs = 0;
     edge_innovation_count = 0;
@@ -84,7 +93,11 @@ EXAMM::EXAMM(
 
     speciation_strategy->initialize_population(mutate_function);
     generate_log();
+    generate_size_count();
     startClock = std::chrono::system_clock::now();
+
+    is_harada_selection = _is_harada_selection;
+    harada_selection_ratio = _harada_selection_ratio;
 }
 
 void EXAMM::print() {
@@ -130,9 +143,45 @@ void EXAMM::generate_log() {
             }
             (*op_log_file) << endl;
         }
+        
+        // Create genome stats log file for per-genome backprop statistics
+        genome_stats_log_file = new ofstream(output_directory + "/" + "genome_stats_log.csv");
+        (*genome_stats_log_file) << "Genome Number, Initial Fitness, Final Fitness, BP Epochs, BP Time (ms)" << endl;
+        Log::info("Generating genome stats log\n");
     } else {
         log_file = NULL;
         op_log_file = NULL;
+        genome_stats_log_file = NULL;
+    }
+}
+
+// generate size count log
+
+
+void EXAMM::generate_size_count() {
+    if (genome_size_log) {
+        std::string size_dir = output_directory + "/" + "size_log";
+        mkpath(size_dir.c_str(), 0777);
+        Log::info("Generating neural network size log\n");
+        // Creating size csv files and headers
+        size_log_file = new ofstream(size_dir + "/" + "size_log.csv");
+        (*size_log_file) << speciation_strategy->get_size_information_headers() << endl;
+        (*size_log_file) << speciation_strategy->get_size_information_values() << endl;
+        // Creating island best genome size file and headers
+        best_genome_size_log = new ofstream(size_dir + "/" + "best_genome_size_log.csv");
+        (*best_genome_size_log) << speciation_strategy->get_best_genome_size_information_headers() << endl;
+        // Creating global best genome size file and headers
+        global_best_genome_size_log = new ofstream(size_dir + "/" + "global_best_genome_size_log.csv");
+        (*global_best_genome_size_log)
+            << speciation_strategy->get_global_best_genome_size_information_headers() << endl;
+        // Creating generated genome generation size file and headers
+        generate_geneome_size_log_file = new ofstream(size_dir + "/" + "generate_geneome_size_log.csv");
+        (*generate_geneome_size_log_file) << speciation_strategy->generate_genome_size_headers() << endl;
+    } else {
+        size_log_file = NULL;
+        best_genome_size_log = NULL;
+        global_best_genome_size_log = NULL;
+        generate_geneome_size_log_file = NULL;
     }
 }
 
@@ -205,6 +254,16 @@ void EXAMM::update_log() {
 //     log_file.close();
 // }
 
+// update the size logs
+
+void EXAMM::update_size_log() {
+    if(genome_size_log){
+        (*size_log_file) << speciation_strategy->get_size_information_values() << endl;
+        (*best_genome_size_log) << speciation_strategy->get_best_genome_size_information_values() << endl;
+        (*global_best_genome_size_log) << speciation_strategy->get_global_best_genome_size_information_values() << endl;
+    }
+}
+
 void EXAMM::set_possible_node_types(vector<string> possible_node_type_strings) {
     possible_node_types.clear();
 
@@ -240,7 +299,8 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         return false;
     }
 
-    total_bp_epochs += genome->get_bp_iterations();
+    int backprop_iterations = genome->get_bp_iterations();
+    total_bp_epochs += backprop_iterations;
     if (!genome->sanity_check()) {
         Log::error("genome failed sanity check on insert!\n");
         exit(1);
@@ -276,7 +336,36 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     update_op_log_statistics(genome, insert_position);
     Log::debug("update op log statistics complete\n");
+    
+    // Write per-genome backprop stats to log file
+    if (genome_stats_log_file != NULL) {
+        // Make sure the log file is still good (similar to update_log)
+        if (!genome_stats_log_file->good()) {
+            genome_stats_log_file->close();
+            delete genome_stats_log_file;
+            string output_file = output_directory + "/genome_stats_log.csv";
+            genome_stats_log_file = new ofstream(output_file, std::ios_base::app);
+            if (!genome_stats_log_file->is_open()) {
+                Log::error("could not open genome stats log: '%s'\n", output_file.c_str());
+                genome_stats_log_file = NULL;
+            }
+        }
+        
+        if (genome_stats_log_file != NULL && genome->get_bp_stats_valid()) {
+            (*genome_stats_log_file) << genome->get_generation_id() << ","
+                                     << genome->get_initial_fitness_before_bp() << ","
+                                     << genome->get_fitness() << ","
+                                     << genome->get_bp_iterations() << ","
+                                     << genome->get_bp_time_milliseconds() << endl;
+            genome_stats_log_file->flush();  // Ensure data is written immediately
+        }
+    }
+    
     update_log();
+
+    // update size log.
+    update_size_log();
+    Log::debug("update op size log statistics\n");
     Log::debug("update log complete\n");
 
     return insert_position >= 0;
@@ -384,15 +473,32 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
 }
 
 RNN_Genome* EXAMM::generate_genome() {
-    if (speciation_strategy->get_evaluated_genomes() > max_genomes) {
+    if ((max_genomes > 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) || (max_wallclock_seconds > 0 && std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startClock).count() >= max_wallclock_seconds)) {
         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
         save_genome(global_best_genome, "global_best_genome");
 
         if (save_genome_option.compare("entire_population") == 0) {
             speciation_strategy->save_entire_population(output_directory);
         }
+        Log::info("max_genomes: %d", max_genomes);
+        Log::info("max_wallclock_seconds: %d", max_wallclock_seconds);
+        Log::info("elapsed_seconds: %d", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startClock).count());
+        // Log::info("max_genomes reached, terminating search");
         return NULL;
     }
+
+    // if (max_wallclock_seconds > 0) {
+    //     std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    //     int64_t elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(now - startClock).count();
+    //     if (elapsed_seconds >= max_wallclock_seconds) {
+    //         RNN_Genome* global_best_genome = speciation_strategy->get_global_best_genome();
+    //         save_genome(global_best_genome, "global_best_genome");
+    //         if (save_genome_option.compare("entire_population") == 0) {
+    //             speciation_strategy->save_entire_population(output_directory);
+    //         }
+    //         return NULL;
+    //     }
+    // }
 
     function<void(int32_t, RNN_Genome*)> mutate_function = [=, this](int32_t max_mutations, RNN_Genome* genome) {
         this->mutate(max_mutations, genome);
@@ -403,6 +509,40 @@ RNN_Genome* EXAMM::generate_genome() {
 
     RNN_Genome* genome = speciation_strategy->generate_genome(rng_0_1, generator, mutate_function, crossover_function);
 
+    int32_t backprop_iterations = genome_property->get_bp_iterations();
+    int32_t bp_min = genome_property->get_bp_min();
+    int32_t bp_max = genome_property->get_bp_max();
+    float slope = genome_property->get_bp_slope();
+    float exponent = genome_property->get_bp_exponent();
+    string type = genome_property->get_backprop_iterations_type();
+
+    int32_t generated_genomes = speciation_strategy->get_generated_genomes();
+
+    if (type == "scaled") {
+        backprop_iterations = floor(pow(slope * generated_genomes, exponent)) + bp_min;
+        // backprop_iterations = floor(slope * pow(double(generated_genomes), exponent)) + bp_min;
+    } else if (type == "rand") {
+        std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
+        backprop_iterations = dist(generator);
+        Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", backprop_iterations, bp_min, bp_max);
+
+    // } else if (type == "acc") {
+        // backprop_iterations = floor((generated_genomes / double(slope)) + exponent) + bp_min;
+    } else if (type != "const") {
+        Log::fatal("Unknown bp_iterations_type specified: %s\n", type.c_str());
+        exit(1);
+    }
+
+    if (bp_max > 0 && backprop_iterations > bp_max) {
+        // if specified, make sure backprop iterations can't be higher than the
+        // specified maximum
+        backprop_iterations = bp_max;
+    }
+
+    Log::info("calculating backprop iterations using %s: bp_min: %d, bp_max: %d, generated_genomes: %d, slope: %f exponent: %f is iterations: %d\n", type.c_str(), bp_min, bp_max, generated_genomes, slope, exponent, backprop_iterations);
+
+    genome_property->set_bp_iterations(backprop_iterations);
+
     genome_property->set_genome_properties(genome);
     // if (!epigenetic_weights) genome->initialize_randomly();
 
@@ -412,6 +552,22 @@ RNN_Genome* EXAMM::generate_genome() {
     double _mu, _sigma;
     genome->get_mu_sigma(genome->best_parameters, _mu, _sigma);
 
+    // Generate Genome size log tracking
+    Log::info("Generated New Genome\n");
+    if(genome_size_log){
+        string genome_values =
+            speciation_strategy->generate_genome_size_values(genome, speciation_strategy->get_generated_genomes());
+        (*generate_geneome_size_log_file) << genome_values << endl;
+
+        // Saving the genome to txt file
+        genome->write_manual_txt(output_directory + "/" + "size_log"+ "/" + "generated_genome" + "_" + to_string(genome->get_generation_id()) + ".txt");
+    }
+
+    // Set stats output directory for genome stats files
+    if (output_directory != "") {
+        genome->set_stats_output_directory(output_directory);
+    }
+
     return genome;
 }
 
@@ -420,6 +576,46 @@ int32_t EXAMM::get_random_node_type() {
 }
 
 void EXAMM::mutate(int32_t max_mutations, RNN_Genome* g) {
+    if (growth_phase_genomes > 0 && reduction_phase_genomes > 0) {
+        if (((speciation_strategy->get_generated_genomes() - 1) % (growth_phase_genomes + reduction_phase_genomes))
+            < growth_phase_genomes) {
+            Log::info(
+                "\t Entering growth phase at Generated Genome - %d\n", speciation_strategy->get_generated_genomes()
+            );
+            add_node_rate = 1;
+            add_edge_rate = 1;
+            add_recurrent_edge_rate = 1;
+            enable_edge_rate = 1;
+            enable_node_rate = 1;
+            split_node_rate = 1;
+            split_edge_rate = 1;
+            clone_rate = 1;
+            disable_node_rate = 0;
+            disable_edge_rate = 0;
+            merge_node_rate = 0;
+            Log::info("\t setting add_node rate - %d\n", (int) add_node_rate);
+            Log::info("\t setting disable_node rate - %d\n", (int) disable_node_rate);
+            Log::info("\t setting values for Genome - %d\n", g->get_generation_id());
+        } else {
+            Log::info(
+                "\t Entering shrink phase at Generated Genome - %d\n", speciation_strategy->get_generated_genomes()
+            );
+            add_node_rate = 0;
+            add_edge_rate = 0;
+            add_recurrent_edge_rate = 0;
+            enable_edge_rate = 0;
+            enable_node_rate = 0;
+            split_node_rate = 0;
+            split_edge_rate = 0;
+            clone_rate = 1;
+            disable_node_rate = 1;
+            disable_edge_rate = 1;
+            merge_node_rate = 1;
+            Log::info("\t setting add_node rate - %d\n", (int) add_node_rate);
+            Log::info("\t setting disable_node rate - %d\n", (int) disable_node_rate);
+            Log::info("\t setting values for Genome - %d\n", g->get_generation_id());
+        }
+    }
     double total = clone_rate + add_edge_rate + add_recurrent_edge_rate + enable_edge_rate + disable_edge_rate
                    + split_edge_rate + add_node_rate + enable_node_rate + disable_node_rate + split_node_rate
                    + merge_node_rate;

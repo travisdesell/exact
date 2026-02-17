@@ -29,6 +29,7 @@ class EXAMM {
     int32_t number_islands;
 
     int32_t max_genomes;
+    int32_t max_wallclock_seconds;
     int32_t total_bp_epochs;
     SpeciationStrategy* speciation_strategy;
     WeightRules* weight_rules;
@@ -71,7 +72,11 @@ class EXAMM {
     string output_directory;
     ofstream* log_file;
     ofstream* op_log_file;
-
+    ofstream* genome_stats_log_file;
+    ofstream* size_log_file;
+    ofstream* generate_geneome_size_log_file;
+    ofstream* best_genome_size_log;
+    ofstream* global_best_genome_size_log;
     std::chrono::time_point<std::chrono::system_clock> startClock;
 
     string genome_file_name;
@@ -80,11 +85,21 @@ class EXAMM {
     bool generate_op_log;
     bool generate_visualization_json;
 
+    int32_t growth_phase_genomes;
+    int32_t reduction_phase_genomes;
+    // size log check
+    int32_t genome_size_log;
+
+    double harada_selection_ratio;
+    int32_t is_harada_selection;
+
+
    public:
     EXAMM(
-        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, SpeciationStrategy* _speciation_strategy,
-        WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory,
-        string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json
+        int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, 
+        SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property, 
+        string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
+        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio
     );
 
     ~EXAMM();
@@ -95,6 +110,10 @@ class EXAMM {
     void set_possible_node_types(vector<string> possible_node_type_strings);
 
     uniform_int_distribution<int32_t> get_recurrent_depth_dist();
+    // update the size logs
+    void update_size_log();
+    // generate the logs of csv
+    void generate_size_count();
 
     int32_t get_random_node_type();
 

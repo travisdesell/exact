@@ -13,6 +13,11 @@ using std::string;
 class GenomeProperty {
    private:
     int32_t bp_iterations;
+    string backprop_iterations_type;
+    int32_t bp_min;
+    int32_t bp_max;
+    float bp_exponent;
+    float bp_slope;
     bool use_dropout;
     double dropout_probability;
     int32_t min_recurrent_depth;
@@ -36,6 +41,18 @@ class GenomeProperty {
     void set_genome_properties(RNN_Genome* genome);
     void get_time_series_parameters(TimeSeriesSets* time_series_sets);
     uniform_int_distribution<int32_t> get_recurrent_depth_dist();
+    void set_bp_iterations(int32_t _bp_iterations);
+    int32_t get_bp_iterations();
+    void set_bp_min(int32_t _bp_min);
+    int32_t get_bp_min();
+    void set_bp_max(int32_t _bp_max);
+    int32_t get_bp_max();
+    void set_bp_exponent(float _bp_exponent);
+    float get_bp_exponent();
+    void set_bp_slope(float _bp_slope);
+    float get_bp_slope();
+    void set_backprop_iterations_type(string _backprop_iterations_type);
+    string get_backprop_iterations_type();
 };
 
 #endif

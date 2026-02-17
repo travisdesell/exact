@@ -26,7 +26,7 @@ using std::string;
 NeatSpeciationStrategy::NeatSpeciationStrategy(
     double _mutation_rate, double _intra_island_crossover_rate, double _inter_island_crossover_rate,
     RNN_Genome* _seed_genome, double _species_threshold, double _fitness_threshold, double _neat_c1, double _neat_c2,
-    double _neat_c3
+    double _neat_c3, std::vector<std::string> possible_node_types, int32_t _is_harada_selection
 )
     : generation_species(0),
       species_count(0),
@@ -64,6 +64,9 @@ NeatSpeciationStrategy::NeatSpeciationStrategy(
     insert_genome(seed_genome);
 
     global_best_genome = NULL;
+    this->possible_node_types = possible_node_types;
+
+    is_harada_selection = _is_harada_selection;
 }
 
 int32_t NeatSpeciationStrategy::get_generated_genomes() const {
@@ -411,6 +414,712 @@ string NeatSpeciationStrategy::get_strategy_information_values() const {
     }
     return info_value;
 }
+
+static const vector<string> size_metric_keys = {
+    "Total_Nodes",
+    "Enabled_Nodes",
+    "Enabled_Hidden_Layer_Nodes",
+    "Disabled_Hidden_Layer_Nodes",
+    "Total_Edges",
+    "Enabled_Edges",
+    "Total_Rec_Edges",
+    "Enabled_Rec_Edges",
+    "Total_Number_of_Hidden_Layer_Weights",
+    "Best_Validation_MSE",
+    "Best_Validation_MAE",
+    "Generation_ID",
+    "Total_Number_Outputs",
+    "Total_Number_Weight",
+    "Total_Number_Enabled_Weight",
+    "Get_Number_Inputs",
+    "Total_Genomes",
+};
+
+string NeatSpeciationStrategy::get_size_information_values() {
+    string info_value = "";
+
+    for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
+        // ===== ISLAND (ALL GENOMES) AGGREGATES =====
+        int32_t total_node_count = 0;
+        int32_t enabled_node_count = 0;
+        int32_t enabled_hidden_layer_node_count = 0;
+        int32_t disabled_hidden_layer_node_count = 0;
+        int32_t total_edge_count = 0;
+        int32_t enabled_edge_count = 0;
+        int32_t total_rec_edge_count = 0;
+        int32_t enabled_rec_edge_count = 0;
+        int32_t total_number_hidden_layer_weights = 0;
+        int32_t total_number_outputs = 0;
+        int32_t total_number_weight = 0;
+        int32_t total_number_enabled_weight = 0;
+        int32_t total_number_inputs = 0;
+        int32_t generation_id = -1;
+        double best_mse = -1;
+        double best_mae = -1;
+        int32_t total_genomes = 0;
+
+        std::unordered_map<int32_t, int32_t> island_total_node_type_counts;
+        std::unordered_map<int32_t, int32_t> island_enabled_node_type_counts;
+
+        std::vector<RNN_Genome*> genomes = Neat_Species[i]->get_genomes();
+        for (RNN_Genome* g : genomes) {
+            total_node_count += g->get_node_count();
+            enabled_node_count += g->get_enabled_node_count();
+            enabled_hidden_layer_node_count += g->get_enabled_node_count_hidden_layer();
+            disabled_hidden_layer_node_count += g->get_disabled_node_count_hidden_layer();
+            total_edge_count += (int32_t) g->edges.size();
+            enabled_edge_count += g->get_enabled_edge_count();
+            total_rec_edge_count += (int32_t) g->recurrent_edges.size();
+            enabled_rec_edge_count += g->get_enabled_recurrent_edge_count();
+            total_number_hidden_layer_weights += g->get_number_weights_enabled_hidden_layer_node();
+            best_mse = g->get_best_validation_mse();
+            best_mae = g->get_best_validation_mae();
+            generation_id = g->get_generation_id();
+            total_number_outputs += g->get_number_outputs();
+            total_number_weight += g->get_number_weights();
+            total_number_enabled_weight += g->get_enabled_number_weights();
+            total_number_inputs += g->get_number_inputs();
+            total_genomes++;
+
+            for (std::string& node_type_str1 : possible_node_types) {
+                int32_t type_id = node_type_from_string(node_type_str1);
+                island_total_node_type_counts[type_id] += g->get_node_count(type_id);
+                island_enabled_node_type_counts[type_id] += g->get_all_enabled_node_count(type_id);
+            }
+        }
+
+        // Append values in the same order as in size_metric_keys
+        info_value.append(std::to_string(total_node_count) + ",");
+        info_value.append(std::to_string(enabled_node_count) + ",");
+        info_value.append(std::to_string(enabled_hidden_layer_node_count) + ",");
+        info_value.append(std::to_string(disabled_hidden_layer_node_count) + ",");
+        info_value.append(std::to_string(total_edge_count) + ",");
+        info_value.append(std::to_string(enabled_edge_count) + ",");
+        info_value.append(std::to_string(total_rec_edge_count) + ",");
+        info_value.append(std::to_string(enabled_rec_edge_count) + ",");
+        info_value.append(std::to_string(total_number_hidden_layer_weights) + ",");
+        info_value.append(std::to_string(best_mse) + ",");
+        info_value.append(std::to_string(best_mae) + ",");
+        info_value.append(std::to_string(generation_id) + ",");
+        info_value.append(std::to_string(total_number_outputs) + ",");
+        info_value.append(std::to_string(total_number_weight) + ",");
+        info_value.append(std::to_string(total_number_enabled_weight) + ",");
+        info_value.append(std::to_string(total_number_inputs) + ",");
+        info_value.append(std::to_string(total_genomes) + ",");
+
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            info_value.append(std::to_string(island_total_node_type_counts[type_id]) + ",");
+            info_value.append(std::to_string(island_enabled_node_type_counts[type_id]) + ",");
+        }
+
+        // ===== ISLAND BEST GENOME VALUES =====
+        RNN_Genome* best = Neat_Species[i]->get_best_genome();
+
+        int32_t best_gen_id = -1;
+        int32_t best_nodes = 0;
+        int32_t best_enabled_nodes = 0;
+        int32_t best_enabled_hidden = 0;
+        int32_t best_disabled_hidden = 0;
+        int32_t best_edges = 0;
+        int32_t best_enabled_edges = 0;
+        int32_t best_rec_edges = 0;
+        int32_t best_enabled_rec_edges = 0;
+        int32_t best_hidden_layer_weights = 0;
+        int32_t best_number_outputs = 0;
+        int32_t best_number_weights = 0;
+        int32_t best_number_enabled_weights = 0;
+        int32_t best_number_inputs = 0;
+        double best_best_mse = -1.0;
+        double best_best_mae = -1.0;
+        int32_t total_best_genomes = 1;
+
+        std::unordered_map<int32_t, int32_t> best_total_node_type_counts;
+        std::unordered_map<int32_t, int32_t> best_enabled_node_type_counts;
+
+        if (best != nullptr) {
+            best_gen_id = best->get_generation_id();
+            best_nodes = best->get_node_count();
+            best_enabled_nodes = best->get_enabled_node_count();
+            best_enabled_hidden = best->get_enabled_node_count_hidden_layer();
+            best_disabled_hidden = best->get_disabled_node_count_hidden_layer();
+            best_edges = (int32_t) best->edges.size();
+            best_enabled_edges = best->get_enabled_edge_count();
+            best_rec_edges = (int32_t) best->recurrent_edges.size();
+            best_enabled_rec_edges = best->get_enabled_recurrent_edge_count();
+            best_hidden_layer_weights = best->get_number_weights_enabled_hidden_layer_node();
+            best_number_outputs = best->get_number_outputs();
+            best_number_weights = best->get_number_weights();
+            best_number_enabled_weights = best->get_enabled_number_weights();
+            best_number_inputs = best->get_number_inputs();
+            best_best_mse = best->get_best_validation_mse();
+            best_best_mae = best->get_best_validation_mae();
+
+            for (std::string& node_type_str : possible_node_types) {
+                int32_t type_id = node_type_from_string(node_type_str);
+                best_total_node_type_counts[type_id] = best->get_node_count(type_id);
+                best_enabled_node_type_counts[type_id] = best->get_all_enabled_node_count(type_id);
+            }
+        }
+
+        // Append best genome values in the same order as size_metric_keys
+        info_value.append(std::to_string(best_nodes) + ",");
+        info_value.append(std::to_string(best_enabled_nodes) + ",");
+        info_value.append(std::to_string(best_enabled_hidden) + ",");
+        info_value.append(std::to_string(best_disabled_hidden) + ",");
+        info_value.append(std::to_string(best_edges) + ",");
+        info_value.append(std::to_string(best_enabled_edges) + ",");
+        info_value.append(std::to_string(best_rec_edges) + ",");
+        info_value.append(std::to_string(best_enabled_rec_edges) + ",");
+        info_value.append(std::to_string(best_hidden_layer_weights) + ",");
+        info_value.append(std::to_string(best_best_mse) + ",");
+        info_value.append(std::to_string(best_best_mae) + ",");
+        info_value.append(std::to_string(best_gen_id) + ",");
+        info_value.append(std::to_string(best_number_outputs) + ",");
+        info_value.append(std::to_string(best_number_weights) + ",");
+        info_value.append(std::to_string(best_number_enabled_weights) + ",");
+        info_value.append(std::to_string(best_number_inputs) + ",");
+        info_value.append(std::to_string(total_best_genomes) + ",");
+
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            info_value.append(std::to_string(best_total_node_type_counts[type_id]) + ",");
+            info_value.append(std::to_string(best_enabled_node_type_counts[type_id]) + ",");
+        }
+    }
+
+    // ===== GLOBAL BEST GENOME VALUES =====
+    int32_t global_best_generation_id = -1;
+    int32_t global_total_nodes = 0;
+    int32_t global_enabled_nodes = 0;
+    int32_t global_enabled_hidden_layer_nodes = 0;
+    int32_t global_disabled_hidden_layer_nodes = 0;
+    int32_t global_total_edges = 0;
+    int32_t global_enabled_edges = 0;
+    int32_t global_total_rec_edges = 0;
+    int32_t global_enabled_rec_edges = 0;
+    int32_t global_total_hidden_layer_weights = 0;
+    double global_best_mse = -1;
+    double global_best_mae = -1;
+    int32_t global_total_outputs = 0;
+    int32_t global_total_weights = 0;
+    int32_t global_total_enabled_weights = 0;
+    int32_t global_total_inputs = 0;
+    int32_t global_total_best_genomes = 1;
+
+    std::unordered_map<int32_t, int32_t> global_total_node_type_counts;
+    std::unordered_map<int32_t, int32_t> global_enabled_node_type_counts;
+
+    RNN_Genome* global_best = get_global_best_genome();
+
+    if (global_best != NULL) {
+        global_best_generation_id = global_best->get_generation_id();
+        global_total_nodes = global_best->get_node_count();
+        global_enabled_nodes = global_best->get_enabled_node_count();
+        global_enabled_hidden_layer_nodes = global_best->get_enabled_node_count_hidden_layer();
+        global_disabled_hidden_layer_nodes = global_best->get_disabled_node_count_hidden_layer();
+        global_total_edges = (int32_t) global_best->edges.size();
+        global_enabled_edges = global_best->get_enabled_edge_count();
+        global_total_rec_edges = (int32_t) global_best->recurrent_edges.size();
+        global_enabled_rec_edges = global_best->get_enabled_recurrent_edge_count();
+        global_total_hidden_layer_weights = global_best->get_number_weights_enabled_hidden_layer_node();
+        global_best_mse = global_best->get_best_validation_mse();
+        global_best_mae = global_best->get_best_validation_mae();
+        global_total_outputs = global_best->get_number_outputs();
+        global_total_weights = global_best->get_number_weights();
+        global_total_enabled_weights = global_best->get_enabled_number_weights();
+        global_total_inputs = global_best->get_number_inputs();
+
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            global_total_node_type_counts[type_id] = global_best->get_node_count(type_id);
+            global_enabled_node_type_counts[type_id] = global_best->get_all_enabled_node_count(type_id);
+        }
+    }
+
+    // Append values in the same order as size_metric_keys
+    info_value.append(std::to_string(global_total_nodes) + ",");
+    info_value.append(std::to_string(global_enabled_nodes) + ",");
+    info_value.append(std::to_string(global_enabled_hidden_layer_nodes) + ",");
+    info_value.append(std::to_string(global_disabled_hidden_layer_nodes) + ",");
+    info_value.append(std::to_string(global_total_edges) + ",");
+    info_value.append(std::to_string(global_enabled_edges) + ",");
+    info_value.append(std::to_string(global_total_rec_edges) + ",");
+    info_value.append(std::to_string(global_enabled_rec_edges) + ",");
+    info_value.append(std::to_string(global_total_hidden_layer_weights) + ",");
+    info_value.append(std::to_string(global_best_mse) + ",");
+    info_value.append(std::to_string(global_best_mae) + ",");
+    info_value.append(std::to_string(global_best_generation_id) + ",");
+    info_value.append(std::to_string(global_total_outputs) + ",");
+    info_value.append(std::to_string(global_total_weights) + ",");
+    info_value.append(std::to_string(global_total_enabled_weights) + ",");
+    info_value.append(std::to_string(global_total_inputs) + ",");
+    info_value.append(std::to_string(global_total_best_genomes) + ",");
+
+    for (std::string& node_type_str : possible_node_types) {
+        int32_t type_id = node_type_from_string(node_type_str);
+        info_value.append(std::to_string(global_total_node_type_counts[type_id]) + ",");
+        info_value.append(std::to_string(global_enabled_node_type_counts[type_id]) + ",");
+    }
+
+    return info_value;
+}
+
+string NeatSpeciationStrategy::get_size_information_headers() {
+    string info_header = "";
+
+    for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
+        // General island metrics
+        for (const auto& key : size_metric_keys) {
+            info_header.append("Species_" + std::to_string(i) + "_" + key + ",");
+        }
+
+        // Node type counts for island
+        for (const auto& node_type : possible_node_types) {
+            info_header.append("Species_" + std::to_string(i) + "_NodeType_" + node_type + "_Total,");
+            info_header.append("Species_" + std::to_string(i) + "_NodeType_" + node_type + "_Enabled,");
+        }
+
+        // Best genome metrics
+        for (const auto& key : size_metric_keys) {
+            info_header.append("Species_" + std::to_string(i) + "_Best_Genome_" + key + ",");
+        }
+
+        // Node type counts for best genome
+        for (const auto& node_type : possible_node_types) {
+            info_header.append("Species_" + std::to_string(i) + "_Best_Genome_NodeType_" + node_type + "_Total,");
+            info_header.append("Species_" + std::to_string(i) + "_Best_Genome_NodeType_" + node_type + "_Enabled,");
+        }
+    }
+
+    // Global best genome metrics
+    for (const auto& key : size_metric_keys) {
+        info_header.append("Global_Best_Genome_");
+        info_header.append(key);
+        info_header.append(",");
+    }
+
+    // Node type counts for global best genome
+    for (const auto& node_type : possible_node_types) {
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Total,");
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Enabled,");
+    }
+
+    return info_header;
+}
+
+/**
+ * Gets speciation strategy information headers for best genome size logs
+ */
+string NeatSpeciationStrategy::get_best_genome_size_information_headers() {
+    string info_header = "";
+
+    for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
+        for (const auto& key : size_metric_keys) {
+            info_header.append("Species_");
+            info_header.append(std::to_string(i));
+            info_header.append("_Best_Genome_");
+            info_header.append(key);
+            info_header.append(",");
+        }
+
+        for (const auto& node_type : possible_node_types) {
+            info_header.append("Species_");
+            info_header.append(std::to_string(i));
+            info_header.append("_Best_Genome_NodeType_");
+            info_header.append(node_type);
+            info_header.append("_Total,");
+            info_header.append("Species_");
+            info_header.append(std::to_string(i));
+            info_header.append("_Best_Genome_NodeType_");
+            info_header.append(node_type);
+            info_header.append("_Enabled,");
+        }
+    }
+
+    return info_header;
+}
+
+/**
+ * Gets speciation strategy information values for best genome size logs.
+ */
+string NeatSpeciationStrategy::get_best_genome_size_information_values() {
+    string info_value = "";
+
+    for (int32_t i = 0; i < (int32_t) Neat_Species.size(); i++) {
+        int32_t best_gen_id = -1;
+        int32_t best_nodes = 0;
+        int32_t best_enabled_nodes = 0;
+        int32_t best_enabled_hidden = 0;
+        int32_t best_disabled_hidden = 0;
+        int32_t best_edges = 0;
+        int32_t best_enabled_edges = 0;
+        int32_t best_rec_edges = 0;
+        int32_t best_enabled_rec_edges = 0;
+        int32_t best_hidden_layer_weights = 0;
+        int32_t best_number_outputs = 0;
+        int32_t best_number_weights = 0;
+        int32_t best_number_enabled_weights = 0;
+        int32_t best_number_inputs = 0;
+        double best_best_mse = -1.0;
+        double best_best_mae = -1.0;
+        int32_t total_best_genomes = 1;
+
+        std::unordered_map<int32_t, int32_t> best_total_node_type_counts;
+        std::unordered_map<int32_t, int32_t> best_enabled_node_type_counts;
+
+        RNN_Genome* best = Neat_Species[i]->get_best_genome();
+        if (best != nullptr) {
+            best_gen_id = best->get_generation_id();
+            best_nodes = best->get_node_count();
+            best_enabled_nodes = best->get_enabled_node_count();
+            best_enabled_hidden = best->get_enabled_node_count_hidden_layer();
+            best_disabled_hidden = best->get_disabled_node_count_hidden_layer();
+            best_edges = (int32_t) best->edges.size();
+            best_enabled_edges = best->get_enabled_edge_count();
+            best_rec_edges = (int32_t) best->recurrent_edges.size();
+            best_enabled_rec_edges = best->get_enabled_recurrent_edge_count();
+            best_hidden_layer_weights = best->get_number_weights_enabled_hidden_layer_node();
+            best_number_outputs = best->get_number_outputs();
+            best_number_weights = best->get_number_weights();
+            best_number_enabled_weights = best->get_enabled_number_weights();
+            best_number_inputs = best->get_number_inputs();
+            best_best_mse = best->get_best_validation_mse();
+            best_best_mae = best->get_best_validation_mae();
+            for (std::string& node_type_str : possible_node_types) {
+                int32_t type_id = node_type_from_string(node_type_str);
+                best_total_node_type_counts[type_id] = best->get_node_count(type_id);
+                best_enabled_node_type_counts[type_id] = best->get_all_enabled_node_count(type_id);
+            }
+        }
+
+        // Append best genome values in the same order as size_metric_keys
+        info_value.append(std::to_string(best_nodes) + ",");
+        info_value.append(std::to_string(best_enabled_nodes) + ",");
+        info_value.append(std::to_string(best_enabled_hidden) + ",");
+        info_value.append(std::to_string(best_disabled_hidden) + ",");
+        info_value.append(std::to_string(best_edges) + ",");
+        info_value.append(std::to_string(best_enabled_edges) + ",");
+        info_value.append(std::to_string(best_rec_edges) + ",");
+        info_value.append(std::to_string(best_enabled_rec_edges) + ",");
+        info_value.append(std::to_string(best_hidden_layer_weights) + ",");
+        info_value.append(std::to_string(best_best_mse) + ",");
+        info_value.append(std::to_string(best_best_mae) + ",");
+        info_value.append(std::to_string(best_gen_id) + ",");
+        info_value.append(std::to_string(best_number_outputs) + ",");
+        info_value.append(std::to_string(best_number_weights) + ",");
+        info_value.append(std::to_string(best_number_enabled_weights) + ",");
+        info_value.append(std::to_string(best_number_inputs) + ",");
+        info_value.append(std::to_string(total_best_genomes) + ",");
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            info_value.append(std::to_string(best_total_node_type_counts[type_id]) + ",");
+            info_value.append(std::to_string(best_enabled_node_type_counts[type_id]) + ",");
+        }
+    }
+    return info_value;
+}
+
+/**
+ * Gets speciation strategy information values for global best genome size logs.
+ */
+string NeatSpeciationStrategy::get_global_best_genome_size_information_values() {
+    string info_value = "";
+    int32_t global_best_generation_id = -1;
+    int32_t total_node_count = 0;
+    int32_t enabled_node_count = 0;
+    int32_t enabled_hidden_layer_node_count = 0;
+    int32_t disabled_hidden_layer_node_count = 0;
+    int32_t total_edge_count = 0;
+    int32_t enabled_edge_count = 0;
+    int32_t total_rec_edge_count = 0;
+    int32_t enabled_rec_edge_count = 0;
+    int32_t number_of_hidden_layer_weights = 0;
+    int32_t number_of_outputs = 0;
+    int32_t number_of_weights = 0;
+    int32_t number_of_enabled_weights = 0;
+    int32_t number_of_inputs = 0;
+    int32_t total_best_global_genomes = 1;
+    double best_mse = -1;
+    double best_mae = -1;
+
+    std::unordered_map<int32_t, int32_t> total_node_type_counts;
+    std::unordered_map<int32_t, int32_t> enabled_node_type_counts;
+
+    RNN_Genome* best = get_global_best_genome();
+
+    if (best != NULL) {
+        global_best_generation_id = best->get_generation_id();
+        total_node_count = best->get_node_count();
+        enabled_node_count = best->get_enabled_node_count();
+        enabled_hidden_layer_node_count = best->get_enabled_node_count_hidden_layer();
+        disabled_hidden_layer_node_count = best->get_disabled_node_count_hidden_layer();
+        total_edge_count = (int32_t) best->edges.size();
+        enabled_edge_count = best->get_enabled_edge_count();
+        total_rec_edge_count = (int32_t) best->recurrent_edges.size();
+        enabled_rec_edge_count = best->get_enabled_recurrent_edge_count();
+        number_of_hidden_layer_weights = best->get_number_weights_enabled_hidden_layer_node();
+        number_of_outputs = best->get_number_outputs();
+        number_of_weights = best->get_number_weights();
+        number_of_enabled_weights = best->get_enabled_number_weights();
+        number_of_inputs = best->get_number_inputs();
+        best_mse = best->get_best_validation_mse();
+        best_mae = best->get_best_validation_mae();
+
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            total_node_type_counts[type_id] = best->get_node_count(type_id);
+            enabled_node_type_counts[type_id] = best->get_all_enabled_node_count(type_id);
+        }
+    }
+
+    // Append values in same order as size_metric_keys
+    info_value.append(std::to_string(total_node_count) + ",");
+    info_value.append(std::to_string(enabled_node_count) + ",");
+    info_value.append(std::to_string(enabled_hidden_layer_node_count) + ",");
+    info_value.append(std::to_string(disabled_hidden_layer_node_count) + ",");
+    info_value.append(std::to_string(total_edge_count) + ",");
+    info_value.append(std::to_string(enabled_edge_count) + ",");
+    info_value.append(std::to_string(total_rec_edge_count) + ",");
+    info_value.append(std::to_string(enabled_rec_edge_count) + ",");
+    info_value.append(std::to_string(number_of_hidden_layer_weights) + ",");
+    info_value.append(std::to_string(best_mse) + ",");
+    info_value.append(std::to_string(best_mae) + ",");
+    info_value.append(std::to_string(global_best_generation_id) + ",");
+    info_value.append(std::to_string(number_of_outputs) + ",");
+    info_value.append(std::to_string(number_of_weights) + ",");
+    info_value.append(std::to_string(number_of_enabled_weights) + ",");
+    info_value.append(std::to_string(number_of_inputs) + ",");
+    info_value.append(std::to_string(total_best_global_genomes) + ",");
+
+    for (std::string& node_type_str : possible_node_types) {
+        int32_t type_id = node_type_from_string(node_type_str);
+        info_value.append(std::to_string(total_node_type_counts[type_id]) + ",");
+        info_value.append(std::to_string(enabled_node_type_counts[type_id]) + ",");
+    }
+
+    return info_value;
+}
+
+/**
+ * Gets speciation strategy information headers for global best genome size logs.
+ */
+string NeatSpeciationStrategy::get_global_best_genome_size_information_headers() {
+    string info_header = "";
+
+    for (const auto& key : size_metric_keys) {
+        info_header.append("Global_Best_Genome_");
+        info_header.append(key);
+        info_header.append(",");
+    }
+
+    for (const auto& node_type : possible_node_types) {
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Total,");
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Enabled,");
+    }
+
+    return info_header;
+}
+
+/**
+ * Get the complete generate genome headers
+ */
+string NeatSpeciationStrategy::generate_genome_size_headers() {
+    string info_header = "";
+    // General Genome metrics
+    for (const auto& key : size_metric_keys) {
+        info_header.append("Genome_" + key + ",");
+    }
+
+    // Node type counts for genome
+    for (const auto& node_type : possible_node_types) {
+        info_header.append("Genome_NodeType_" + node_type + "_Total,");
+        info_header.append("Genome_NodeType_" + node_type + "_Enabled,");
+    }
+    info_header.append("Generated_Genomes,");
+
+    // Global best genome metrics
+    for (const auto& key : size_metric_keys) {
+        info_header.append("Global_Best_Genome_");
+        info_header.append(key);
+        info_header.append(",");
+    }
+
+    // Node type counts for global best genome
+    for (const auto& node_type : possible_node_types) {
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Total,");
+        info_header.append("Global_Best_Genome_NodeType_");
+        info_header.append(node_type);
+        info_header.append("_Enabled,");
+    }
+
+    return info_header;
+}
+
+/**
+ * Get the complete generate genome values
+ */
+string NeatSpeciationStrategy::generate_genome_size_values(RNN_Genome* g, int32_t generated_genomes) {
+    string info_value = "";
+
+    int32_t total_node_count = 0;
+    int32_t enabled_node_count = 0;
+    int32_t enabled_hidden_layer_node_count = 0;
+    int32_t disabled_hidden_layer_node_count = 0;
+    int32_t total_edge_count = 0;
+    int32_t enabled_edge_count = 0;
+    int32_t total_rec_edge_count = 0;
+    int32_t enabled_rec_edge_count = 0;
+    int32_t total_number_hidden_layer_weights = 0;
+    int32_t total_number_outputs = 0;
+    int32_t total_number_weight = 0;
+    int32_t total_number_enabled_weight = 0;
+    int32_t total_number_inputs = 0;
+    int32_t generation_id = -1;
+    double best_mse = -1;
+    double best_mae = -1;
+    int32_t total_genomes = 0;
+
+    std::unordered_map<int32_t, int32_t> island_total_node_type_counts;
+    std::unordered_map<int32_t, int32_t> island_enabled_node_type_counts;
+    total_node_count += g->get_node_count();
+    enabled_node_count += g->get_enabled_node_count();
+    enabled_hidden_layer_node_count += g->get_enabled_node_count_hidden_layer();
+    disabled_hidden_layer_node_count += g->get_disabled_node_count_hidden_layer();
+    total_edge_count += (int32_t) g->edges.size();
+    enabled_edge_count += g->get_enabled_edge_count();
+    total_rec_edge_count += (int32_t) g->recurrent_edges.size();
+    enabled_rec_edge_count += g->get_enabled_recurrent_edge_count();
+    total_number_hidden_layer_weights += g->get_number_weights_enabled_hidden_layer_node();
+    best_mse = g->get_best_validation_mse();
+    best_mae = g->get_best_validation_mae();
+    generation_id = g->get_generation_id();
+    total_number_outputs += g->get_number_outputs();
+    total_number_weight += g->get_number_weights();
+    total_number_enabled_weight += g->get_enabled_number_weights();
+    total_number_inputs += g->get_number_inputs();
+    total_genomes++;
+
+    for (std::string& node_type_str1 : possible_node_types) {
+        int32_t type_id = node_type_from_string(node_type_str1);
+        island_total_node_type_counts[type_id] += g->get_node_count(type_id);
+        island_enabled_node_type_counts[type_id] += g->get_all_enabled_node_count(type_id);
+    }
+
+    // Append values in the same order as in size_metric_keys
+    info_value.append(std::to_string(total_node_count) + ",");
+    info_value.append(std::to_string(enabled_node_count) + ",");
+    info_value.append(std::to_string(enabled_hidden_layer_node_count) + ",");
+    info_value.append(std::to_string(disabled_hidden_layer_node_count) + ",");
+    info_value.append(std::to_string(total_edge_count) + ",");
+    info_value.append(std::to_string(enabled_edge_count) + ",");
+    info_value.append(std::to_string(total_rec_edge_count) + ",");
+    info_value.append(std::to_string(enabled_rec_edge_count) + ",");
+    info_value.append(std::to_string(total_number_hidden_layer_weights) + ",");
+    info_value.append(std::to_string(best_mse) + ",");
+    info_value.append(std::to_string(best_mae) + ",");
+    info_value.append(std::to_string(generation_id) + ",");
+    info_value.append(std::to_string(total_number_outputs) + ",");
+    info_value.append(std::to_string(total_number_weight) + ",");
+    info_value.append(std::to_string(total_number_enabled_weight) + ",");
+    info_value.append(std::to_string(total_number_inputs) + ",");
+    info_value.append(std::to_string(total_genomes) + ",");
+
+    for (std::string& node_type_str : possible_node_types) {
+        int32_t type_id = node_type_from_string(node_type_str);
+        info_value.append(std::to_string(island_total_node_type_counts[type_id]) + ",");
+        info_value.append(std::to_string(island_enabled_node_type_counts[type_id]) + ",");
+    }
+    info_value.append(std::to_string(generated_genomes) + ",");
+
+
+    // ===== GLOBAL BEST GENOME VALUES =====
+    int32_t global_best_generation_id = -1;
+    int32_t global_total_nodes = 0;
+    int32_t global_enabled_nodes = 0;
+    int32_t global_enabled_hidden_layer_nodes = 0;
+    int32_t global_disabled_hidden_layer_nodes = 0;
+    int32_t global_total_edges = 0;
+    int32_t global_enabled_edges = 0;
+    int32_t global_total_rec_edges = 0;
+    int32_t global_enabled_rec_edges = 0;
+    int32_t global_total_hidden_layer_weights = 0;
+    double global_best_mse = -1;
+    double global_best_mae = -1;
+    int32_t global_total_outputs = 0;
+    int32_t global_total_weights = 0;
+    int32_t global_total_enabled_weights = 0;
+    int32_t global_total_inputs = 0;
+    int32_t global_total_best_genomes = 1;
+
+    std::unordered_map<int32_t, int32_t> global_total_node_type_counts;
+    std::unordered_map<int32_t, int32_t> global_enabled_node_type_counts;
+
+    RNN_Genome* global_best = get_global_best_genome();
+
+    if (global_best != NULL) {
+        global_best_generation_id = global_best->get_generation_id();
+        global_total_nodes = global_best->get_node_count();
+        global_enabled_nodes = global_best->get_enabled_node_count();
+        global_enabled_hidden_layer_nodes = global_best->get_enabled_node_count_hidden_layer();
+        global_disabled_hidden_layer_nodes = global_best->get_disabled_node_count_hidden_layer();
+        global_total_edges = (int32_t) global_best->edges.size();
+        global_enabled_edges = global_best->get_enabled_edge_count();
+        global_total_rec_edges = (int32_t) global_best->recurrent_edges.size();
+        global_enabled_rec_edges = global_best->get_enabled_recurrent_edge_count();
+        global_total_hidden_layer_weights = global_best->get_number_weights_enabled_hidden_layer_node();
+        global_best_mse = global_best->get_best_validation_mse();
+        global_best_mae = global_best->get_best_validation_mae();
+        global_total_outputs = global_best->get_number_outputs();
+        global_total_weights = global_best->get_number_weights();
+        global_total_enabled_weights = global_best->get_enabled_number_weights();
+        global_total_inputs = global_best->get_number_inputs();
+
+        for (std::string& node_type_str : possible_node_types) {
+            int32_t type_id = node_type_from_string(node_type_str);
+            global_total_node_type_counts[type_id] = global_best->get_node_count(type_id);
+            global_enabled_node_type_counts[type_id] = global_best->get_all_enabled_node_count(type_id);
+        }
+    }
+
+    // Append values in the same order as size_metric_keys
+    info_value.append(std::to_string(global_total_nodes) + ",");
+    info_value.append(std::to_string(global_enabled_nodes) + ",");
+    info_value.append(std::to_string(global_enabled_hidden_layer_nodes) + ",");
+    info_value.append(std::to_string(global_disabled_hidden_layer_nodes) + ",");
+    info_value.append(std::to_string(global_total_edges) + ",");
+    info_value.append(std::to_string(global_enabled_edges) + ",");
+    info_value.append(std::to_string(global_total_rec_edges) + ",");
+    info_value.append(std::to_string(global_enabled_rec_edges) + ",");
+    info_value.append(std::to_string(global_total_hidden_layer_weights) + ",");
+    info_value.append(std::to_string(global_best_mse) + ",");
+    info_value.append(std::to_string(global_best_mae) + ",");
+    info_value.append(std::to_string(global_best_generation_id) + ",");
+    info_value.append(std::to_string(global_total_outputs) + ",");
+    info_value.append(std::to_string(global_total_weights) + ",");
+    info_value.append(std::to_string(global_total_enabled_weights) + ",");
+    info_value.append(std::to_string(global_total_inputs) + ",");
+    info_value.append(std::to_string(global_total_best_genomes) + ",");
+
+    for (std::string& node_type_str : possible_node_types) {
+        int32_t type_id = node_type_from_string(node_type_str);
+        info_value.append(std::to_string(global_total_node_type_counts[type_id]) + ",");
+        info_value.append(std::to_string(global_enabled_node_type_counts[type_id]) + ",");
+    }
+
+    return info_value;
+}
+
 
 RNN_Genome* NeatSpeciationStrategy::get_global_best_genome() {
     return global_best_genome;

@@ -49,6 +49,12 @@ class RNN_Genome {
     string structural_hash;
 
     string log_filename;
+    string stats_output_directory;
+
+    // Temporary stats for logging (not serialized to bin files for backward compatibility)
+    double initial_fitness_before_bp;
+    long bp_time_milliseconds;
+    bool bp_stats_valid;  // Flag to indicate if stats were collected
 
     WeightRules* weight_rules;
 
@@ -83,6 +89,9 @@ class RNN_Genome {
     map<string, double> normalize_std_devs;
 
    public:
+    // Harada frequency-based parent selection 
+    double search_frequency;
+
     void sort_nodes_by_depth();
     void sort_edges_by_depth();
     void sort_recurrent_edges_by_depth();
@@ -155,13 +164,24 @@ class RNN_Genome {
     void disable_dropout();
     void enable_dropout(double _dropout_probability);
     void set_log_filename(string _log_filename);
+    void set_stats_output_directory(string _stats_output_directory);
+    
+    // Getters for backprop stats (for logging)
+    double get_initial_fitness_before_bp() const;
+    long get_bp_time_milliseconds() const;
+    bool get_bp_stats_valid() const;
 
     void get_weights(vector<double>& parameters);
     void set_weights(const vector<double>& parameters);
 
     int32_t get_number_weights();
+    int32_t get_enabled_number_weights();
     int32_t get_number_inputs();
     int32_t get_number_outputs();
+    int32_t get_enabled_node_count_hidden_layer();
+    int32_t get_disabled_node_count_hidden_layer();
+    int32_t get_number_weights_enabled_hidden_layer_node();
+    int32_t get_all_enabled_node_count(int32_t node_type);
 
     double get_avg_edge_weight();
     void initialize_randomly();
@@ -307,6 +327,7 @@ class RNN_Genome {
     RNN_Genome(string binary_filename);
     RNN_Genome(char* array, int32_t length);
     RNN_Genome(istream& bin_infile);
+    void write_manual_txt(const std::string& filename);
 
     void read_from_array(char* array, int32_t length);
     void read_from_stream(istream& bin_istream);
@@ -374,5 +395,4 @@ struct sort_genomes_by_fitness {
 
 void write_binary_string(ostream& out, string s, string name);
 void read_binary_string(istream& in, string& s, string name);
-
 #endif

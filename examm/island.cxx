@@ -102,6 +102,40 @@ void Island::copy_random_genome(
     *genome = genomes[genome_position]->copy();
 }
 
+void Island::copy_random_genome_harada_selection(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome, 
+    double harada_selection_ratio
+) {
+    // Sort the entire island by frequency (least explored at the front)
+    vector<RNN_Genome*> frequency_sorted = genomes;
+    std::sort(frequency_sorted.begin(), frequency_sorted.end(), [](RNN_Genome* a, RNN_Genome* b) {
+        return a->search_frequency < b->search_frequency;
+    });
+
+    // Calculate pool size (if size is 10 and rs is 0.3, pool is 3)
+    int32_t current_island_size = (int32_t)frequency_sorted.size();
+    int32_t pool_size = (int32_t)(current_island_size * harada_selection_ratio);
+    
+    if (pool_size < 2) pool_size = 2;
+    if (pool_size > current_island_size) pool_size = current_island_size;
+
+    // Select indices ONLY within [0, pool_size - 1]
+    int32_t index1 = (int32_t)(pool_size * rng_0_1(generator));
+
+    if (index1 >= pool_size) {
+        index1 = pool_size - 1;
+    }
+
+    Log::info("Parent 1 selected using Harada Selection with generation Id: %d\n", frequency_sorted[index1]->get_generation_id());
+    Log::info("Parent 1 selected using Harada Selection with MSE: %f\n", frequency_sorted[index1]->get_fitness());
+    Log::info("Parent 1 selected using Harada Selection with Harada Frequency: %f\n", frequency_sorted[index1]->search_frequency);
+    frequency_sorted[index1]->search_frequency += 1.0;
+    
+
+    // Return the deep copies
+    *genome = frequency_sorted[index1]->copy();
+}
+
 void Island::copy_two_random_genomes(
     uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
 ) {
@@ -120,6 +154,57 @@ void Island::copy_two_random_genomes(
 
     *genome1 = genomes[p1]->copy();
     *genome2 = genomes[p2]->copy();
+}
+
+void Island::copy_two_harada_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, 
+    double harada_selection_ratio
+) {
+    // Sort the entire island by frequency (least explored at the front)
+    vector<RNN_Genome*> frequency_sorted = genomes;
+    std::sort(frequency_sorted.begin(), frequency_sorted.end(), [](RNN_Genome* a, RNN_Genome* b) {
+        return a->search_frequency < b->search_frequency;
+    });
+
+    // Calculate pool size (if size is 10 and rs is 0.3, pool is 3)
+    int32_t current_island_size = (int32_t)frequency_sorted.size();
+    int32_t pool_size = (int32_t)(current_island_size * harada_selection_ratio);
+    
+    if (pool_size < 2) pool_size = 2;
+    if (pool_size > current_island_size) pool_size = current_island_size;
+
+    // Select indices ONLY within [0, pool_size - 1]
+    int32_t index1 = (int32_t)(pool_size * rng_0_1(generator));
+    
+    // If rng_0_1 returns exactly 1.0, index could be out of bounds
+    if (index1 >= pool_size) index1 = pool_size - 1;
+
+    int32_t index2 = (int32_t)(pool_size * rng_0_1(generator));
+    if (index2 >= pool_size) index2 = pool_size - 1;
+
+    // Ensure parents are distinct
+    while (index1 == index2) {
+        index2 = (int32_t)(pool_size * rng_0_1(generator));
+        if (index2 >= pool_size) index2 = pool_size - 1;
+    }
+
+    Log::info("Parent 1 selected using Harada Selection withe generation Id: %d\n", frequency_sorted[index1]->get_generation_id());
+    Log::info("Parent 1 selected using Harada Selection with MSE: %f\n", frequency_sorted[index1]->get_fitness());
+    Log::info("Parent 1 selected using Harada Selection with Harada Frequency: %f\n", frequency_sorted[index1]->search_frequency);
+
+    Log::info("Parent 2 selected using Harada Selection generation Id: %d\n", frequency_sorted[index2]->get_generation_id());
+    Log::info("Parent 2 selected using Harada Selection with MSE: %f\n", frequency_sorted[index2]->get_fitness());
+    Log::info("Parent 2 selected using Harada Selection with Harada Frequency: %f\n", frequency_sorted[index2]->search_frequency);
+
+    // Every time a solution is selected as a parent to create an offspring, 
+    // its own frequency parameter is increased by 1 Every time a solution 
+    // is selected as a parent to create an offspring, its own frequency parameter is increased by 1
+    frequency_sorted[index1]->search_frequency += 1.0;
+    frequency_sorted[index2]->search_frequency += 1.0;
+
+    // Return the deep copies
+    *genome1 = frequency_sorted[index1]->copy();
+    *genome2 = frequency_sorted[index2]->copy();
 }
 
 void Island::do_population_check(int32_t line, int32_t initial_size) {

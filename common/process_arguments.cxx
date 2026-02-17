@@ -16,14 +16,26 @@ EXAMM* generate_examm_from_arguments(
     get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+    
+    int32_t max_genomes = 0;
+    get_argument(arguments, "--max_genomes", false, max_genomes);
+    int64_t max_wallclock_seconds = 0;
+    get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
+    if (max_genomes <= 0 && max_wallclock_seconds <= 0) {
+        Log::fatal("Either --max_genomes or --max_wallclock_seconds must be provided and be > 0.\n");
+        exit(1);
+    }
+
     string output_directory = "";
     get_argument(arguments, "--output_directory", false, output_directory);
     vector<string> possible_node_types;
     get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
     string save_genome_option = "all_best_genomes";
     get_argument(arguments, "--save_genome_option", false, save_genome_option);
+    int32_t growth_phase_genomes = 0;
+    get_argument(arguments, "--growth_phase_genomes", false, growth_phase_genomes);
+    int32_t reduction_phase_genomes = 0;
+    get_argument(arguments, "--reduction_phase_genomes", false, reduction_phase_genomes);
 
     bool generate_op_log = false;
     get_argument(arguments, "--generate_op_log", false, generate_op_log);
@@ -31,11 +43,30 @@ EXAMM* generate_examm_from_arguments(
     bool generate_visualization_json = false;
     get_argument(arguments, "--generate_visualization_json", false, generate_visualization_json);
 
+    int32_t genome_size_log;
+    get_argument(arguments, "--genome_size_log", false, genome_size_log);
 
-    Log::info(
-        "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
-        max_genomes
-    );
+    int32_t is_harada_selection = 0;
+    get_argument(arguments, "--is_harada_selection", false, is_harada_selection);
+
+    double harada_selection_ratio = 0.0;
+    get_argument(arguments, "--harada_selection_ratio", false, harada_selection_ratio);
+
+
+    if (max_genomes > 0) {
+        Log::info(
+            "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
+            max_genomes
+        );
+    } else {
+        Log::info(
+            "Setting up examm with %d islands, island size %d, and unlimited genomes (no cap)\n", number_islands,
+            island_size
+        );
+    }
+    if (max_wallclock_seconds > 0) {
+        Log::info("Max wallclock seconds set to %lld seconds\n", (long long) max_wallclock_seconds);
+    }
 
     // random_sequence_length = argument_exists(arguments, "--random_sequence_length");
     // get_argument(arguments, "--sequence_length_lower_bound", false, sequence_length_lower_bound);
@@ -63,8 +94,9 @@ EXAMM* generate_examm_from_arguments(
     SpeciationStrategy* speciation_strategy = generate_speciation_strategy_from_arguments(arguments, seed_genome);
 
     EXAMM* examm = new EXAMM(
-        island_size, number_islands, max_genomes, speciation_strategy, weight_rules, genome_property, output_directory,
-        save_genome_option, generate_op_log, generate_visualization_json
+        island_size, number_islands, max_genomes, max_wallclock_seconds, speciation_strategy, weight_rules, genome_property, output_directory,
+        save_genome_option, generate_op_log, generate_visualization_json, growth_phase_genomes, reduction_phase_genomes,
+        genome_size_log, is_harada_selection, harada_selection_ratio
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);
@@ -100,8 +132,14 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--island_size", true, island_size);
     int32_t number_islands;
     get_argument(arguments, "--number_islands", true, number_islands);
-    int32_t max_genomes;
-    get_argument(arguments, "--max_genomes", true, max_genomes);
+    int32_t max_genomes = 0;
+    get_argument(arguments, "--max_genomes", false, max_genomes);
+    int64_t max_wallclock_seconds = 0;
+    get_argument(arguments, "--max_wallclock_seconds", false, max_wallclock_seconds);
+    if (max_genomes <= 0 && max_wallclock_seconds <= 0) {
+        Log::fatal("Either --max_genomes or --max_wallclock_seconds must be provided and > 0.\n");
+        exit(1);
+    }
     int32_t extinction_event_generation_number = 0;
     get_argument(arguments, "--extinction_event_generation_number", false, extinction_event_generation_number);
     int32_t islands_to_exterminate = 0;
@@ -112,6 +150,11 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--repopulation_method", false, repopulation_method);
     int32_t num_mutations = 1;
     get_argument(arguments, "--num_mutations", false, num_mutations);
+    int32_t is_harada_selection = 0;
+    get_argument(arguments, "--is_harada_selection", false, is_harada_selection);
+    double harada_selection_ratio = 0.0;
+    get_argument(arguments, "--harada_selection_ratio", false, harada_selection_ratio);
+
 
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
 
@@ -128,11 +171,14 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     bool start_filled = argument_exists(arguments, "--start_filled");
     bool tl_epigenetic_weights = argument_exists(arguments, "--tl_epigenetic_weights");
 
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+
     IslandSpeciationStrategy* island_strategy = new IslandSpeciationStrategy(
         number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,
         island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations,
         islands_to_exterminate, max_genomes, repeat_extinction, start_filled, transfer_learning,
-        transfer_learning_version, seed_stirs, tl_epigenetic_weights
+        transfer_learning_version, seed_stirs, tl_epigenetic_weights, possible_node_types, is_harada_selection, harada_selection_ratio
     );
 
     return island_strategy;
@@ -153,10 +199,14 @@ NeatSpeciationStrategy* generate_neat_speciation_strategy_from_arguments(
     double neat_c3 = 1;
     get_argument(arguments, "--neat_c3", false, neat_c3);
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
+    vector<string> possible_node_types;
+    get_argument_vector(arguments, "--possible_node_types", false, possible_node_types);
+    int32_t is_harada_selection = 0;
+    get_argument(arguments, "--is_harada_selection", false, is_harada_selection);
 
     NeatSpeciationStrategy* neat_strategy = new NeatSpeciationStrategy(
         mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome, species_threshold, fitness_threshold,
-        neat_c1, neat_c2, neat_c3
+        neat_c1, neat_c2, neat_c3, possible_node_types, is_harada_selection
     );
     return neat_strategy;
 }

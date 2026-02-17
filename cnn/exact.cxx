@@ -114,6 +114,7 @@ EXACT::EXACT(int exact_id) {
         genomes_generated = atoi(row[++column]);
         inserted_genomes = atoi(row[++column]);
         max_genomes = atoi(row[++column]);
+        //
 
         reset_weights = atoi(row[++column]);
         max_epochs = atoi(row[++column]);
@@ -1188,7 +1189,11 @@ void EXACT::generate_simplex_hyperparameters(
 }
 
 CNN_Genome* EXACT::generate_individual() {
-    if (inserted_genomes >= max_genomes) {
+    if (max_genomes > 0 && inserted_genomes >= max_genomes) {
+        // Log::info("max_genomes reached, terminating search", );
+        cout << "max_genomes reached, terminating search" << endl;
+        cout << "inserted_genomes: " << inserted_genomes << endl;
+        cout << "max_genomes: " << max_genomes << endl;
         return NULL;
     }
 
@@ -1314,7 +1319,7 @@ CNN_Genome* EXACT::generate_individual() {
 
         insert_genome(genome_copy);
     }
-
+    cout << "genome generated: " << genome->get_generation_id() << endl;
     return genome;
 }
 
