@@ -345,7 +345,10 @@ log will be generated which will track enabled/disabled nodes, edges, rec edges,
 
 * `--reduction_phase_genomes` if this integer flag is > 0 and --growth_phase_genomes > 0, adds a reduction (shrink) phase each cycle. It sets how many consecutive genomes run with pruning favored (add_*/enable_* = 0, disable_*/merge_* = 1). Default 0 means no shrink phase.
 
-* `--is_harada_selection` If this integer flag is 1 (or > 0), the algorithm will use Harada's Frequency-based parent selection to reduce evaluation time bias.
+* `--is_harada_selection` If this integer flag is 1 (or > 0), the algorithm will use Harada's Frequency-based parent selection[^harada_selection] to reduce evaluation time bias.
+
+[^harada_selection] Tomohiro Harada. **[A frequency-based parent selection for reducing the effect of evaluation time bias in asynchronous parallel multi-objective evolutionary algorithms.]** *Natural Computing 24.2 (2025)*. pp 211-225.
+
 
 * `--harada_selection_ratio` This decimal (floating-point) value determines the percentage of the population used for the candidate pool. It should be between 0.0 and 1.0. The paper typically recommends values around 0.2 or 0.3 (20-30%).
 
