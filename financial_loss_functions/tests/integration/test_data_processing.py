@@ -4,7 +4,7 @@ import pytest
 import shutil
 import pandas as pd
 from pathlib import Path
-from src.utils import load_config
+from src.utils.io import load_config
 from src.data_processing.pipeline import run_processing_pipeline
 
 # ---------- Integration test for Data Processing Pipeline ---------- #

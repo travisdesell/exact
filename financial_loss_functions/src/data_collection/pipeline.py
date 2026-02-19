@@ -1,7 +1,7 @@
 from pathlib import Path
 from src.data_collection.macro_api import FredAPI
 from src.data_collection.const import FRED_SERIES
-from src.utils import reset_data_stage, save_to_csv
+from src.utils.io import reset_data_stage, save_to_csv
 
 
 def run_macro_pipeline(

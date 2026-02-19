@@ -1,5 +1,5 @@
 import pandas as pd
-from src.utils import check_if_files_exist
+from src.utils.io import check_if_files_exist
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str

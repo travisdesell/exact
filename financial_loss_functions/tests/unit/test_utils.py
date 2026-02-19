@@ -3,7 +3,7 @@ import json
 import pytest
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from src.utils import (
+from src.utils.io import (
     data_dir_check,
     create_directory,
     delete_file,
@@ -12,9 +12,10 @@ from src.utils import (
     save_to_csv,
     reset_data_stage,
     load_path_config, 
-    load_config,
-    extract_req_cols    
+    load_config   
 )
+
+from src.utils.formatting import extract_req_cols
 
 # ---------- Tests for create_directory ---------- #
 def test_create_directory_creates_and_prints(tmp_path, capsys):
@@ -74,7 +75,7 @@ def test_delete_directory_handles_unexpected_exception(monkeypatch, tmp_path, ca
     target = str(d)
 
     # monkeypatch the module-level shutil.rmtree
-    import src.utils as utils_test
+    import src.utils.io as utils_test
 
     def fake_rmtree(path):
         raise Exception('boom')

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer, RobustScaler
-from src.utils import extract_req_cols
+from src.utils.formatting import extract_req_cols
 
 
 class MacroCombiner:

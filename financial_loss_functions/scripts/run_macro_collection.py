@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from src.utils import load_path_config
+from src.utils.io import load_path_config
 from src.data_collection.pipeline import run_macro_pipeline
 
 

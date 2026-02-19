@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.utils import reset_data_stage, save_to_csv
+from src.utils.io import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
 from src.data_processing.preprocess import (
     MacroCombiner,

@@ -3,7 +3,8 @@ from torch import optim
 from pathlib import Path
 from src.evaluation.evaluator import Evaluator
 from src.data_processing.loading import load_csv_files
-from src.utils import create_directory, get_best_device
+from src.utils.io import create_directory
+from src.utils.device import get_best_device
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,

@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from src.utils import load_path_config, load_config
+from src.utils.io import load_path_config, load_config
 from src.data_processing.pipeline import run_processing_pipeline
 
 if __name__ == '__main__':
