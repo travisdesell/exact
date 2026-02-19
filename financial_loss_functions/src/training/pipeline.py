@@ -7,7 +7,8 @@ from src.utils import create_directory, get_best_device
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
-    WindowDataset
+    WindowDataset,
+    get_date_index_col
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
@@ -132,10 +133,12 @@ def run_training_pipeline(
         hparams_config
     )
 
-    # -------------------- Training Tradional Models -------------------- #
+    # -------------------- Evaluator Setup -------------------- #
+
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val)
 
+    # -------------------- Training Tradional Models -------------------- #
     trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
     trad_alloc_weights = trad_grid.train_all(
         in_wind_idxs,
@@ -197,6 +200,7 @@ def run_training_pipeline(
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
+        get_date_index_col(val_data, out_wind_idxs),
         plots_dir / (f'Daily Returns' + '.png')
     )
 
@@ -258,10 +262,11 @@ def run_training_one_model(
         train_ds = WindowDataset(X_train, y_train)
         val_ds   = WindowDataset(X_val, y_val)
 
-        # -------------------- Training Tradional Models -------------------- #
+        # -------------------- Evaluator Setup -------------------- #
         # Initializing once to compare all models together
         evaluator = Evaluator(y_val)
 
+        # -------------------- Training Tradional Models -------------------- #
         trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
         trad_alloc_weights = trad_grid.train_all(
             in_wind_idxs,
@@ -316,9 +321,10 @@ def run_training_one_model(
 
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
-        
+
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),
+            get_date_index_col(val_data, out_wind_idxs),
             plots_dir /
             (f'Daily Returns_{model_name}-{loss_name}' + '.png')
         )

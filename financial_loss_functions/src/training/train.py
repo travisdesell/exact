@@ -747,7 +747,7 @@ class TradModelsTrainer:
 
             # Loop over dataset slices
             for i in range(len(in_sample_indexes)): # len(in-sample) = len(out-of-sample)
-                returns_is, returns_oos = build_dataset(
+                returns_is, _ = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
                     returns_train,
@@ -761,7 +761,7 @@ class TradModelsTrainer:
         else: # To use Test Set (Combines Train + Val + in-sample Test)
 
             for i in range(len(in_sample_indexes)): 
-                returns_is, returns_oos = build_dataset(
+                returns_is, _ = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
                     returns_train,

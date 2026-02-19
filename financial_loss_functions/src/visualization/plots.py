@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 def train_val_losses_plot(
     train_losses: list[float],
@@ -44,12 +45,13 @@ def train_val_losses_plot(
 
 def plot_windowed_comparison(
     all_daily_returns: dict,
+    window_dates: list,  # Add this parameter (list of DatetimeIndex)
     output_path: str,
-    plot: bool=False
+    plot: bool = False
 ):
+    cmap = plt.get_cmap('tab20')
     
-    cmap = plt.get_cmap('tab20') # or 'tab20', 'gist_rainbow'
-    
+    # Get number of windows from the first portfolio type
     n_windows = next(iter(all_daily_returns.values())).shape[0]
     n_cols = min(3, n_windows)
     n_rows = (n_windows + n_cols - 1) // n_cols
@@ -59,23 +61,41 @@ def plot_windowed_comparison(
         axes = np.array([axes])
     axes = axes.flatten()
     
-    # Plotting loop for each window
     for window_idx in range(n_windows):
         ax = axes[window_idx]
+        
+        # Get the specific dates for this window
+        current_window_dates = window_dates[window_idx]
+        
         for i, (pf_type, daily_returns) in enumerate(all_daily_returns.items()):
+            # Ensure the data matches the date length
+            y_data = daily_returns[window_idx]
+            
+            # Use the dates as the X-axis
             ax.plot(
-                daily_returns[window_idx],
+                current_window_dates, 
+                y_data,
                 label=pf_type,
-                color=cmap(i % 20), # Using a 20-color map
+                color=cmap(i % 20),
                 alpha=0.7,
                 linewidth=1
             )
-        ax.set_title(f'Window {window_idx + 1}')
+        
+        # Format the Title with Start/End dates for better context
+        start_str = current_window_dates[0].strftime('%Y-%m-%d')
+        end_str = current_window_dates[-1].strftime('%Y-%m-%d')
+        ax.set_title(f'W{window_idx + 1}: {start_str} to {end_str}', fontsize=10)
+        
+        # Add date formatting to make them readable
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d')) # Shows Month-Day
         ax.grid(True, alpha=0.3)
 
-    # 1. CLEAN UP MAIN PLOT
+    # Clean up empty subplots
     for i in range(n_windows, len(axes)):
         axes[i].set_visible(False)
+    
+    # MAGIC STEP: Automatically rotates and aligns the tick labels
+    fig.autofmt_xdate()
     
     plt.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')

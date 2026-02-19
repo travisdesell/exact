@@ -260,15 +260,31 @@ def calc_in_out_idx(
     in_sample_indexes = []
     out_sample_indexes = []
     for strt in starts:
-        in_end = strt + in_size # In sample end
+        in_end = strt + in_size
         in_sample_indexes.append((strt, in_end))
-        out_start = in_end + 1 # Out sample start
-        out_sample_indexes.append((out_start, out_start + out_size))
+        
+        # FIX: out_start must be exactly in_end
+        out_start = in_end 
+        out_end = out_start + out_size
+        out_sample_indexes.append((out_start, out_end))
 
     if len(in_sample_indexes) != len(out_sample_indexes):
-        raise RuntimeError('Number of in sample and out sample windows do not match.')
+        raise RuntimeError('Window count mismatch.')
 
     return in_sample_indexes, out_sample_indexes
+
+def get_date_index_col(
+    split: pd.DataFrame, wind_strt_stops: list[tuple]
+) -> list:
+    """
+    Get the datetime index columns from the provided dataframe using the 
+    start and stop indexes.
+    """
+    date_idx_cols = []
+    for idxs in wind_strt_stops:
+        date_idx_cols.append(split.index[idxs[0] : idxs[1]])
+    
+    return date_idx_cols
 
 def build_dataset(
         in_sample_idx: tuple[int, int], # (Start, End)
@@ -286,15 +302,17 @@ def build_dataset(
     # after grabbing index from dataset.py
     if returns_test is None:
         returns_is = pd.concat(
-            [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
+            [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]]]
         )
-        returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
+        
+        # iloc[200:250] gives rows 200-249 (Exactly 50 rows)
+        returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]]
     
     elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
         returns_is = pd.concat(
-            [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
+            [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]]]
         )
-        returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
+        returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]]
     else:
         raise ValueError('Incorrect type for test returns.')
 
