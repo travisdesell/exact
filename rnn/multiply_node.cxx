@@ -46,8 +46,6 @@ void MULTIPLY_Node::input_fired(int32_t time, double incoming_output) {
 
     ordered_input[time].push_back(incoming_output);
 
-    Log::info("Debug Check:\n inputs_fired size:", inputs_fired.size(), "\ncurrent time index:", time);
-
     if (inputs_fired[time] == 1) {
         input_values[time] = incoming_output;
     } else {
