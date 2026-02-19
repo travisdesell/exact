@@ -178,8 +178,9 @@ void RNN::fix_parameter_orders(
 
 RNN::RNN(
     vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, const vector<string>& input_parameter_names,
-    const vector<string>& output_parameter_names
+    const vector<string>& output_parameter_names, bool use_classification
 ) {
+    this->use_classification = use_classification;
     nodes = _nodes;
     edges = _edges;
 
@@ -200,8 +201,9 @@ RNN::RNN(
 
 RNN::RNN(
     vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names
+    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names, bool use_classification
 ) {
+    this->use_classification = use_classification;
     nodes = _nodes;
     edges = _edges;
     recurrent_edges = _recurrent_edges;
@@ -659,8 +661,13 @@ void RNN::get_analytic_gradient(
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    mse = calculate_error_mse(outputs);
-    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    if (use_classification) {
+        mse = calculate_error_softmax(outputs);  // mse holds cross-entropy when classification mode is enabled
+        backward_pass(1.0, using_dropout, training, dropout_probability);
+    } else {
+        mse = calculate_error_mse(outputs);
+        backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    }
 
     vector<double> current_gradients;
 

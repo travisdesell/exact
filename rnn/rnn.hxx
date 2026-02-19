@@ -16,6 +16,7 @@ using std::vector;
 class RNN {
    private:
     int32_t series_length;
+    bool use_classification;  // controls loss in get_analytic_gradient
 
     vector<RNN_Node_Interface*> input_nodes;
     vector<RNN_Node_Interface*> output_nodes;
@@ -26,9 +27,10 @@ class RNN {
 
    public:
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, const vector<string>& input_parameter_names,
-        const vector<string>& output_parameter_names);
+        const vector<string>& output_parameter_names, bool use_classification = false);
     RNN(vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names);
+        const vector<string>& input_parameter_names, const vector<string>& output_parameter_names,
+        bool use_classification = false);
     ~RNN();
 
     void fix_parameter_orders(

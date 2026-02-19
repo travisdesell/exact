@@ -239,5 +239,16 @@ RNN_Genome* get_seed_genome(
         }
     }
 
+    // Set task mode from --prediction_type (from config / ExammTask: "categorical" = classification, "regression" = default)
+    string prediction_type = "regression";
+    get_argument(arguments, "--prediction_type", false, prediction_type);
+    if (prediction_type == "categorical") {
+        seed_genome->set_use_classification(true);
+        Log::info("Prediction type: categorical (classification)\n");
+    } else {
+        seed_genome->set_use_classification(false);
+        Log::info("Prediction type: regression\n");
+    }
+
     return seed_genome;
 }

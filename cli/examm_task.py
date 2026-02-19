@@ -14,6 +14,7 @@ class ExammTask(ConfigToArg):
         return list(set(a))
     ALL_ITER_TYPES = ["scaled", "rand", "acc", "const"]
     ALL_NODE_TYPES = [ 'simple', 'UGRNN', 'MGU', 'GRU', 'delta', 'LSTM' , 'ENARC' ]
+    ALL_PREDICTION_TYPES = [ 'categorical', 'regression' ]
     CONFIG_OPTIONS = {
             "training_files":       lambda self, x: ['--training_filenames'] + ExammTask.glob_to_all(x),
             "test_files":           lambda self, x: ['--test_filenames'] + ExammTask.glob_to_all(x),
@@ -32,6 +33,8 @@ class ExammTask(ConfigToArg):
             "bp_slope":             lambda self, x: ['--bp_slope', str(x)],
             "output_directory":     lambda self, x: ['--output_directory', str(x)],
             "node_types":           lambda self, x: ['--possible_node_types'] + list(map(str, x)),
+            "prediction_type":      lambda self, x: ['--prediction_type', str(x)],
+            # "feedback_loop":        lambda self, x: ['--feedback_loop', bool(x)],
             "rec":                  lambda self, x: RecArgs(x, self.filename).to_args(),
             "island_purging":       lambda self, x: IslandPurgingArgs(x, self.filename).to_args()
     }    
@@ -40,6 +43,8 @@ class ExammTask(ConfigToArg):
     # the default value
     DEFAULTS = {
             "node_types": lambda: ExammTask.ALL_NODE_TYPES,
+            "prediction_type": lambda: 'regression',
+            # "feedback_loop": lambda: False,
             "rec": lambda: dict(),
             "island_purging": lambda: dict()
     }
@@ -62,6 +67,8 @@ class ExammTask(ConfigToArg):
             "bp_slope":             {float},
             "output_directory":     {str},
             "node_types":           {list},
+            "prediction_type":      {str},
+            # "feedback_loop":        {bool},
             # Subsections should be of type dict
             "rec":                  {dict},
             "island_purging":       {dict}
@@ -92,6 +99,8 @@ class ExammTask(ConfigToArg):
             "node_types":           (lambda self: self.all_strings(self.node_types) \
                                                 and set(self.node_types).issubset(set(ExammTask.ALL_NODE_TYPES)),
                                     "must be a subset of " + str(ALL_NODE_TYPES)),
+            "prediction_type":      (lambda self: self.prediction_type in ExammTask.ALL_PREDICTION_TYPES, "must be one of " + str(ExammTask.ALL_PREDICTION_TYPES)),
+            # "feedback_loop":        (lambda self: True, "must be a boolean"),
             # Subsections should be of type dict
             "rec":                  (lambda self: True, ""),
             "island_purging":       (lambda self: True, "")

@@ -100,6 +100,8 @@ RNN_Genome::RNN_Genome(
 
     best_validation_mse = EXAMM_MAX_DOUBLE;
     best_validation_mae = EXAMM_MAX_DOUBLE;
+    best_validation_softmax = EXAMM_MAX_DOUBLE;
+    use_classification = false;
 
     nodes = _nodes;
     edges = _edges;
@@ -208,7 +210,9 @@ RNN_Genome* RNN_Genome::copy() {
 
     other->best_validation_mse = best_validation_mse;
     other->best_validation_mae = best_validation_mae;
+    other->best_validation_softmax = best_validation_softmax;
     other->best_parameters = best_parameters;
+    other->use_classification = use_classification;
 
     other->input_parameter_names = input_parameter_names;
     other->output_parameter_names = output_parameter_names;
@@ -254,7 +258,7 @@ RNN_Genome::~RNN_Genome() {
 string RNN_Genome::print_statistics_header() {
     ostringstream oss;
 
-    oss << std::left << setw(12) << "MSE" << setw(12) << "MAE" << setw(12) << "Edges" << setw(12) << "Rec Edges"
+    oss << std::left << setw(12) << "Fitness" << setw(12) << "MAE" << setw(12) << "Edges" << setw(12) << "Rec Edges"
         << setw(12) << "Simple" << setw(12) << "Jordan" << setw(12) << "Elman" << setw(12) << "UGRNN" << setw(12)
         << "MGU" << setw(12) << "GRU" << setw(12) << "Delta" << setw(12) << "LSTM" << setw(12) << "ENARC" << setw(12)
         << "ENAS_DAG" << setw(12) << "RANDOM_DAG" << setw(12) << "Total"
@@ -265,7 +269,7 @@ string RNN_Genome::print_statistics_header() {
 
 string RNN_Genome::print_statistics() {
     ostringstream oss;
-    oss << std::left << setw(12) << parse_fitness(best_validation_mse) << setw(12) << parse_fitness(best_validation_mae)
+    oss << std::left << setw(12) << parse_fitness(get_fitness()) << setw(12) << parse_fitness(best_validation_mae)
         << setw(12) << get_edge_count_str(false) << setw(12) << get_edge_count_str(true) << setw(12)
         << get_node_count_str(SIMPLE_NODE) << setw(12) << get_node_count_str(JORDAN_NODE) << setw(12)
         << get_node_count_str(ELMAN_NODE) << setw(12) << get_node_count_str(UGRNN_NODE) << setw(12)
@@ -992,7 +996,10 @@ RNN* RNN_Genome::get_rnn() {
         // recurrent_edges[i]->copy(node_copies) );
     }
 
-    return new RNN(node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names);
+    return new RNN(
+        node_copies, edge_copies, recurrent_edge_copies, input_parameter_names, output_parameter_names,
+        use_classification
+    );
 }
 
 vector<double> RNN_Genome::get_best_parameters() const {
@@ -1021,17 +1028,35 @@ void RNN_Genome::set_generation_id(int32_t _generation_id) {
     generation_id = _generation_id;
 }
 
-double RNN_Genome::get_fitness() const {
-    return best_validation_mse;
-    // return best_validation_mae;
-}
-
 double RNN_Genome::get_best_validation_mse() const {
     return best_validation_mse;
 }
 
 double RNN_Genome::get_best_validation_mae() const {
     return best_validation_mae;
+}
+
+double RNN_Genome::get_best_validation_softmax() const {
+    return best_validation_softmax;
+}
+
+bool RNN_Genome::get_use_classification() const {
+    return use_classification;
+}
+
+void RNN_Genome::set_use_classification(bool b) {
+    use_classification = b;
+}
+
+double RNN_Genome::get_fitness() const {
+    bool use_classification = this->use_classification;
+    if (use_classification) {
+        return best_validation_softmax;
+    } else {
+        return best_validation_mse;
+    }
+    // return best_validation_mse;
+    // return best_validation_mae;
 }
 
 void RNN_Genome::set_generated_by(string type) {
@@ -1079,11 +1104,21 @@ void RNN_Genome::get_analytic_gradient(
     double* mses = new double[rnns.size()];
     double mse_sum = 0.0;
     vector<thread> threads;
-    for (int32_t i = 0; i < (int32_t) rnns.size(); i++) {
-        threads.push_back(thread(
-            forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout, training,
-            dropout_probability
-        ));
+    bool use_classification = this->use_classification;
+    if (use_classification) {
+        for (int32_t i = 0; i < (int32_t) rnns.size(); i++) {
+            threads.push_back(thread(
+                forward_pass_thread_classification, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout,
+                training, dropout_probability
+            ));
+        }
+    } else {
+        for (int32_t i = 0; i < (int32_t) rnns.size(); i++) {
+            threads.push_back(thread(
+                forward_pass_thread_regression, rnns[i], parameters, inputs[i], outputs[i], i, mses, use_dropout,
+                training, dropout_probability
+            ));
+        }
     }
 
     for (int32_t i = 0; i < (int32_t) rnns.size(); i++) {
@@ -1092,10 +1127,10 @@ void RNN_Genome::get_analytic_gradient(
     }
     delete[] mses;
 
+    // For classification, softmax already set per-node errors; backward_pass scale is 1.0. For regression, use MSE scale.
+    const double backward_scale = use_classification ? 1.0 : (mse_sum * (1.0 / outputs[0][0].size()) * 2.0);
     for (int32_t i = 0; i < (int32_t) rnns.size(); i++) {
-        double d_mse = 0.0;
-        d_mse = mse_sum * (1.0 / outputs[i][0].size()) * 2.0;
-        rnns[i]->backward_pass(d_mse, use_dropout, training, dropout_probability);
+        rnns[i]->backward_pass(backward_scale, use_dropout, training, dropout_probability);
     }
 
     mse = mse_sum;
@@ -1149,11 +1184,18 @@ void RNN_Genome::backpropagate(
 
     // initialize the initial previous values
     get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
-    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-    initial_fitness_before_bp = validation_mse;  // Store initial fitness before backprop
-    best_validation_mse = validation_mse;
-    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-    best_parameters = parameters;
+    if (use_classification) {
+        double validation_ce = get_softmax(parameters, validation_inputs, validation_outputs);
+        initial_fitness_before_bp = validation_ce;
+        best_validation_softmax = validation_ce;
+        best_parameters = parameters;
+    } else {
+        double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        initial_fitness_before_bp = validation_mse;
+        best_validation_mse = validation_mse;
+        best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+        best_parameters = parameters;
+    }
 
     norm = weight_update_method->get_norm(analytic_gradient);
 
@@ -1163,23 +1205,38 @@ void RNN_Genome::backpropagate(
         prev_gradient = analytic_gradient;
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
         this->set_weights(parameters);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-        if (validation_mse < best_validation_mse) {
-            best_validation_mse = validation_mse;
-            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-            best_parameters = parameters;
+        if (use_classification) {
+            double validation_ce = get_softmax(parameters, validation_inputs, validation_outputs);
+            if (validation_ce < best_validation_softmax) {
+                best_validation_softmax = validation_ce;
+                best_parameters = parameters;
+            }
+            if (output_log != NULL) {
+                double train_ce = get_softmax(parameters, inputs, outputs);
+                (*output_log) << iteration << " " << train_ce << " " << validation_ce << " " << best_validation_softmax << endl;
+            }
+            Log::info(
+                "iteration %10d, loss: %10lf, v_ce: %10lf, bv_ce: %10lf, norm: %lf", iteration, mse, validation_ce,
+                best_validation_softmax, norm
+            );
+        } else {
+            double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+            if (validation_mse < best_validation_mse) {
+                best_validation_mse = validation_mse;
+                best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+                best_parameters = parameters;
+            }
+            if (output_log != NULL) {
+                (*output_log) << iteration << " " << mse << " " << validation_mse << " " << best_validation_mse << endl;
+            }
+            Log::info(
+                "iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse,
+                best_validation_mse, norm
+            );
         }
-        norm = weight_update_method->get_norm(analytic_gradient);
-        if (output_log != NULL) {
-            (*output_log) << iteration << " " << mse << " " << validation_mse << " " << best_validation_mse << endl;
-        }
+        Log::info_no_header("\n");
         weight_update_method->norm_gradients(analytic_gradient, norm);
         weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
-        Log::info(
-            "iteration %10d, mse: %10lf, v_mse: %10lf, bv_mse: %10lf, norm: %lf", iteration, mse, validation_mse,
-            best_validation_mse, norm
-        );
-        Log::info_no_header("\n");
     }
 
     RNN* g;
@@ -1196,6 +1253,8 @@ void RNN_Genome::backpropagate(
     bp_stats_valid = true;
 }
 
+// backpropagate_stochastic uses RNN::get_analytic_gradient (one RNN, one series per step). The RNN's
+// use_classification flag is set from this genome in get_rnn(), so classification is applied here too.
 void RNN_Genome::backpropagate_stochastic(
     const vector<vector<vector<double> > >& inputs, const vector<vector<vector<double> > >& outputs,
     const vector<vector<vector<double> > >& validation_inputs,
@@ -1233,15 +1292,22 @@ void RNN_Genome::backpropagate_stochastic(
     }
     Log::trace("initialized previous values.\n");
 
-    // TODO: need to get validation mse on the RNN not the genome
-    double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-    initial_fitness_before_bp = validation_mse;  // Store initial fitness before backprop
-    best_validation_mse = validation_mse;
-    best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-    best_parameters = parameters;
-
-    Log::trace("got initial mses.\n");
-    Log::info("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
+    if (use_classification) {
+        double validation_ce = get_softmax(parameters, validation_inputs, validation_outputs);
+        initial_fitness_before_bp = validation_ce;
+        best_validation_softmax = validation_ce;
+        best_parameters = parameters;
+        Log::trace("got initial validation CE.\n");
+        Log::info("initial validation CE: %lf, best validation CE: %lf\n", validation_ce, best_validation_softmax);
+    } else {
+        double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+        initial_fitness_before_bp = validation_mse;
+        best_validation_mse = validation_mse;
+        best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+        best_parameters = parameters;
+        Log::trace("got initial mses.\n");
+        Log::info("initial validation_mse: %lf, best validation mse: %lf\n", validation_mse, best_validation_mse);
+    }
 
     for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
         Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
@@ -1275,7 +1341,8 @@ void RNN_Genome::backpropagate_stochastic(
                 best_parameters = parameters;
                 this->best_validation_mse = NAN;
                 this->best_validation_mae = NAN;
-                
+                this->best_validation_softmax = NAN;
+
                 // Store stats even for failed genomes (for logging)
                 std::chrono::time_point<std::chrono::system_clock> bp_end_time = std::chrono::system_clock::now();
                 bp_time_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(bp_end_time - startClock).count();
@@ -1288,24 +1355,42 @@ void RNN_Genome::backpropagate_stochastic(
             weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
         }
         this->set_weights(parameters);
-        double training_mse = get_mse(parameters, inputs, outputs);
-        validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
-
-        if (validation_mse < best_validation_mse) {
-            best_validation_mse = validation_mse;
-            best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
-            best_parameters = parameters;
+        if (use_classification) {
+            double training_ce = get_softmax(parameters, inputs, outputs);
+            double validation_ce = get_softmax(parameters, validation_inputs, validation_outputs);
+            if (validation_ce < best_validation_softmax) {
+                best_validation_softmax = validation_ce;
+                best_parameters = parameters;
+            }
+            if (output_log != NULL) {
+                std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+                long milliseconds =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+                update_log_file(output_log, iteration, milliseconds, training_ce, validation_ce, avg_norm);
+            }
+            Log::info(
+                "iteration %4d, loss: %5.10lf, v_ce: %5.10lf, bv_ce: %5.10lf, avg_norm: %5.10lf\n", iteration,
+                training_ce, validation_ce, best_validation_softmax, avg_norm
+            );
+        } else {
+            double training_mse = get_mse(parameters, inputs, outputs);
+            double validation_mse = get_mse(parameters, validation_inputs, validation_outputs);
+            if (validation_mse < best_validation_mse) {
+                best_validation_mse = validation_mse;
+                best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
+                best_parameters = parameters;
+            }
+            if (output_log != NULL) {
+                std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
+                long milliseconds =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
+                update_log_file(output_log, iteration, milliseconds, training_mse, validation_mse, avg_norm);
+            }
+            Log::info(
+                "iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration,
+                training_mse, validation_mse, best_validation_mse, avg_norm
+            );
         }
-        if (output_log != NULL) {
-            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
-            long milliseconds =
-                std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
-            update_log_file(output_log, iteration, milliseconds, training_mse, validation_mse, avg_norm);
-        }
-        Log::info(
-            "iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration,
-            training_mse, validation_mse, best_validation_mse, avg_norm
-        );
     }
     delete rnn;
     this->set_weights(best_parameters);
@@ -1332,7 +1417,11 @@ ofstream* RNN_Genome::create_log_file() {
         }
         Log::trace("opened log file '%s'\n", log_filename.c_str());
 
-        (*output_log) << "Total BP Epochs, Time, Train MSE, Val. MSE, BEST Val. MSE, BEST Val. MAE, norm";
+        if (use_classification) {
+            (*output_log) << "Total BP Epochs, Time, Train loss, Val. loss, BEST Val. loss, BEST Val. MAE, norm";
+        } else {
+            (*output_log) << "Total BP Epochs, Time, Train MSE, Val. MSE, BEST Val. MSE, BEST Val. MAE, norm";
+        }
         (*output_log) << endl;
     }
     return output_log;
@@ -1353,8 +1442,13 @@ void RNN_Genome::update_log_file(
             exit(1);
         }
     }
-    (*output_log) << iteration << "," << milliseconds << "," << training_mse << "," << validation_mse << ","
-                  << best_validation_mse << "," << best_validation_mae << "," << avg_norm << endl;
+    if (use_classification) {
+        (*output_log) << iteration << "," << milliseconds << "," << training_mse << "," << validation_mse << ","
+                      << best_validation_softmax << "," << best_validation_mae << "," << avg_norm << endl;
+    } else {
+        (*output_log) << iteration << "," << milliseconds << "," << training_mse << "," << validation_mse << ","
+                      << best_validation_mse << "," << best_validation_mae << "," << avg_norm << endl;
+    }
 }
 
 double RNN_Genome::get_softmax(
@@ -3141,7 +3235,11 @@ void RNN_Genome::write_graphviz(string filename) {
 
     outfile << "digraph RNN {" << endl;
     outfile << "labelloc=\"t\";" << endl;
-    outfile << "label=\"Genome Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
+    if (use_classification) {
+        outfile << "label=\"Genome Fitness: CE = " << best_validation_softmax << "\";" << endl;
+    } else {
+        outfile << "label=\"Genome Fitness: " << best_validation_mae * 100.0 << "% MAE\";" << endl;
+    }
     outfile << endl;
 
     outfile << "\tgraph [pad=\"0.01\", nodesep=\"0.05\", ranksep=\"0.9\"];" << endl;
@@ -3549,6 +3647,8 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
 
     bin_istream.read((char*) &best_validation_mse, sizeof(double));
     bin_istream.read((char*) &best_validation_mae, sizeof(double));
+    bin_istream.read((char*) &best_validation_softmax, sizeof(double));  // format extended; old files lack this
+    use_classification = false;  // not stored in binary; loaded genomes default to regression
 
     int32_t n_initial_parameters;
     bin_istream.read((char*) &n_initial_parameters, sizeof(int32_t));
@@ -3749,6 +3849,7 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
 
     bin_ostream.write((char*) &best_validation_mse, sizeof(double));
     bin_ostream.write((char*) &best_validation_mae, sizeof(double));
+    bin_ostream.write((char*) &best_validation_softmax, sizeof(double));
 
     int32_t n_initial_parameters = (int32_t) initial_parameters.size();
     Log::debug("writing %d initial parameters.\n", n_initial_parameters);
@@ -4302,6 +4403,7 @@ void RNN_Genome::transfer_to(
 
     best_validation_mse = EXAMM_MAX_DOUBLE;
     best_validation_mae = EXAMM_MAX_DOUBLE;
+    best_validation_softmax = EXAMM_MAX_DOUBLE;
 
     get_mu_sigma(best_parameters, mu, sigma);
     Log::info("after transfer, mu: %lf, sigma: %lf\n", mu, sigma);
@@ -4620,6 +4722,7 @@ void RNN_Genome::write_equations(ostream& outstream) {
         }
     }
     outstream << "best_validation_mse: " << to_string(this->get_best_validation_mse()) << endl;
+    outstream << "best_validation_softmax: " << to_string(this->get_best_validation_softmax()) << endl;
     outstream << endl;
 }
 
@@ -4680,6 +4783,7 @@ void RNN_Genome::write_manual_txt(const std::string& filename) {
 
     out_file << "  \"best_validation_mse\": " << best_validation_mse << "," << std::endl;
     out_file << "  \"best_validation_mae\": " << best_validation_mae << "," << std::endl;
+    out_file << "  \"best_validation_softmax\": " << best_validation_softmax << "," << std::endl;
     out_file << "  \"log_filename\": \"" << log_filename << "\"," << std::endl;
 
     // Nodes
@@ -4762,6 +4866,7 @@ void RNN_Genome::write_manual_txt(const std::string& filename) {
     out_file << "    \"total_number_hidden_layer_weights\": " << get_number_weights_enabled_hidden_layer_node() << "," << std::endl;
     out_file << "    \"best_validation_mse\": " << get_best_validation_mse() << "," << std::endl;
     out_file << "    \"best_validation_mae\": " << get_best_validation_mae() << "," << std::endl;
+    out_file << "    \"best_validation_softmax\": " << get_best_validation_softmax() << "," << std::endl;
     out_file << "    \"total_number_outputs\": " << get_number_outputs() << "," << std::endl;
     out_file << "    \"total_number_weights\": " << get_number_weights() << "," << std::endl;
     out_file << "    \"total_number_enabled_weights\": " << get_enabled_number_weights() << "," << std::endl;
