@@ -184,12 +184,6 @@ int main(int argc, char** argv) {
     // genome->enable_low_threshold(0.05);
     genome->disable_dropout();
 
-    if (argument_exists(arguments, "--log_filename")) {
-        string log_filename;
-        get_argument(arguments, "--log_filename", false, log_filename);
-        genome->set_log_filename(log_filename);
-    }
-
     if (argument_exists(arguments, "--stochastic")) {
         genome->backpropagate_stochastic(
             training_inputs, training_outputs, test_inputs, test_outputs, weight_update_method

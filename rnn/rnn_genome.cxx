@@ -128,9 +128,6 @@ RNN_Genome::RNN_Genome(
     use_dropout = false;
     dropout_probability = 0.5;
 
-    log_filename = "";
-    stats_output_directory = "";
-    
     // Initialize backprop stats
     initial_fitness_before_bp = EXAMM_MAX_DOUBLE;
     bp_time_milliseconds = 0;
@@ -194,9 +191,6 @@ RNN_Genome* RNN_Genome::copy() {
     other->use_dropout = use_dropout;
     other->dropout_probability = dropout_probability;
 
-    other->log_filename = log_filename;
-    other->stats_output_directory = stats_output_directory;
-    
     // Copy backprop stats
     other->initial_fitness_before_bp = initial_fitness_before_bp;
     other->bp_time_milliseconds = bp_time_milliseconds;
@@ -509,14 +503,6 @@ void RNN_Genome::disable_dropout() {
 
 void RNN_Genome::enable_dropout(double _dropout_probability) {
     dropout_probability = _dropout_probability;
-}
-
-void RNN_Genome::set_log_filename(string _log_filename) {
-    log_filename = _log_filename;
-}
-
-void RNN_Genome::set_stats_output_directory(string _stats_output_directory) {
-    stats_output_directory = _stats_output_directory;
 }
 
 double RNN_Genome::get_initial_fitness_before_bp() const {
@@ -1158,8 +1144,6 @@ void RNN_Genome::backpropagate(
 
     norm = weight_update_method->get_norm(analytic_gradient);
 
-    ofstream* output_log = create_log_file();
-
     for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
         prev_gradient = analytic_gradient;
         get_analytic_gradient(rnns, parameters, inputs, outputs, mse, analytic_gradient, true);
@@ -1171,9 +1155,6 @@ void RNN_Genome::backpropagate(
             best_parameters = parameters;
         }
         norm = weight_update_method->get_norm(analytic_gradient);
-        if (output_log != NULL) {
-            (*output_log) << iteration << " " << mse << " " << validation_mse << " " << best_validation_mse << endl;
-        }
         weight_update_method->norm_gradients(analytic_gradient, norm);
         weight_update_method->update_weights(parameters, velocity, prev_velocity, analytic_gradient, iteration);
         Log::info(
@@ -1223,8 +1204,8 @@ void RNN_Genome::backpropagate_stochastic(
     for (int32_t i = 0; i < n_series; i++) {
         Log::trace(
             "getting analytic gradient for input/output: %d, n_series: %d, parameters.size: %d, inputs.size(): %d, "
-            "outputs.size(): %d, log filename: '%s'\n",
-            i, n_series, parameters.size(), inputs.size(), outputs.size(), log_filename.c_str()
+            "outputs.size(): %d\n",
+            i, n_series, parameters.size(), inputs.size(), outputs.size()
         );
         rnn->get_analytic_gradient(
             parameters, inputs[i], outputs[i], mse, analytic_gradient, use_dropout, true, dropout_probability
@@ -1247,8 +1228,6 @@ void RNN_Genome::backpropagate_stochastic(
     for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
         Log::trace("parameters[%d]: %lf\n", i, parameters[i]);
     }
-
-    ofstream* output_log = create_log_file();
 
     for (int32_t iteration = 0; iteration < bp_iterations; iteration++) {
         vector<int32_t> shuffle_order;
@@ -1297,12 +1276,7 @@ void RNN_Genome::backpropagate_stochastic(
             best_validation_mae = get_mae(parameters, validation_inputs, validation_outputs);
             best_parameters = parameters;
         }
-        if (output_log != NULL) {
-            std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
-            long milliseconds =
-                std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
-            update_log_file(output_log, iteration, milliseconds, training_mse, validation_mse, avg_norm);
-        }
+
         Log::info(
             "iteration %4d, mse: %5.10lf, v_mse: %5.10lf, bv_mse: %5.10lf, avg_norm: %5.10lf\n", iteration,
             training_mse, validation_mse, best_validation_mse, avg_norm
@@ -1318,44 +1292,6 @@ void RNN_Genome::backpropagate_stochastic(
     std::chrono::time_point<std::chrono::system_clock> bp_end_time = std::chrono::system_clock::now();
     bp_time_milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(bp_end_time - startClock).count();
     bp_stats_valid = true;
-}
-
-ofstream* RNN_Genome::create_log_file() {
-    ofstream* output_log = NULL;
-    if (log_filename != "") {
-        Log::trace("creating new log stream for '%s'\n", log_filename.c_str());
-        output_log = new ofstream(log_filename);
-        Log::trace("testing to see if log file is valid.\n");
-
-        if (!output_log->is_open()) {
-            Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
-            exit(1);
-        }
-        Log::trace("opened log file '%s'\n", log_filename.c_str());
-
-        (*output_log) << "Total BP Epochs, Time, Train MSE, Val. MSE, BEST Val. MSE, BEST Val. MAE, norm";
-        (*output_log) << endl;
-    }
-    return output_log;
-}
-
-void RNN_Genome::update_log_file(
-    ofstream* output_log, int32_t iteration, long milliseconds, double training_mse, double validation_mse,
-    double avg_norm
-) {
-    // make sure the output log is good
-    if (!output_log->good()) {
-        output_log->close();
-        delete output_log;
-        output_log = new ofstream(log_filename, std::ios_base::app);
-        Log::trace("testing to see if log file valid for '%s'\n", log_filename.c_str());
-        if (!output_log->is_open()) {
-            Log::fatal("ERROR, could not open output log: '%s'\n", log_filename.c_str());
-            exit(1);
-        }
-    }
-    (*output_log) << iteration << "," << milliseconds << "," << training_mse << "," << validation_mse << ","
-                  << best_validation_mse << "," << best_validation_mae << "," << avg_norm << endl;
 }
 
 double RNN_Genome::get_softmax(
@@ -3443,7 +3379,7 @@ RNN_Node_Interface* RNN_Genome::read_node_from_stream(istream& bin_istream) {
             nodes[i] = RNN_Genome::read_node_from_stream(bin_istream);
         }
 
-        DNASNode* dnas_node = new DNASNode(move(nodes), innovation_number, layer_type, depth, counter);
+        DNASNode* dnas_node = new DNASNode(std::move(nodes), innovation_number, layer_type, depth, counter);
         dnas_node->set_pi(pi);
         node = (RNN_Node_Interface*) dnas_node;
     } else if (node_type == SIN_NODE) {
@@ -3515,7 +3451,6 @@ void RNN_Genome::read_from_stream(istream& bin_istream) {
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
 
-    read_binary_string(bin_istream, log_filename, "log_filename");
     string generator_str;
     read_binary_string(bin_istream, generator_str, "generator");
     istringstream generator_iss(generator_str);
@@ -3717,8 +3652,6 @@ void RNN_Genome::write_to_stream(ostream& bin_ostream) {
     Log::debug("weight initialize: %s\n", WEIGHT_TYPES_STRING[weight_initialize].c_str());
     Log::debug("weight inheritance: %s\n", WEIGHT_TYPES_STRING[weight_inheritance].c_str());
     Log::debug("new component weight: %s\n", WEIGHT_TYPES_STRING[mutated_component_weight].c_str());
-
-    write_binary_string(bin_ostream, log_filename, "log_filename");
 
     ostringstream generator_oss;
     generator_oss << generator;
@@ -4673,7 +4606,6 @@ void RNN_Genome::write_manual_txt(const std::string& filename) {
 
     out_file << "  \"best_validation_mse\": " << best_validation_mse << "," << std::endl;
     out_file << "  \"best_validation_mae\": " << best_validation_mae << "," << std::endl;
-    out_file << "  \"log_filename\": \"" << log_filename << "\"," << std::endl;
 
     // Nodes
     out_file << "  \"nodes\": [" << std::endl;

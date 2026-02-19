@@ -326,8 +326,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     Log::debug("save visualization json complete\n");
 
-    bool generate_visualization_json = true;
-
     if (generate_visualization_json) {
         save_visualization_json(genome, "rnn_genome");
     }
@@ -336,7 +334,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
 
     update_op_log_statistics(genome, insert_position);
     Log::debug("update op log statistics complete\n");
-    
+
     // Write per-genome backprop stats to log file
     if (genome_stats_log_file != NULL) {
         // Make sure the log file is still good (similar to update_log)
@@ -350,17 +348,17 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
                 genome_stats_log_file = NULL;
             }
         }
-        
+
         if (genome_stats_log_file != NULL && genome->get_bp_stats_valid()) {
             (*genome_stats_log_file) << genome->get_generation_id() << ","
-                                     << genome->get_initial_fitness_before_bp() << ","
-                                     << genome->get_fitness() << ","
-                                     << genome->get_bp_iterations() << ","
-                                     << genome->get_bp_time_milliseconds() << endl;
+                << genome->get_initial_fitness_before_bp() << ","
+                << genome->get_fitness() << ","
+                << genome->get_bp_iterations() << ","
+                << genome->get_bp_time_milliseconds() << endl;
             genome_stats_log_file->flush();  // Ensure data is written immediately
         }
     }
-    
+
     update_log();
 
     // update size log.
@@ -470,7 +468,8 @@ void EXAMM::save_genome(RNN_Genome* genome, string genome_name = "rnn_genome") {
     );
     genome->write_equations(equations_filestream);
     genome->write_to_file(output_directory + "/" + genome_name + "_" + to_string(genome->get_generation_id()) + ".bin");
-}
+    save_visualization_json(genome, "rnn_genome");
+ }
 
 RNN_Genome* EXAMM::generate_genome() {
     if ((max_genomes > 0 && speciation_strategy->get_evaluated_genomes() > max_genomes) || (max_wallclock_seconds > 0 && std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - startClock).count() >= max_wallclock_seconds)) {
@@ -561,11 +560,6 @@ RNN_Genome* EXAMM::generate_genome() {
 
         // Saving the genome to txt file
         genome->write_manual_txt(output_directory + "/" + "size_log"+ "/" + "generated_genome" + "_" + to_string(genome->get_generation_id()) + ".txt");
-    }
-
-    // Set stats output directory for genome stats files
-    if (output_directory != "") {
-        genome->set_stats_output_directory(output_directory);
     }
 
     return genome;

@@ -181,11 +181,6 @@ int main(int argc, char** argv) {
     if (output_directory != "") {
         mkpath(output_directory.c_str(), 0777);
     }
-    if (argument_exists(arguments, "--log_filename")) {
-        string log_filename;
-        get_argument(arguments, "--log_filename", true, log_filename);
-        genome->set_log_filename(output_directory + "/" + log_filename);
-    }
 
     genome->set_parameter_names(
         time_series_sets->get_input_parameter_names(), time_series_sets->get_output_parameter_names()

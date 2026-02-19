@@ -230,6 +230,7 @@ void IslandSpeciationStrategy::repopulate() {
             && (max_genomes - evaluated_genomes >= extinction_event_generation_number) && ((max_genomes <= 0) || (max_genomes - evaluated_genomes >= extinction_event_generation_number));
         if (have_room_for_cycle) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
+                Log::info("erasing worst island!\n");
                 global_best_genome = get_best_genome()->copy();
                 vector<int32_t> rank = rank_islands();
                 for (int32_t i = 0; i < islands_to_exterminate; i++) {
