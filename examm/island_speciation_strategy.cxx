@@ -227,7 +227,8 @@ int32_t IslandSpeciationStrategy::get_worst_island_by_best_genome() {
 void IslandSpeciationStrategy::repopulate() {
     if (extinction_event_generation_number != 0) {
         bool have_room_for_cycle = (evaluated_genomes > 1) && (evaluated_genomes % extinction_event_generation_number == 0)
-            && (max_genomes - evaluated_genomes >= extinction_event_generation_number) && ((max_genomes <= 0) || (max_genomes - evaluated_genomes >= extinction_event_generation_number));
+            && ((max_genomes <= 0) || (max_genomes - evaluated_genomes >= extinction_event_generation_number));
+
         if (have_room_for_cycle) {
             if (island_ranking_method.compare("EraseWorst") == 0 || island_ranking_method.compare("") == 0) {
                 Log::info("erasing worst island!\n");

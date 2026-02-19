@@ -7,7 +7,7 @@ GenomeProperty::GenomeProperty() {
     bp_iterations = 10;
     backprop_iterations_type = "const";
     bp_min = 0;
-    bp_max = 10;
+    bp_max = -1;
     bp_exponent = 1.0;
     bp_slope = 0.0025;
     dropout_probability = 0.0;

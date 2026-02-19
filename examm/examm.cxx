@@ -358,7 +358,6 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
             genome_stats_log_file->flush();  // Ensure data is written immediately
         }
     }
-
     update_log();
 
     // update size log.

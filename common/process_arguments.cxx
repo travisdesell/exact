@@ -52,7 +52,6 @@ EXAMM* generate_examm_from_arguments(
     double harada_selection_ratio = 0.0;
     get_argument(arguments, "--harada_selection_ratio", false, harada_selection_ratio);
 
-
     if (max_genomes > 0) {
         Log::info(
             "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,

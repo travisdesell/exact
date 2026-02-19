@@ -48,7 +48,6 @@ class RNN_Genome {
 
     string structural_hash;
 
-    // Temporary stats for logging (not serialized to bin files for backward compatibility)
     double initial_fitness_before_bp;
     long bp_time_milliseconds;
     bool bp_stats_valid;  // Flag to indicate if stats were collected
