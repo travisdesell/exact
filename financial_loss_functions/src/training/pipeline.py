@@ -1,4 +1,5 @@
 import time
+import pandas as pd
 from torch import optim
 from pathlib import Path
 from src.evaluation.evaluator import Evaluator
@@ -9,7 +10,7 @@ from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     WindowDataset,
-    get_date_index_col
+    extract_oos_info
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
@@ -70,7 +71,11 @@ def _load_processed_data(paths_config: dict) -> tuple:
     return train_data, returns_train, val_data, returns_val
     
 def _preprocess(
-        train_data, returns_train, val_data, returns_val, hparams_config: dict
+        train_data: pd.DataFrame,
+        returns_train: pd.DataFrame,
+        val_data: pd.DataFrame,
+        returns_val: pd.DataFrame,
+        hparams_config: dict
     ) -> tuple:
     reshaper = Reshaper(
         hparams_config['rolling_windows']['in_size'],
@@ -188,6 +193,7 @@ def run_training_pipeline(
             plots_dir / (loss_plot_name + '.png')
         )
 
+    # -------------------- Evaluation on Out-of-Sample data -------------------- #
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for loss_name, models_dict in nn_alloc_weights.items():
@@ -198,10 +204,11 @@ def run_training_pipeline(
     
     # Overall Evaluation/Comparison starts here
     evaluator.calc_eq_wt_daily_rets()
+    _, out_win_date_cols = extract_oos_info(val_data, in_wind_idxs, out_wind_idxs)
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
-        get_date_index_col(val_data, out_wind_idxs),
+        out_win_date_cols,
         plots_dir / (f'Daily Returns' + '.png')
     )
 
@@ -319,13 +326,16 @@ def run_training_one_model(
         except Exception as error:
             print(f'DEBUG: Error while training {model_name}. Skipping.', error)
         
+        # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
 
+        _, out_win_date_cols = extract_oos_info(val_data, in_wind_idxs, out_wind_idxs)
+
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),
-            get_date_index_col(val_data, out_wind_idxs),
+            out_win_date_cols,
             plots_dir /
             (f'Daily Returns_{model_name}-{loss_name}' + '.png')
         )

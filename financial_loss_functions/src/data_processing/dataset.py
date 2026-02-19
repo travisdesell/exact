@@ -318,3 +318,13 @@ def build_dataset(
 
     # Sorting in alphabetical order
     return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
+
+def extract_oos_info(
+        split: pd.DataFrame,
+        in_wind_idxs: list[tuple],
+        out_wind_idxs: list[tuple]
+    ):
+    in_win_date_cols = get_date_index_col(split, in_wind_idxs)
+    out_win_date_cols = get_date_index_col(split, out_wind_idxs)
+
+    return in_win_date_cols, out_win_date_cols
