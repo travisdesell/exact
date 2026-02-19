@@ -6,10 +6,9 @@ import psutil
 import inspect
 import numpy as np
 import pandas as pd
-from typing import TYPE_CHECKING
-from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-from src.data_processing.dataset import DatasetSampler
+from typing import Callable, Type, Any, TYPE_CHECKING
+from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess import preprocessor2
 
 # For type hints. To avoid circular dependencies
@@ -671,12 +670,6 @@ class TradModelsTrainer:
         self.model_lib = model_lib
         self.hparams_config = hparams_config
         
-        self._sampler = DatasetSampler(
-            self.hparams_config['rolling_windows']['in_size'],
-            self.hparams_config['rolling_windows']['out_size'],
-            self.hparams_config['rolling_windows']['stride']
-        )
-
         self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
 
     def _train_one_model(
@@ -742,19 +735,19 @@ class TradModelsTrainer:
     
     def train_all(
             self,
+            in_sample_indexes: list[tuple],
+            out_sample_indexes: list[tuple],
             returns_train: pd.DataFrame,
             returns_val: pd.DataFrame,
             returns_test: pd.DataFrame | None = None
         ) -> dict[str, list[pd.Series | np.ndarray]]:
 
         if returns_test is None: # To use Validation Set (Combines Train + in-sample Val)
-            in_sample_indexes, out_sample_indexes = self._sampler.calc_in_out_idx(
-                returns_val
-            ) # Calculate indexes for in-sample and out-of-sample to match the neural networks
+            # Calculate indexes for in-sample and out-of-sample to match the neural networks
 
             # Loop over dataset slices
             for i in range(len(in_sample_indexes)): # len(in-sample) = len(out-of-sample)
-                returns_is, returns_oos = self._sampler.build_dataset(
+                returns_is, returns_oos = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
                     returns_train,
@@ -766,11 +759,9 @@ class TradModelsTrainer:
                 self._process_train_1_ds(returns_is)     
         
         else: # To use Test Set (Combines Train + Val + in-sample Test)
-            in_sample_indexes, out_sample_indexes = self._sampler.calc_in_out_idx(
-                returns_test
-            )
+
             for i in range(len(in_sample_indexes)): 
-                returns_is, returns_oos = self._sampler.build_dataset(
+                returns_is, returns_oos = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
                     returns_train,

@@ -2,10 +2,13 @@ import time
 from torch import optim
 from pathlib import Path
 from src.evaluation.evaluator import Evaluator
-from src.data_processing.dataset import Reshaper
-from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
 from src.utils import create_directory, get_best_device
+from src.data_processing.dataset import (
+    Reshaper,
+    calc_in_out_idx,
+    WindowDataset
+)
 from src.visualization.plots import (
     train_val_losses_plot, 
     plot_windowed_comparison
@@ -84,7 +87,15 @@ def _preprocess(
     print('X_val shape', X_val.shape)
     print('y_val shape:', y_val.shape)
 
-    return X_train, y_train, X_val, y_val
+    # Calculate indexes for input and output windows on split data
+    in_wind_indexes, out_wind_indexes = calc_in_out_idx(
+        returns_val,
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride']
+    ) 
+
+    return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
 def run_training_pipeline(
         paths_config: dict,
@@ -113,7 +124,7 @@ def run_training_pipeline(
     train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val = _preprocess(
+    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
         train_data,
         returns_train,
         val_data,
@@ -126,7 +137,12 @@ def run_training_pipeline(
     evaluator = Evaluator(y_val)
 
     trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-    trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
+    trad_alloc_weights = trad_grid.train_all(
+        in_wind_idxs,
+        out_wind_idxs,
+        returns_train,
+        returns_val
+    )
 
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
@@ -230,7 +246,7 @@ def run_training_one_model(
         train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
         
         # -------------------- Preprocessing (Reshaping) -------------------- #
-        X_train, y_train, X_val, y_val = _preprocess(
+        X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
             train_data,
             returns_train,
             val_data,
@@ -247,7 +263,12 @@ def run_training_one_model(
         evaluator = Evaluator(y_val)
 
         trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-        trad_alloc_weights = trad_grid.train_all(returns_train, returns_val)
+        trad_alloc_weights = trad_grid.train_all(
+            in_wind_idxs,
+            out_wind_idxs,
+            returns_train,
+            returns_val
+        )
 
         for trad_model_name, alloc_weights in trad_alloc_weights.items():
             evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)

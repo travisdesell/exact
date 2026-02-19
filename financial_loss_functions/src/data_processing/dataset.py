@@ -237,68 +237,66 @@ class WindowDataset(Dataset):
         # Return one sample
         return self.X[idx], self.y[idx]
 
-class DatasetSampler:
-    def __init__(self, in_size: int, out_size: int, stride: int):
-        self.in_size = in_size
-        self.out_size = out_size
-        self.stride = stride
+# class DatasetSampler:
+#     def __init__(self, in_size: int, out_size: int, stride: int):
+#         self.in_size = in_size
+#         self.out_size = out_size
+#         self.stride = stride
+def calc_in_out_idx(
+        split_data: pd.DataFrame, in_size: int, out_size: int, stride: int
+    ) -> tuple[list[tuple], list[tuple]]:
 
-    def calc_in_out_idx(
-            self, split_data: pd.DataFrame
-        ) -> tuple[list[tuple], list[tuple]]:
+    #### Implment start index shifting of training data here, if needed ####
+    #### Current design intended to use entire train data.
 
-        #### Implment start index shifting of training data here, if needed ####
-        #### Current design intended to use entire train data.
+    # Check for missing data
+    if split_data.isna().any().any():
+        raise ValueError('Split has missing data. Fix before training.')
+    
+    starts = list(
+        range(0, len(split_data) - (in_size + out_size) + 1, stride)
+    )
 
-        # Check for missing data
-        if split_data.isna().any().any():
-            raise ValueError('Split has missing data. Fix before training.')
-        
-        starts = list(
-            range(0, len(split_data) - (self.in_size + self.out_size) + 1, self.stride)
+    in_sample_indexes = []
+    out_sample_indexes = []
+    for strt in starts:
+        in_end = strt + in_size # In sample end
+        in_sample_indexes.append((strt, in_end))
+        out_start = in_end + 1 # Out sample start
+        out_sample_indexes.append((out_start, out_start + out_size))
+
+    if len(in_sample_indexes) != len(out_sample_indexes):
+        raise RuntimeError('Number of in sample and out sample windows do not match.')
+
+    return in_sample_indexes, out_sample_indexes
+
+def build_dataset(
+        in_sample_idx: tuple[int, int], # (Start, End)
+        out_sample_idx: tuple[int, int],
+        returns_train: pd.DataFrame, 
+        returns_val: pd.DataFrame,
+        returns_test: pd.DataFrame | None = None
+    ) -> dict[str, pd.DataFrame]:
+    """
+    Dataset builder function for covariance based models (tradional).
+    Combines and slices to create in-sample and out-of-sample datasets.
+    """
+    
+    #### If train data must be sliced or shifted, it must be implmented here 
+    # after grabbing index from dataset.py
+    if returns_test is None:
+        returns_is = pd.concat(
+            [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
         )
+        returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
+    
+    elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
+        returns_is = pd.concat(
+            [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
+        )
+        returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
+    else:
+        raise ValueError('Incorrect type for test returns.')
 
-        in_sample_indexes = []
-        out_sample_indexes = []
-        for strt in starts:
-            in_end = strt + self.in_size # In sample end
-            in_sample_indexes.append((strt, in_end))
-            out_start = in_end + 1 # Out sample start
-            out_sample_indexes.append((out_start, out_start + self.out_size))
-
-        if len(in_sample_indexes) != len(out_sample_indexes):
-            raise RuntimeError('Number of in sample and out sample windows do not match.')
-
-        return in_sample_indexes, out_sample_indexes
-
-    @staticmethod
-    def build_dataset(
-            in_sample_idx: tuple[int, int], # (Start, End)
-            out_sample_idx: tuple[int, int],
-            returns_train: pd.DataFrame, 
-            returns_val: pd.DataFrame,
-            returns_test: pd.DataFrame | None = None
-        ) -> dict[str, pd.DataFrame]:
-        """
-        Dataset builder function for covariance based models (tradional).
-        Combines and slices to create in-sample and out-of-sample datasets.
-        """
-        
-        #### If train data must be sliced or shifted, it must be implmented here 
-        # after grabbing index from dataset.py
-        if returns_test is None:
-            returns_is = pd.concat(
-                [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
-            )
-            returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
-        
-        elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
-            returns_is = pd.concat(
-                [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]+1]]
-            )
-            returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]+1]
-        else:
-            raise ValueError('Incorrect type for test returns.')
-
-        # Sorting in alphabetical order
-        return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
+    # Sorting in alphabetical order
+    return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
