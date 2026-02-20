@@ -167,11 +167,13 @@ def get_only_returns(
             ret_train, ret_val, and ret_test
 
     """
-    return_cols = []
+    # return_cols = []
     return_suffix = '_RET'
-    for col in train.columns:
-        if return_suffix in col:
-            return_cols.append(col)
+    # for col in train.columns:
+    #     if return_suffix in col:
+    #         return_cols.append(col)
+    
+    return_cols = extract_req_cols(train.columns, return_suffix)
     
     ret_train = train[return_cols]
     ret_val = val[return_cols]

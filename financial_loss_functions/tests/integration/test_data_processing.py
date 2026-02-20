@@ -92,10 +92,13 @@ def test_processing_with_committed_sample(tmp_path):
             'processed_train': str(tmp_processed / 'processed_train.csv'),
             'processed_val': str(tmp_processed / 'processed_val.csv'),
             'processed_test': str(tmp_processed / 'processed_test.csv'),
+            "benchmark_train": str(tmp_processed / "benchmark_train.csv"),
+            "benchmark_val": str(tmp_processed / "benchmark_val.csv"),
+            "benchmark_test": str(tmp_processed/ "benchmark_test.csv")
         }
     }
 
-    features_config = {'common_features': ['sprtrn']}
+    features_config = {'common_features': ['sprtrn'], 'sp500_returns': 'sprtrn'}
 
     # run pipeline (integration smoke test)
     run_processing_pipeline(paths_config, features_config)
