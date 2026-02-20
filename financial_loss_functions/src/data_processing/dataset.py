@@ -319,7 +319,7 @@ def build_dataset(
     # Sorting in alphabetical order
     return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
 
-def extract_oos_info(
+def extract_oos_dates(
         split: pd.DataFrame,
         in_wind_idxs: list[tuple],
         out_wind_idxs: list[tuple]

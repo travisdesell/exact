@@ -10,7 +10,7 @@ from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     WindowDataset,
-    extract_oos_info
+    extract_oos_dates
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
@@ -103,6 +103,31 @@ def _preprocess(
     ) 
 
     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
+
+def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
+    eval_dates_info = {
+        'Input Window Start': [],
+        'Input Window End': [],
+        'Out Window Start': [],
+        'Out Window End': []
+    }
+    
+    for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
+        eval_dates_info['Input Window Start'].append(in_date[0])
+        eval_dates_info['Input Window End'].append(in_date[-1])
+        eval_dates_info['Out Window Start'].append(out_date[0])
+        eval_dates_info['Out Window End'].append(out_date[-1])
+    
+    print('\nModels evaluated on:')
+    print(pd.DataFrame(eval_dates_info))
+
+    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
+
+    # Loop over provided dataframes and print
+    for metric, df in kwargs.items():
+        # Cleaning up the metric name
+        title = metric.replace('_', ' ').upper()
+        print(f'\n{title} for each window:\n', df)
 
 def run_training_pipeline(
         paths_config: dict,
@@ -204,7 +229,9 @@ def run_training_pipeline(
     
     # Overall Evaluation/Comparison starts here
     evaluator.calc_eq_wt_daily_rets()
-    _, out_win_date_cols = extract_oos_info(val_data, in_wind_idxs, out_wind_idxs)
+    in_win_date_cols, out_win_date_cols = extract_oos_dates(
+        val_data, in_wind_idxs, out_wind_idxs
+    )
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
@@ -217,9 +244,12 @@ def run_training_pipeline(
     total_sharpes = evaluator.calc_total_performance('sharpe')
     total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 
-    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-    print('\n', 'Compounded returns for each window:\n', total_returns)
-    print('\n', 'Basic sharpe ratios for each window:\n', total_sharpes)
+    _print_evaludation_info(
+            in_win_date_cols,
+            out_win_date_cols,
+            total_returns=total_returns,
+            total_sharpes=total_sharpes
+        )
 
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
@@ -331,7 +361,9 @@ def run_training_one_model(
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
 
-        _, out_win_date_cols = extract_oos_info(val_data, in_wind_idxs, out_wind_idxs)
+        in_win_date_cols, out_win_date_cols = extract_oos_dates(
+            val_data, in_wind_idxs, out_wind_idxs
+        )
 
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),
@@ -347,11 +379,15 @@ def run_training_one_model(
         total_sharpes = evaluator.calc_total_performance('sharpe')
         total_sharpes.to_csv(
             results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
+        )  
+
+        _print_evaludation_info(
+            in_win_date_cols,
+            out_win_date_cols,
+            total_returns=total_returns,
+            total_sharpes=total_sharpes
         )
 
-        print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-        print('\n', 'COMPOUNDED RETURNS for each window:\n', total_returns)
-        print('\n', 'SHARPE RATIOS for each window:\n', total_sharpes)
 
         time_taken = round((time.time() - start_time) / 60, 3)
         print(f'Time taken for pipeline = {time_taken} mins')
