@@ -186,8 +186,12 @@ def get_only_returns(
     return ret_train, ret_val, ret_test
     
 class Preprocessor:
+    col_sep = '_'
+    
     def __init__(
-            self, col_sep: str = '_', common_features: list[str] | None = None
+            self,
+            common_features: list[str] | None = None,
+            broadcast: bool = False
         ):
         """
         Initialize Preprocessor which transorforms and normalizes the given dataset
@@ -197,12 +201,13 @@ class Preprocessor:
         @param common_features list[str] List of common features in the dataset. Default = None
         """
         self.common_features = common_features
-        self.col_sep = col_sep
+        self.broadcast = broadcast
+        
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
         self._robust_scaler = RobustScaler()
 
-        self.all_col_names = None
+        self.unordered_cols = None
         self.all_tickers = None
 
     def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
@@ -218,8 +223,8 @@ class Preprocessor:
 
         @return pd.DataFrame Transformed dataset
         """
-        vol_change_cols = extract_req_cols(self.all_col_names, '_VOL_CHANGE')
-        turnover_cols = extract_req_cols(self.all_col_names, '_TURNOVER')
+        vol_change_cols = extract_req_cols(self.unordered_cols, '_VOL_CHANGE')
+        turnover_cols = extract_req_cols(self.unordered_cols, '_TURNOVER')
         
         # For training split
         if mode == 'fit':
@@ -270,7 +275,7 @@ class Preprocessor:
         @return list[str] List of the ticker symbols sorted alphabetically
         """
         tickers = []
-        for col in self.all_col_names :
+        for col in self.unordered_cols :
             if col != 'date':
                 ticker = col.split(self.col_sep, 1)[0]
                 tickers.append(ticker)
@@ -319,6 +324,38 @@ class Preprocessor:
         combined = list(dict.fromkeys(base_common + macro_cols))
         self.common_features = combined if combined else None
 
+    def _split_col(self, col: str) -> tuple[str, str]:
+        """Split column into (ticker, feature) using first underscore only."""
+        parts = col.split(self.col_sep, 1)
+        if len(parts) != 2:
+            raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
+        return parts[0], parts[1]  # ticker, feature-with-underscores
+
+    def _build_feats_order(self) -> tuple[list, list]:
+        """Extract tickers and features from full DataFrame column names."""
+        tickers = []
+        features = []
+        
+        for col in self.unordered_cols:
+            if col != 'date' and col not in self.common_features:
+                t, f = self._split_col(col)
+                tickers.append(t)
+                features.append(f)
+
+        tickers = sorted(set(tickers)) # Important to sort
+        # features.extend(common_feats)
+        features = sorted(set(features)) # Important to sort
+        
+        # Build list of <ticker>_<feature> in alphabetical order
+        all_features = []
+        for ticker in tickers:
+            for feat in features:
+                all_features.append(f'{ticker}_{feat}')
+        
+        # Append sorted common features, eg., sprtrn (s&p500)
+        all_features.extend(sorted(self.common_features))
+        return all_features, tickers
+
     def process_train_data(
             self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> pd.DataFrame:
@@ -339,15 +376,17 @@ class Preprocessor:
         # Update common features before extracting tickers so macro columns are excluded
         self._update_common_features(macro_cols)
 
-        self.all_col_names = list(train.columns)
-        self.all_tickers = self._extract_tickers()
+        # Reorder columns in alphabetical order
+        self.unordered_cols = list(train.columns)
+        self.ordered_cols, self.all_tickers = self._build_feats_order()
+
+        train = train[self.ordered_cols]
         
         # train = self._transform(train, 'fit')
-
         train = self._normalize(train, 'fit')
 
-        # Broadcasting only if common features are present
-        if self.common_features:
+        # Broadcast common features only if needed
+        if self.broadcast:
             train = self._broadcast_common(train, self.common_features)
 
         return train
@@ -374,23 +413,24 @@ class Preprocessor:
             self._update_common_features(macro_cols)
 
         # Ensure column alignment with training data before normalization
-        if self.all_col_names is not None:
-            missing = set(self.all_col_names) - set(split_data.columns)
-            extra = set(split_data.columns) - set(self.all_col_names)
-            if missing:
-                raise ValueError(f'Missing columns in split data: {missing}')
-            if extra:
-                # Drop any unexpected columns to match training schema
-                split_data = split_data[self.all_col_names]
-            else:
-                split_data = split_data[self.all_col_names]
+        missing = set(self.unordered_cols) - set(split_data.columns)
+        extra = set(split_data.columns) - set(self.unordered_cols)
+        if missing:
+            raise ValueError(f'Missing columns in split data: {missing}')
+        if extra:
+            # Drop any unexpected columns to match training schema
+            split_data = split_data[self.unordered_cols]
+        else:
+            split_data = split_data[self.unordered_cols]
 
+        # Reorder columns to match train data
+        split_data = split_data[self.ordered_cols]
         # split_data = self._transform(split_data, 'split')
 
         split_data = self._normalize(split_data, 'split')
 
-        # Broadcast only if common features are present
-        if self.common_features:
+        # Broadcast common features only if needed
+        if self.broadcast:
             split_data = self._broadcast_common(split_data, self.common_features)
 
         return split_data
