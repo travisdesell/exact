@@ -306,36 +306,34 @@ def build_dataset(
     # Sorting in alphabetical order
     return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
 
-class EvalInfoExtractor:
-    def __init__(self, split: pd.DataFrame):
-        self.split = split
 
-    def get_date_index_col(self, wind_strt_stops: list[tuple]) -> list:
-        """
-        Get the datetime index columns from the provided dataframe using the 
-        start and stop indexes.
-        """
-        date_idx_cols = []
-        for idxs in wind_strt_stops:
-            date_idx_cols.append(self.split.index[idxs[0] : idxs[1]])
-        
-        return date_idx_cols
 
-    def extract_oos_dates(
-            self, in_wind_idxs: list[tuple], out_wind_idxs: list[tuple]
-        ) -> tuple[list[tuple], list[tuple]]:
-        in_win_date_cols = self.get_date_index_col(in_wind_idxs)
-        out_win_date_cols = self.get_date_index_col(out_wind_idxs)
+def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
+    """
+    Get the datetime index columns from the provided dataframe using the 
+    start and stop indexes.
+    """
+    date_idx_cols = []
+    for idxs in wind_strt_stops:
+        date_idx_cols.append(split.index[idxs[0] : idxs[1]])
+    
+    return date_idx_cols
 
-        return in_win_date_cols, out_win_date_cols
+def extract_oos_dates(
+        split: pd.DataFrame, in_wind_idxs: list[tuple], out_wind_idxs: list[tuple]
+    ) -> tuple[list[tuple], list[tuple]]:
+    in_win_date_cols = get_date_index_col(split, in_wind_idxs)
+    out_win_date_cols = get_date_index_col(split, out_wind_idxs)
 
-    def extract_sp500(
-            self, col_suffix: str, out_win_idxs: list[tuple]
-        ) -> np.ndarray:
-        sp500_col = self.split.filter(like=col_suffix).iloc[:, 0]
+    return in_win_date_cols, out_win_date_cols
 
-        sp500_windows = []
-        for idxs in out_win_idxs:
-            sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
-        
-        return np.vstack(sp500_windows)
+def extract_sp500_winds(
+        benchmark_split: pd.DataFrame, col_name: str, out_win_idxs: list[tuple]
+    ) -> np.ndarray:
+    sp500_col = benchmark_split[col_name]
+
+    sp500_windows = []
+    for idxs in out_win_idxs:
+        sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
+    
+    return np.vstack(sp500_windows)

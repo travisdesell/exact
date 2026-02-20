@@ -58,7 +58,7 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     # )
     # print('Macro data processed and aligned with CRSP splits.')
 
-    # -------------------- Preporcessing -------------------- #
+    # -------------------- Split Returns and S&P 500 Returns -------------------- #
     # Common processing (realized returns)
     ret_train, ret_val, ret_test = get_only_returns(train_data, val_data, test_data)
     save_to_csv(
@@ -75,6 +75,26 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     )
     
     print('Realized returns extracted and saved.')
+
+    # Extract and Save S&P 500 returns for benchmarks
+    sp500_col_name = features_config['sp500_returns']
+    
+    save_to_csv(
+        train_data[sp500_col_name],
+        Path(paths_config['processed_paths']['benchmark_train'])
+    )
+
+    save_to_csv(
+        val_data[sp500_col_name],
+        Path(paths_config['processed_paths']['benchmark_val'])
+    )
+
+    save_to_csv(
+        test_data[sp500_col_name],
+        Path(paths_config['processed_paths']['benchmark_test'])
+    )
+
+    # -------------------- Preporcessing -------------------- #
 
     # Preprocessing for NN
     nn_preprocessor = Preprocessor(

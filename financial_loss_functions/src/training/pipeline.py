@@ -10,7 +10,8 @@ from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     WindowDataset,
-    EvalInfoExtractor
+    extract_oos_dates,
+    extract_sp500_winds
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
@@ -69,6 +70,15 @@ def _load_processed_data(paths_config: dict) -> tuple:
     print('Val shape:', val_data.shape)
 
     return train_data, returns_train, val_data, returns_val
+
+def _load_sp500_rets(paths_config: dict):
+
+    # Loading only S&P500 from validation split
+    benches = load_csv_files(
+        {'benchmark_val': Path(paths_config['processed_paths']['benchmark_val'])}
+    )
+
+    return benches['benchmark_val']
     
 def _preprocess(
         train_data: pd.DataFrame,
@@ -131,7 +141,8 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
 
 def run_training_pipeline(
         paths_config: dict,
-        hparams_config: dict, 
+        hparams_config: dict,
+        features_config: dict, 
         grid_mode: str = 'all', 
         loss_mode: str = 'all',
         model_name: str | None = None,
@@ -231,19 +242,24 @@ def run_training_pipeline(
     evaluator.calc_eq_wt_daily_rets()
 
     # Extract dates index columns for the rrespective output windows
-    eval_info_extactor = EvalInfoExtractor(val_data)
-    in_win_date_cols, out_win_date_cols = eval_info_extactor.extract_oos_dates(
+    in_win_date_cols, out_win_date_cols = extract_oos_dates(
+        val_data,
         in_wind_idxs,
         out_wind_idxs
     )
+    
+    # Loading S&P 500 for benchmarking
+    sp500_rets = _load_sp500_rets(paths_config)
+
     # Extract s&p500 returns column sliced for the respective output windows
-    sp500_rets = eval_info_extactor.extract_sp500(
-        '_sprtrn',
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
         out_wind_idxs
     )
 
     # Adding s&p500 returns to the evaluator as a benchmark
-    evaluator.add_benchmark_rets('s&p500', sp500_rets)
+    evaluator.add_benchmark_rets('s&p500', sp500_rets_winds)
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
@@ -269,6 +285,7 @@ def run_training_pipeline(
 def run_training_one_model(
         paths_config: dict,
         hparams_config: dict,
+        features_config: dict,
         model_cat: str, 
         model_name: str,
         loss_name: str,
@@ -374,20 +391,24 @@ def run_training_one_model(
         evaluator.calc_eq_wt_daily_rets()
         
         # Extract dates index columns for the rrespective output windows
-        eval_info_extactor = EvalInfoExtractor(val_data)
-        in_win_date_cols, out_win_date_cols = eval_info_extactor.extract_oos_dates(
+        in_win_date_cols, out_win_date_cols = extract_oos_dates(
+            val_data,
             in_wind_idxs,
             out_wind_idxs
         )
+        
+        # Loading S&P 500 for benchmarking
+        sp500_rets = _load_sp500_rets(paths_config)
 
         # Extract s&p500 returns column sliced for the respective output windows
-        sp500_rets = eval_info_extactor.extract_sp500(
-            '_sprtrn',
+        sp500_rets_winds = extract_sp500_winds(
+            sp500_rets,
+            features_config['sp500_returns'],
             out_wind_idxs
         )
 
         # Adding s&p500 returns to the evaluator as a benchmark
-        evaluator.add_benchmark_rets('s&p500',sp500_rets)
+        evaluator.add_benchmark_rets('s&p500', sp500_rets_winds)
 
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),

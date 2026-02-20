@@ -104,10 +104,12 @@ if __name__ == '__main__':
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
 
         hparams_config = load_config(os.path.join('config', 'hparams.json'))
+        features_config = load_config(os.path.join('config', 'features.json'))
 
         run_training_one_model(
             paths_config,
             hparams_config, 
+            features_config,
             model_name = args.model,
             model_cat=args.model_cat,
             loss_name = args.loss,

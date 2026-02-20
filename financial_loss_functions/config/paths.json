@@ -19,7 +19,10 @@
         "corr_train": "data/processed/corr_train.csv",
         "processed_train": "data/processed/processed_train.csv",
         "processed_val": "data/processed/processed_val.csv",
-        "processed_test": "data/processed/processed_test.csv"
+        "processed_test": "data/processed/processed_test.csv",
+        "benchmark_train": "data/processed/benchmark_train.csv",
+        "benchmark_val": "data/processed/benchmark_val.csv",
+        "benchmark_test": "data/processed/benchmark_test.csv"
     },
     "artifacts": {
         "artifacts_dir": "artifacts/",

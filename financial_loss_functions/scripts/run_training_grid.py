@@ -119,12 +119,13 @@ if __name__ == '__main__':
                 parser.error("--loss is required when --grid_mode is 'one_loss'")
 
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
-
         hparams_config = load_config(os.path.join('config', 'hparams.json'))
+        features_config = load_config(os.path.join('config', 'features.json'))
 
         run_training_pipeline(
             paths_config,
             hparams_config, 
+            features_config,
             grid_mode = args.grid_mode, 
             loss_mode = args.loss_mode, 
             model_name = args.model,
