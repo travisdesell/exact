@@ -190,7 +190,7 @@ class Trainer:
         time_taken = round(end_time-start_time, 3)
         print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
 
-    def get_val_alloc_weights(self) -> np.ndarray:
+    def get_eval_alloc_weights(self) -> np.ndarray:
         """
         Getter for allocation weights as numpy array
         
@@ -303,7 +303,7 @@ class CandidatesGrid:
             'val':trainer.val_losses
         }
 
-        alloc_weights = trainer.get_val_alloc_weights()
+        alloc_weights = trainer.get_eval_alloc_weights()
         # trainer.device_cleanup()
         del trainer
 

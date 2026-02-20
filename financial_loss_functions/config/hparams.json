@@ -39,7 +39,7 @@
                 "train_batch_size": 256,
                 "val_batch_size": 1,
                 "clip_grad_norm": 0.5,
-                "epochs": 100
+                "epochs": 5
             }
         }
     },

@@ -59,6 +59,12 @@ class Evaluator:
             
         self.all_daily_returns[model_name] = np.array(pf_daily_returns)
     
+    def add_benchmark_rets(self, bench_name: str, bench_rets: np.ndarray):
+        """
+        Add benchmark returns for the respective evalulation output windows. eg., S&P500 daily returns
+        """
+        self.all_daily_returns[bench_name] = bench_rets
+
     def _daily_rets_calcd_check(self):
         if not self.all_daily_returns:
             raise ValueError(

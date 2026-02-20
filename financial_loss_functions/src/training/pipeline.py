@@ -10,7 +10,7 @@ from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     WindowDataset,
-    extract_oos_dates
+    EvalInfoExtractor
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
@@ -229,9 +229,21 @@ def run_training_pipeline(
     
     # Overall Evaluation/Comparison starts here
     evaluator.calc_eq_wt_daily_rets()
-    in_win_date_cols, out_win_date_cols = extract_oos_dates(
-        val_data, in_wind_idxs, out_wind_idxs
+
+    # Extract dates index columns for the rrespective output windows
+    eval_info_extactor = EvalInfoExtractor(val_data)
+    in_win_date_cols, out_win_date_cols = eval_info_extactor.extract_oos_dates(
+        in_wind_idxs,
+        out_wind_idxs
     )
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets = eval_info_extactor.extract_sp500(
+        '_sprtrn',
+        out_wind_idxs
+    )
+
+    # Adding s&p500 returns to the evaluator as a benchmark
+    evaluator.add_benchmark_rets('s&p500', sp500_rets)
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
@@ -347,7 +359,7 @@ def run_training_one_model(
                 plots_dir / (loss_plot_name + '.png')
             )
 
-            alloc_weights = trainer.get_val_alloc_weights()
+            alloc_weights = trainer.get_eval_alloc_weights()
 
             # Call on every models output allocation weights to calculate pf returns
             evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
@@ -360,10 +372,22 @@ def run_training_one_model(
 
         # Overall Evaluation/Comparison
         evaluator.calc_eq_wt_daily_rets()
-
-        in_win_date_cols, out_win_date_cols = extract_oos_dates(
-            val_data, in_wind_idxs, out_wind_idxs
+        
+        # Extract dates index columns for the rrespective output windows
+        eval_info_extactor = EvalInfoExtractor(val_data)
+        in_win_date_cols, out_win_date_cols = eval_info_extactor.extract_oos_dates(
+            in_wind_idxs,
+            out_wind_idxs
         )
+
+        # Extract s&p500 returns column sliced for the respective output windows
+        sp500_rets = eval_info_extactor.extract_sp500(
+            '_sprtrn',
+            out_wind_idxs
+        )
+
+        # Adding s&p500 returns to the evaluator as a benchmark
+        evaluator.add_benchmark_rets('s&p500',sp500_rets)
 
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),
@@ -387,7 +411,6 @@ def run_training_one_model(
             total_returns=total_returns,
             total_sharpes=total_sharpes
         )
-
 
         time_taken = round((time.time() - start_time) / 60, 3)
         print(f'Time taken for pipeline = {time_taken} mins')
