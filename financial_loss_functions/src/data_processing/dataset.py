@@ -9,9 +9,11 @@ class ReshapeStyle(StrEnum):
     """
     For fixed reshaping styles to avoid reshape errors.
     """
-    T_NxF = 'T_NxF' # (Time Steps, Ticker x Features) -> 2D for 3D after Batch
-    T_N_F = 'T_N_F' # (Time Steps, Tickers, Features) -> 3D for 4D after Batch
-    T_F_N = 'T_F_N' # (Time Steps, Features, Tickers) -> 3D for 4D after Batch  
+    T_NxF = 'T_NxF' # (Time Steps, Ticker x Features + Common features) -> 2D for 3D after Batch
+    # T_N_F = 'T_N_F' # (Time Steps, Tickers, Features) -> 3D for 4D after Batch
+    # T_F_N = 'T_F_N' # (Time Steps, Features, Tickers) -> 3D for 4D after Batch
+    T_N_F_plus_C = 'T_N_F_plus_C' # (Time Steps, Tickers, Features + Common Features)
+    CNN_2D = 'F_plus_C_T_N' # Channels approach for 2D CNN
 
 class Reshaper:
     """
@@ -53,6 +55,8 @@ class Reshaper:
                 '`layout` must be of type ReshapeStyle to avoid errors.',
                 'Use ReshapeStyle from src.data_processing.preprocess.'
             )
+        
+        self.num_common_feats = len(common_features)
 
         self.tickers = [] # All tickers
         self.features = [] # All features
@@ -81,27 +85,48 @@ class Reshaper:
     def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
-        ticker_data = df_window.values
+        all_data_value = df_window.values
         
-        T = ticker_data.shape[0]
+        T = all_data_value.shape[0]
         N = self.num_tickers
         F = self.num_features
+        C = self.num_common_feats
+
+        ticker_block = all_data_value[:, :N*F] 
+        # Common Block is the remaining columns at the end
+        common_block = all_data_value[:, N*F:]
 
         # Handle Layouts using Vectorized Operations
         # TODO: Other forms of reshaping must be implmented !!!!
         if self.layout == ReshapeStyle.T_NxF:
             # Already in shape (T, N*F)
-            return ticker_data
+            return all_data_value
+        
+        elif self.layout == ReshapeStyle.T_N_F_plus_C:
+            # BROADCASTING: Each ticker gets the macro features appended to its own features.
+            # Reshape tickers to (T, N, F)
+            grid = ticker_block.reshape(T, N, F)
+            # Reshape common to (T, 1, C) so it can be broadcasted across the N dimension
+            common_reshaped = common_block.reshape(T, 1, C)
+            common_broadcasted = np.repeat(common_reshaped, N, axis=1)
+            # Concatenate on the Feature axis: Result shape (T, N, F + C)
+            return np.concatenate([grid, common_broadcasted], axis=2)
 
-        elif self.layout == ReshapeStyle.T_N_F:
-            pass
-            # # Reshape to 3D: (T, Tickers, Features)
-            # return ticker_data.reshape(T, N, F)
-
-        elif self.layout == ReshapeStyle.T_F_N:
-            pass
-            # # Reshape to (T, N, F) then swap axes to get (T, F, N)
-            # return ticker_data.reshape(T, N, F).transpose(0, 2, 1)
+        elif self.layout == ReshapeStyle.CNN_2D:
+            # CHANNEL APPROACH: (Channels, Time, Tickers)
+            # Channel 0..F-1: Ticker Features
+            # Channel F..F+C: Macro Features (broadcasted)
+            grid = ticker_block.reshape(T, N, F).transpose(2, 0, 1) # (F, T, N)
+            
+            # Broadcast each macro feature as its own channel
+            common_channels = []
+            for i in range(C):
+                # Take one macro feature, shape (T, 1), broadcast to (T, N), add channel dim
+                feat = common_block[:, i:i+1] # (T, 1)
+                feat_expanded = np.repeat(feat, N, axis=1)[np.newaxis, :, :] # (1, T, N)
+                common_channels.append(feat_expanded)
+                
+            return np.concatenate([grid] + common_channels, axis=0) # (F+C, T, N)
 
         else:
             raise ValueError('layout must be of type `ReshapeStyle`')
@@ -143,7 +168,7 @@ class Reshaper:
             X_df = features_data.iloc[s : s + self.in_size]
             y_df = raw_returns.iloc[
                 s + self.in_size : s + self.in_size + self.out_size
-            ][self.tickers]
+            ]#[self.tickers]
 
             # skip invalid windows
             if y_df.isna().any().any():

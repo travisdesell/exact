@@ -30,8 +30,8 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 # TODO:
 # 1. Add other NN models
 # 2. Fix Validation loss plot (X axis should not be epochs)
-# 2. Add Best model ranker
-# 3. Unit test NCO
+# 3. Add Best model ranker
+# 4. Unit test NCO
 
 def _common_setup(paths_config):
     # Create plots directory if it doesnt exist
