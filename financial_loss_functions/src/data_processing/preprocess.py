@@ -183,7 +183,7 @@ def get_only_returns(
     ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
     ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
 
-    return ret_train, ret_val, ret_test
+    return ret_train.sort_index(axis=1), ret_val.sort_index(axis=1), ret_test.sort_index(axis=1)
     
 class Preprocessor:
     col_sep = '_'
