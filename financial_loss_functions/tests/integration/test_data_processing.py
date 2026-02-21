@@ -14,11 +14,9 @@ def _get_raw_files_names():
     )['raw_files']
     return raw_files_dict
 
-def _build_expected_feats(
-        df: pd.DataFrame, common_feats: list[str]
-    ) -> tuple[list, list]:
+def _build_expected_feats(df: pd.DataFrame, common_feats: list[str]) -> tuple[list, list]:
     """Extract tickers and features from full DataFrame column names."""
-    expected_tickers = []
+    tickers = []
     features = []
 
     def _split_col(col: str) -> tuple[str, str]:
@@ -31,30 +29,22 @@ def _build_expected_feats(
     for col in df.columns:
         if col != 'date' and col not in common_feats:
             t, f = _split_col(col)
-            expected_tickers.append(t)
+            tickers.append(t)
             features.append(f)
 
-    expected_tickers = sorted(set(expected_tickers)) # Important to sort
+    tickers = sorted(set(tickers)) # Important to sort
     # features.extend(common_feats)
-    features = set(features) # Important to sort
+    features = sorted(set(features)) # Important to sort
     
-
-    expected_all_feats = []
-    for ticker in expected_tickers:
+    # Build list of <ticker>_<feature> in alphabetical order
+    all_features = []
+    for ticker in tickers:
         for feat in features:
-            expected_all_feats.append(f'{ticker}_{feat}')
+            all_features.append(f'{ticker}_{feat}')
     
-    for ticker in expected_tickers:
-        for com_feat in common_feats:
-            expected_all_feats.append(f'{ticker}_{com_feat}')
-
-    return expected_all_feats, expected_tickers
-
-    # Deterministic order for reshaping
-    # cols_per_ticker = [
-    #     f'{t}{col_sep}{f}' for t in tickers for f in features
-    # ]
-
+    # Append sorted common features, eg., sprtrn (s&p500)
+    all_features.extend(sorted(common_feats))
+    return all_features, tickers
 
 @pytest.mark.integration
 def test_processing_with_committed_sample(tmp_path):

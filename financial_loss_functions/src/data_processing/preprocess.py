@@ -268,23 +268,23 @@ class Preprocessor:
         
         return data
 
-    def _extract_tickers(self) -> list[str]:
-        """
-        Extract ticker symbols from column names of the dataset.
+    # def _extract_tickers(self) -> list[str]:
+    #     """
+    #     Extract ticker symbols from column names of the dataset.
 
-        @return list[str] List of the ticker symbols sorted alphabetically
-        """
-        tickers = []
-        for col in self.unordered_cols :
-            if col != 'date':
-                ticker = col.split(self.col_sep, 1)[0]
-                tickers.append(ticker)
+    #     @return list[str] List of the ticker symbols sorted alphabetically
+    #     """
+    #     tickers = []
+    #     for col in self.unordered_cols :
+    #         if col != 'date':
+    #             ticker = col.split(self.col_sep, 1)[0]
+    #             tickers.append(ticker)
         
-        if self.common_features:
-            tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
-            return tickers
-        else:
-            return sorted(set(tickers))
+    #     if self.common_features:
+    #         tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
+    #         return tickers
+    #     else:
+    #         return sorted(set(tickers))
 
     def _broadcast_common(
             self, data: pd.DataFrame, features: list[str]
@@ -350,7 +350,11 @@ class Preprocessor:
         all_features = []
         for ticker in tickers:
             for feat in features:
-                all_features.append(f'{ticker}_{feat}')
+                column_name = f'{ticker}_{feat}'
+                if column_name in self.unordered_cols:
+                    all_features.append(column_name)
+                else:
+                    print(f'{column_name}, not found in data, features are not symmetric across tickers')
         
         # Append sorted common features, eg., sprtrn (s&p500)
         all_features.extend(sorted(self.common_features))
