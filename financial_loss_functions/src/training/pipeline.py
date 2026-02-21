@@ -29,6 +29,7 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
 # 1. Add other NN models
+# 2. Fix Validation loss plot (X axis should not be epochs)
 # 2. Add Best model ranker
 # 3. Unit test NCO
 
@@ -85,14 +86,16 @@ def _preprocess(
         returns_train: pd.DataFrame,
         val_data: pd.DataFrame,
         returns_val: pd.DataFrame,
-        hparams_config: dict
+        windows_config: dict,
+        common_features: list
     ) -> tuple:
     reshaper = Reshaper(
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride']
+        windows_config['in_size'],
+        windows_config['out_size'],
+        windows_config['stride'],
+        common_features
     )
-    reshaper.extract_features(train_data)
+    reshaper.extract_features(train_data.columns)
     
     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
     print('-'*10, ' train shapes ', '-'*10)
@@ -107,9 +110,9 @@ def _preprocess(
     # Calculate indexes for input and output windows on split data
     in_wind_indexes, out_wind_indexes = calc_in_out_idx(
         returns_val,
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride']
+        windows_config['in_size'],
+        windows_config['out_size'],
+        windows_config['stride']
     ) 
 
     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
@@ -172,7 +175,8 @@ def run_training_pipeline(
         returns_train,
         val_data,
         returns_val,
-        hparams_config
+        hparams_config['rolling_windows'],
+        features_config['common_features']
     )
 
     # -------------------- Evaluator Setup -------------------- #
@@ -322,7 +326,8 @@ def run_training_one_model(
             returns_train,
             val_data,
             returns_val,
-            hparams_config
+            hparams_config['rolling_windows'],
+            features_config['common_features']
         )
 
         # Converting to pytorch tensors

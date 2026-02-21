@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from enum import StrEnum
 from torch.utils.data import Dataset
+from src.utils.formatting import split_col
 
 class ReshapeStyle(StrEnum):
     """
@@ -20,12 +21,13 @@ class Reshaper:
     Assumes all columns follow the pattern:
         <ticker>_<feature>
     """
+    col_sep = '_'
     def __init__(
             self,
             in_size: int,
             out_size: int,
             stride: int,
-            col_sep: str = '_',
+            common_features: list,
             layout: ReshapeStyle = ReshapeStyle.T_NxF
         ):
         """
@@ -43,7 +45,7 @@ class Reshaper:
         self.in_size = in_size
         self.out_size = out_size
         self.stride = stride
-        self.col_sep = col_sep
+        self.common_features = common_features
         self.layout = layout
         
         if not isinstance(layout, ReshapeStyle):
@@ -54,90 +56,59 @@ class Reshaper:
 
         self.tickers = [] # All tickers
         self.features = [] # All features
-        self.cols_per_ticker = [] # All features for all tickers
+
+        self.num_tickers = None
+        self.num_features = None
     
-    def _split_col(self, col: str) -> tuple[str, str]:
-        """Split column into (ticker, feature) using first underscore only."""
-        parts = col.split(self.col_sep, 1)
-        if len(parts) != 2:
-            raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
-        return parts[0], parts[1]  # ticker, feature-with-underscores
-    
-    def extract_features(self, train_df: pd.DataFrame):
+    def extract_features(self, train_cols: list):
         """Extract tickers and features from full DataFrame column names."""
         tickers = []
         features = []
 
-        for col in train_df.columns:
-            t, f = self._split_col(col)
-            tickers.append(t)
-            features.append(f)
-
-        self.tickers = sorted(set(tickers)) # Important to sort
-
-        # Features must be identical for all tickers
-        features_by_ticker = {t: set() for t in self.tickers}
-        for col in train_df.columns:
-            t, f = self._split_col(col)
-            features_by_ticker[t].add(f)
+        for col in train_cols:
+            if col != 'date' and col not in self.common_features:
+                t, f = split_col(self.col_sep, col)
+                tickers.append(t)
+                features.append(f)
         
-        # Ensuring all tickers have the same feature list
-        all_feature_sets = list(features_by_ticker.values())
-        if not all(s == all_feature_sets[0] for s in all_feature_sets):
-            raise ValueError('Different tickers have different feature sets!')
+        self.tickers = list(set(tickers)) # Not required to sort here
+        # features.extend(common_feats)
+        self.features = list(set(features)) # Not required to sort here
 
-        self.features = sorted(list(all_feature_sets[0])) # Important to sort
-
-        # Deterministic order for reshaping
-        self.cols_per_ticker = [
-            f'{t}{self.col_sep}{f}' for t in self.tickers for f in self.features
-        ]
+        self.num_tickers = len(self.tickers)
+        self.num_features = len(self.features)
     
-    def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:
-        """
-        Convert a single (T_in x flat-columns) window into an array of set layout.
-        Uses alphabetical ordered for loops to maintain strict ordering to map input
-        stocks to ouput nodes neural networks.
+    def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
+        # Extract the raw values for ticker features
+        # Shape: (T, N * F) + (C)
+        ticker_data = df_window.values
+        
+        T = ticker_data.shape[0]
+        N = self.num_tickers
+        F = self.num_features
 
-        @param df_window pd.DataFrame on window to be reshaped
-
-        @return np.ndarray multi-dimensional reshaped array
-        """
-        T = len(df_window)
-        N = len(self.tickers)
-        F = len(self.features)
-
+        # Handle Layouts using Vectorized Operations
+        # TODO: Other forms of reshaping must be implmented !!!!
         if self.layout == ReshapeStyle.T_NxF:
-            out = np.zeros((T, N*F), dtype=float)
-            for j, t in enumerate(self.tickers):
-                for k, f in enumerate(self.features):
-                    col = f'{t}{self.col_sep}{f}'
-                    out[:,j * F + k] = df_window[col].values # flat index = j * F + K
-            return out
+            # Already in shape (T, N*F)
+            return ticker_data
 
         elif self.layout == ReshapeStyle.T_N_F:
-            out = np.zeros((T, N, F), dtype=float)
-            for j, t in enumerate(self.tickers):
-                for k, f in enumerate(self.features):
-                    col = f'{t}{self.col_sep}{f}'
-                    out[:, j, k] = df_window[col].values
-            return out
+            pass
+            # # Reshape to 3D: (T, Tickers, Features)
+            # return ticker_data.reshape(T, N, F)
 
         elif self.layout == ReshapeStyle.T_F_N:
-            out = np.zeros((T, F, N), dtype=float)
-            for j, t in enumerate(self.tickers):
-                for k, f in enumerate(self.features):
-                    col = f'{t}{self.col_sep}{f}'
-                    out[:, k, j] = df_window[col].values
-            return out
+            pass
+            # # Reshape to (T, N, F) then swap axes to get (T, F, N)
+            # return ticker_data.reshape(T, N, F).transpose(0, 2, 1)
 
         else:
-            raise ValueError('layout must be of type `ReshapStyle`')
-    
+            raise ValueError('layout must be of type `ReshapeStyle`')
+
     def _features_check(self):
         if (len(self.tickers) == 0 or 
-            len(self.features) == 0 or 
-            len(self.cols_per_ticker) == 0):
+            len(self.features) == 0):
             raise ValueError('Run `extract_features` before reshaping!')
 
     def reshape(

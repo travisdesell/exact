@@ -10,3 +10,10 @@ def extract_req_cols(columns_list: list, suffix: str) -> list:
     """
     required_cols = [col for col in columns_list if suffix in col]
     return required_cols
+
+def split_col(col_sep, col: str) -> tuple[str, str]:
+    """Split column into (ticker, feature) using first underscore only."""
+    parts = col.split(col_sep, 1)
+    if len(parts) != 2:
+        raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
+    return parts[0], parts[1]  # ticker, feature-with-underscores

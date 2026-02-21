@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer, RobustScaler
-from src.utils.formatting import extract_req_cols
+from src.utils.formatting import extract_req_cols, split_col
 
 
 class MacroCombiner:
@@ -324,13 +324,6 @@ class Preprocessor:
         combined = list(dict.fromkeys(base_common + macro_cols))
         self.common_features = combined if combined else None
 
-    def _split_col(self, col: str) -> tuple[str, str]:
-        """Split column into (ticker, feature) using first underscore only."""
-        parts = col.split(self.col_sep, 1)
-        if len(parts) != 2:
-            raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
-        return parts[0], parts[1]  # ticker, feature-with-underscores
-
     def _build_feats_order(self) -> tuple[list, list]:
         """Extract tickers and features from full DataFrame column names."""
         tickers = []
@@ -338,12 +331,11 @@ class Preprocessor:
         
         for col in self.unordered_cols:
             if col != 'date' and col not in self.common_features:
-                t, f = self._split_col(col)
+                t, f = split_col(self.col_sep, col)
                 tickers.append(t)
                 features.append(f)
 
         tickers = sorted(set(tickers)) # Important to sort
-        # features.extend(common_feats)
         features = sorted(set(features)) # Important to sort
         
         # Build list of <ticker>_<feature> in alphabetical order
