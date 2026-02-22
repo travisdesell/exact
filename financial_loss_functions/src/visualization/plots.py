@@ -149,7 +149,7 @@ def plot_models_comparison(
     
     eval_metrics.boxplot(figsize=(12, 6))
     plt.xticks(rotation=45)
-    plt.title('Model Comparison on Evaluation Data')
+    plt.title(title)
     plt.tight_layout() # Ensures labels aren't cut off
 
 
