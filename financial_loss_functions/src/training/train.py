@@ -7,9 +7,9 @@ import inspect
 import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
-from typing import Callable, Type, Any, TYPE_CHECKING
 from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess import preprocessor2
+from typing import Callable, Type, Any, TYPE_CHECKING, Optional
 
 # For type hints. To avoid circular dependencies
 if TYPE_CHECKING:
@@ -87,14 +87,19 @@ class Trainer:
         self.train_hparams = train_hparams
         self.loss_hparams = loss_hparams or {}
         
-        self.train_losses = []
-        self.val_losses = []
+        self.train_losses = [] # Stores average losses, for plotting
+        self.val_losses = [] # Stores average losses, for plotting
+        
+        self.eval_losses = [] # For out of sample eval. Stores batch losses, not average
+        
         self.avg_train_loss = None
-        self.avg_val_loss = None
+        self.avg_eval_loss = None
 
-        self.val_alloc_weights = []
+        self.eval_alloc_weights = []
     
-    def train(self, train_ds: 'WindowDataset'):
+    def train(
+            self, train_ds: 'WindowDataset', val_ds: Optional['WindowDataset'] = None
+        ):
         """
         Train inistalized model using a train data split.
 
@@ -134,37 +139,38 @@ class Trainer:
                 total_loss_sum += loss.item() * batch_size
                 total_samples += batch_size
 
+            epoch_avg_loss = total_loss_sum / total_samples
+            self.train_losses.append(epoch_avg_loss)
+            epoch_losses_print = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}'
+
+            if val_ds is not None:
+                avg_val_loss = self.validate(val_ds)
+                self.val_losses.append(avg_val_loss)
+                epoch_losses_print = epoch_losses_print + f' | Val Loss: {avg_val_loss:.4f}'
+            
+            self.avg_train_loss = epoch_avg_loss
+            
             epoch_end = time.time()
             epoch_time = round(epoch_end - epoch_start, 3)
             
-            epoch_avg_loss = total_loss_sum / total_samples
-            self.train_losses.append(epoch_avg_loss)
-            print(f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f} | Took: {epoch_time}s')
-
-            self.avg_train_loss = epoch_avg_loss
+            print(epoch_losses_print + f' | Time Taken: {epoch_time}s')            
 
         end_time = time.time()
         time_taken = round(end_time - start_time, 3)
         print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
 
-    def evaluate(self, val_ds: 'WindowDataset'):
+    def validate(self, val_ds: 'WindowDataset'):
         """
-        Evaluate the trained model using a validation data split.
-        
-        @param val_ds WindowDataset
-            Validation data split converted to windowed dataset tensors
+        Validation method to run on each training epoch
         """
-        start_time = time.time()
         val_loader = DataLoader(
             val_ds,
             batch_size=self.train_hparams['val_batch_size'],
             shuffle=False
         )
 
-        # --- validation ---
         self.model.eval()
         with torch.no_grad():
-            self.val_losses = []
             total_loss, total_samples = 0.0, 0
 
             for xb, yb in val_loader:
@@ -173,22 +179,62 @@ class Trainer:
                 weights = self.model(xb)
                 loss = self.loss(weights, yb, **self.loss_hparams)
 
-                # detach & move to CPU BEFORE appending
-                self.val_alloc_weights.append(weights.detach().cpu()) 
-
                 # --- store per-batch loss ---
-                self.val_losses.append(loss.item())
+                # self.eval_losses.append(loss.item())
 
                 # --- accumulate weighted sum for overall avg ---
                 total_loss += loss.item() * b
                 total_samples += b
 
             # --- weighted average over all samples ---
-            self.avg_val_loss = total_loss / total_samples
+            avg_val_loss = total_loss / total_samples
+        
+        return avg_val_loss
+
+
+    def evaluate(self, split_ds: 'WindowDataset'):
+        """
+        Evaluate the trained model using a validation data split.
+        
+        @param val_ds WindowDataset
+            Validation data split converted to windowed dataset tensors
+        """
+        start_time = time.time()
+        eval_loader = DataLoader(
+            split_ds,
+            batch_size=self.train_hparams['val_batch_size'],
+            shuffle=False
+        )
+
+        # --- evaluation ---
+        self.model.eval()
+        with torch.no_grad():
+            self.eval_losses = []
+            total_loss, total_samples = 0.0, 0
+
+            for xb, yb in eval_loader:
+                b = xb.size(0)
+                xb, yb = xb.to(self.device), yb.to(self.device)
+                weights = self.model(xb)
+                loss = self.loss(weights, yb, **self.loss_hparams)
+
+                # detach & move to CPU BEFORE appending
+                self.eval_alloc_weights.append(weights.detach().cpu()) 
+
+                # --- store per-batch loss ---
+                batch_loss = loss.item()
+                self.eval_losses.append(batch_loss)
+
+                # --- accumulate weighted sum for overall avg ---
+                total_loss += batch_loss * b
+                total_samples += b
+
+            # --- weighted average over all samples ---
+            self.avg_eval_loss = total_loss / total_samples
         
         end_time = time.time()
         time_taken = round(end_time-start_time, 3)
-        print(f'Average Val Loss: {self.avg_val_loss:.4f}, Time Taken: {time_taken}')
+        print(f'Average Eval Loss: {self.avg_eval_loss:.4f}, Time Taken: {time_taken}')
 
     def get_eval_alloc_weights(self) -> np.ndarray:
         """
@@ -196,9 +242,9 @@ class Trainer:
         
         @return np.ndarray Portfolio allocation weights for each validation window
         """
-        if self.val_alloc_weights:
+        if self.eval_alloc_weights:
             wt_array = []
-            for w in self.val_alloc_weights:
+            for w in self.eval_alloc_weights:
                 wt_array.append(w.numpy())
             return np.vstack(wt_array)
         else:
@@ -294,13 +340,14 @@ class CandidatesGrid:
             loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             device=self.torch_device
         )
-        trainer.train(train_ds)
+        trainer.train(train_ds, val_ds)
         trainer.evaluate(val_ds)
 
         # To send all loss curves back to pipeline
         self.train_val_losses[f'{model_name}-{loss_name}'] = {
             'train': trainer.train_losses,
-            'val':trainer.val_losses
+            'val': trainer.val_losses,
+            'eval':trainer.eval_losses
         }
 
         alloc_weights = trainer.get_eval_alloc_weights()

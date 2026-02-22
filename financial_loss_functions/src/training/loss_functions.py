@@ -932,6 +932,6 @@ def custom_loss_5(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     sharpe = differentiable_sharpe_objective(weights, returns)
     risk_parity = risk_parity_regularizer(weights, returns)
 
-    print('Sharpe:',sharpe)
-    print('CVaR:', risk_parity)
+    # print('Sharpe:',sharpe)
+    # print('RP:', risk_parity * lambda1)
     return sharpe + lambda1 * risk_parity 

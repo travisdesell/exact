@@ -6,39 +6,53 @@ import matplotlib.dates as mdates
 def train_val_losses_plot(
     train_losses: list[float],
     val_losses: list[float],
+    eval_losses: list[float], # The individual losses for Window 1, Window 2, etc.
     title: str,
     output_path: str,
     plot: bool = False,
-    sharey: bool = False,          # set True to use same y-axis for easier comparison
-    figsize: tuple = (12, 4)
+    figsize: tuple = (14, 5)
 ):
-    """Plot training and validation loss curves"""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize, sharey=sharey)
+    """
+    Left: Training vs Validation curves over Epochs.
+    Right: Bar chart of specific Out-of-Sample Window losses.
+    """
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
-    # Left: train loss
-    ax1.plot(train_losses, linestyle='-')
+    # --- Left: Combined Loss Curves (Epoch-based) ---
+    epochs = range(len(train_losses))
+    ax1.plot(epochs, train_losses, label='Train Loss', color='#1f77b4', linewidth=2)
+    ax1.plot(epochs, val_losses, label='Val Loss (Avg)', color='#ff7f0e', linestyle='--', linewidth=2)
+    
     ax1.set_xlabel('Epoch')
     ax1.set_ylabel('Loss')
-    ax1.set_title('Train Loss')
-    ax1.grid(True)
+    ax1.set_title('Learning Curves (Loss vs Epoch)')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
 
-    # Right: validation loss
-    ax2.plot(val_losses, linestyle='-')
-    ax2.set_xlabel('Epoch')
-    ax2.set_title('Validation Loss')
-    ax2.grid(True)
+    # --- Right: Column Chart (Window-based) ---
+    num_windows = len(eval_losses)
+    window_labels = [f'Window {i+1}' for i in range(num_windows)]
+    
+    bars = ax2.bar(window_labels, eval_losses)
+    
+    # Add value labels on top of the bars
+    for bar in bars:
+        height = bar.get_height()
+        ax2.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.4f}', ha='center', va='bottom' if height > 0 else 'top', fontsize=10)
 
-    # Overall title centered above subplots
-    fig.suptitle(title)
+    ax2.set_ylabel('Loss')
+    ax2.set_title(f'Evaluation Performance (N={num_windows} Windows)')
+    ax2.grid(axis='y', linestyle='--', alpha=0.7)
 
-    # Tight layout so title and labels don't overlap
+    # Overall title
+    fig.suptitle(title, fontsize=16)
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # Save and optionally show
+    # Save and show
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     if plot:
         plt.show()
-
     plt.close('all')
     plt.clf()
     plt.cla()

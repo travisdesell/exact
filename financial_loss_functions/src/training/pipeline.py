@@ -28,10 +28,12 @@ from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# 1. Add other NN models
-# 2. Fix Validation loss plot (X axis should not be epochs)
-# 3. Add Best model ranker
-# 4. Unit test NCO
+# Plot average returns for all models in a bar plot
+# Implement early stopping
+# Implement Learning Rate Scheduler
+# Add other NN models
+# Add Best model ranker
+# Unit test NCO
 
 def _common_setup(paths_config):
     # Create plots directory if it doesnt exist
@@ -229,6 +231,7 @@ def run_training_pipeline(
         train_val_losses_plot(
             model_loss_curves['train'],
             model_loss_curves['val'],
+            model_loss_curves['eval'],
             loss_plot_name,
             plots_dir / (loss_plot_name + '.png')
         )
@@ -368,7 +371,7 @@ def run_training_one_model(
                 device=best_device
             )
 
-            trainer.train(train_ds)
+            trainer.train(train_ds, val_ds)
             trainer.evaluate(val_ds)
 
             loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
@@ -377,6 +380,7 @@ def run_training_one_model(
             train_val_losses_plot(
                 trainer.train_losses,
                 trainer.val_losses,
+                trainer.eval_losses,
                 loss_plot_name,
                 plots_dir / (loss_plot_name + '.png')
             )
