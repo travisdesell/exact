@@ -46,6 +46,16 @@ class BaseLSTM(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
+
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
@@ -66,14 +76,14 @@ class BaseLSTM(nn.Module):
         
         logits = self.fc(last)     # (B, N)
 
-        if self.equal_prior:
-            # Strong equal-weight prior that never goes away
-            equal_prior = torch.full_like(
-                logits,
-                fill_value=np.log(1.0 / logits.shape[-1]),
-                device=logits.device
-            )
-            logits = logits + equal_prior
+        # if self.equal_prior:
+        #     # Strong equal-weight prior that never goes away
+        #     equal_prior = torch.full_like(
+        #         logits,
+        #         fill_value=np.log(1.0 / logits.shape[-1]),
+        #         device=logits.device
+        #     )
+        #     logits = logits + equal_prior
         
         weights = torch.softmax(logits, dim=-1)
         return weights
@@ -124,6 +134,16 @@ class AttentionLSTM(nn.Module):
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
+        
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
@@ -153,14 +173,14 @@ class AttentionLSTM(nn.Module):
         context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)
-        if self.equal_prior:
-            # Strong equal-weight prior that never goes away
-            equal_prior = torch.full_like(
-                logits,
-                fill_value=np.log(1.0 / logits.shape[-1]),
-                device=logits.device
-            )
-            logits = logits + equal_prior
+        # if self.equal_prior:
+        #     # Strong equal-weight prior that never goes away
+        #     equal_prior = torch.full_like(
+        #         logits,
+        #         fill_value=np.log(1.0 / logits.shape[-1]),
+        #         device=logits.device
+        #     )
+        #     logits = logits + equal_prior
         
         weights = torch.softmax(logits, dim=-1)
         return weights

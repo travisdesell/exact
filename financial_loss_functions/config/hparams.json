@@ -10,7 +10,7 @@
                 "hidden_size": 256,
                 "num_layers": 2,
                 "dropout": 0.2,
-                "equal_prior": false
+                "equal_prior": true
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -29,7 +29,7 @@
                 "num_layers": 3,
                 "attention_heads": 2,
                 "dropout": 0.2,
-                "equal_prior": false
+                "equal_prior": true
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -39,7 +39,7 @@
                 "train_batch_size": 256,
                 "val_batch_size": 1,
                 "clip_grad_norm": 0.5,
-                "epochs": 100
+                "epochs": 300
             }
         }
     },

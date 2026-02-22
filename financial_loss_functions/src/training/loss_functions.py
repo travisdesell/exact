@@ -885,7 +885,7 @@ def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float):
     """
     loss = raw sortino + lambda1 * smooth CVaR
     """
-    sortino = raw_sortino_objective(weights, returns)
+    sortino = rms_sortino_loss(weights, returns)
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
 
     return sortino + lambda1 * cvar
