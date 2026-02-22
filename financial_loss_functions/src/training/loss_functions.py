@@ -186,6 +186,32 @@ def raw_sortino_objective(
     return -sortino.mean()
 
 @LossLibrary.register(category='objectives')
+def differentiable_sortino_objective(
+        weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
+    ):
+    """
+    @param weights torch.tensor (B, N)
+    @param returns torch.tensor (B, T_out, N) -- raw returns
+    @param target float Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
+    @param eps float Epsilon value to avoid divide by zero error
+
+    @return batch average Sortino Ratio. 
+        Negative since NN has to maximize Sortino but minimize loss
+    """
+    # Portfolio returns per step
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
+    
+    # Downside deviation: std of negative deviations from target
+    downside = torch.clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
+    downside_var = downside.var(dim=1) 
+    
+    mean_return = port.mean(dim=1)  # (B,)
+    sortino = mean_return / (downside_var.sqrt() + eps)  # (B,)
+    
+    # Maximize Sortino -> minimize negative Sortino
+    return -sortino.mean()
+
+@LossLibrary.register(category='objectives')
 def rms_sortino_loss(
         weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
     ):
@@ -856,7 +882,7 @@ def smooth_calmar_objective(
 
 # -------------------- Combination Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
-def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
+def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     #### Most Stable, for now ####
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
@@ -869,7 +895,7 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float):
     return sharpe + lambda1 * cvar 
 
 @LossLibrary.register(category='custom')
-def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float):
+def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     """
     loss = RMS sharpe + lambda1 * smooth CVar
     """
@@ -881,7 +907,7 @@ def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float):
     return sharpe + lambda1 * cvar 
 
 @LossLibrary.register(category='custom')
-def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float):
+def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     """
     loss = raw sortino + lambda1 * smooth CVaR
     """
@@ -889,3 +915,23 @@ def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float):
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
 
     return sortino + lambda1 * cvar
+
+
+@LossLibrary.register(category='custom')
+def custom_loss_4(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+    sortino = differentiable_sortino_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+
+    return sortino + lambda1 * cvar
+
+@LossLibrary.register(category='custom')
+def custom_loss_5(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * smooth CVar
+    """
+    sharpe = differentiable_sharpe_objective(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    print('Sharpe:',sharpe)
+    print('CVaR:', risk_parity)
+    return sharpe + lambda1 * risk_parity 
