@@ -892,7 +892,7 @@ def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
 
     # print('Sharpe:',sharpe)
     # print('CVaR:', cvar * lambda1)
-    return sharpe + lambda1 * cvar 
+    return sharpe + (lambda1 * cvar) 
 
 @LossLibrary.register(category='custom')
 def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
@@ -904,7 +904,7 @@ def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
 
     # print('Sharpe:',sharpe)
     # print('CVaR:', cvar * lambda1)
-    return sharpe + lambda1 * cvar 
+    return sharpe + (lambda1 * cvar) 
 
 @LossLibrary.register(category='custom')
 def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
@@ -914,8 +914,7 @@ def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     sortino = rms_sortino_loss(weights, returns)
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
 
-    return sortino + lambda1 * cvar
-
+    return sortino + (lambda1 * cvar)
 
 @LossLibrary.register(category='custom')
 def custom_loss_4(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
@@ -935,3 +934,19 @@ def custom_loss_5(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
     # print('Sharpe:',sharpe)
     # print('RP:', risk_parity * lambda1)
     return sharpe + lambda1 * risk_parity 
+
+@LossLibrary.register(category='custom')
+def custom_loss_6(
+    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
+    """
+    sharpe = differentiable_sharpe_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    return sharpe + (lambda1 * cvar) + (lambda2 * risk_parity) 

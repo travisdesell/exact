@@ -2,10 +2,10 @@ import time
 import pandas as pd
 from torch import optim
 from pathlib import Path
-from src.evaluation.evaluator import Evaluator
-from src.data_processing.loading import load_csv_files
 from src.utils.io import create_directory
 from src.utils.device import get_best_device
+from src.evaluation.evaluator import Evaluator
+from src.data_processing.loading import load_csv_files
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
@@ -29,7 +29,6 @@ from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Plot average returns for all models in a bar plot
 # Implement early stopping
 # Implement Learning Rate Scheduler
 # Add other NN models
