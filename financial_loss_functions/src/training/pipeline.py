@@ -15,7 +15,8 @@ from src.data_processing.dataset import (
 )
 from src.visualization.plots import (
     train_val_losses_plot, 
-    plot_windowed_comparison
+    plot_windowed_comparison,
+    plot_models_comparison
 )
 from src.training.train import (
     CandidatesGrid,
@@ -266,7 +267,7 @@ def run_training_pipeline(
     )
 
     # Adding s&p500 returns to the evaluator as a benchmark
-    evaluator.add_benchmark_rets('s&p500', sp500_rets_winds)
+    evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
     
     plot_windowed_comparison(
         evaluator.get_all_daily_returns(),
@@ -278,6 +279,12 @@ def run_training_pipeline(
     total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
     total_sharpes = evaluator.calc_total_performance('sharpe')
     total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
+
+    plot_models_comparison(
+        total_sharpes,
+        'Out-of-Sample Sharpe Ratio Comparison',
+        plots_dir / f'Sharpe Comprison.png'
+    )
 
     _print_evaludation_info(
             in_win_date_cols,
@@ -417,7 +424,7 @@ def run_training_one_model(
         )
 
         # Adding s&p500 returns to the evaluator as a benchmark
-        evaluator.add_benchmark_rets('s&p500', sp500_rets_winds)
+        evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
 
         plot_windowed_comparison(
             evaluator.get_all_daily_returns(),
@@ -434,6 +441,12 @@ def run_training_one_model(
         total_sharpes.to_csv(
             results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
         )  
+
+        plot_models_comparison(
+            total_sharpes,
+            'Out-of-Sample Sharpe Ratio Comparison',
+            plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
+        )
 
         _print_evaludation_info(
             in_win_date_cols,

@@ -1,7 +1,9 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
 
 def train_val_losses_plot(
     train_losses: list[float],
@@ -136,4 +138,24 @@ def plot_windowed_comparison(
     if plot:
         plt.show()
     
+    plt.close('all')
+
+def plot_models_comparison(
+        eval_metrics: pd.DataFrame,
+        title: str,
+        output_path: str,
+        plot: bool = False
+    ):
+    
+    eval_metrics.boxplot(figsize=(12, 6))
+    plt.xticks(rotation=45)
+    plt.title('Model Comparison on Evaluation Data')
+    plt.tight_layout() # Ensures labels aren't cut off
+
+
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    
+    if plot:
+        plt.show()
+
     plt.close('all')
