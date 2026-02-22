@@ -18,7 +18,7 @@
             },
             "train" : {
                 "train_batch_size": 256,
-                "val_batch_size": 1,
+                "val_batch_size": 2,
                 "clip_grad_norm": 0.5,
                 "epochs": 100
             }
@@ -37,9 +37,9 @@
             },
             "train": {
                 "train_batch_size": 256,
-                "val_batch_size": 1,
+                "val_batch_size": 2,
                 "clip_grad_norm": 0.5,
-                "epochs": 200
+                "epochs": 100
             }
         }
     },

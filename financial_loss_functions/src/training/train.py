@@ -202,7 +202,8 @@ class Trainer:
         start_time = time.time()
         eval_loader = DataLoader(
             split_ds,
-            batch_size=self.train_hparams['val_batch_size'],
+            # batch_size=self.train_hparams['val_batch_size'],
+            batch_size=1, # To iterate over each evaluation sample
             shuffle=False
         )
 
