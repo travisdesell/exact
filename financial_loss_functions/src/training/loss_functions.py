@@ -70,6 +70,23 @@ class LossLibrary:
         sub = subcategory or '__default__'
         return cls._registry[category][sub][name]
 
+# -------------------- Returns -------------------- #
+@LossLibrary.register(category='objectives')
+def log_return_objective(
+    weights: Tensor, returns: Tensor, eps: float = 1e-8
+)-> Tensor:
+    # Daily portfolio returns
+    daily_port_returns = (weights.unsqueeze(1) * returns).sum(dim=-1)
+    
+    # 2. Convert to log returns: log(1 + R)
+    # We add a tiny epsilon to avoid log(0) if a portfolio hits -100%
+    log_returns = torch.log(1.0 + daily_port_returns + eps)
+    
+    # 3. Sum of log returns = Cumulative log growth
+    cum_log_return = log_returns.sum(dim=1)
+    
+    return -cum_log_return.mean()
+
 # -------------------- Sharpe -------------------- #
 @LossLibrary.register(category='objectives')
 def raw_sharpe_objective(
@@ -157,6 +174,20 @@ def smooth_neglog_sharpe_loss(
 
     loss = torch.log(sharpe_pos + eps)
     return -loss.mean()
+
+@LossLibrary.register(category='objectives')
+def log_sharpe_objective(weights: Tensor, returns: Tensor, eps: float = 1e-8) -> Tensor: 
+    """
+    Differentiable Sharpe using mean log returns
+    """
+    port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
+
+    log_returns = torch.log(1.0 + port_ret + eps)
+    
+    mean_log_ret = log_returns.mean(dim=1)
+    var_log  = log_returns.var(dim=1)          # variance, not std
+    
+    return -(mean_log_ret / (var_log.sqrt() + eps)).mean()
 
 # -------------------- Sortino -------------------- #
 @LossLibrary.register(category='objectives')
@@ -269,6 +300,43 @@ def smooth_neglog_sortino_objective(
 
     sortino_loss = torch.log(softplus(sortino) + eps) 
     return -sortino_loss.mean()
+
+@LossLibrary.register(category='objectives')
+def log_sortino_objective(
+        weights: Tensor, returns: Tensor,
+        target: float = 0.0, use_soft_downside: bool = True, 
+        beta: float = 10.0, eps: float = 1e-8
+    ):
+    """
+    @param weights torch.tensor (B, N)
+    @param returns torch.tensor (B, T_out, N) -- raw returns
+    @param target float Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
+    @param eps float Epsilon value to avoid divide by zero error
+
+    @return batch average Sortino Ratio. 
+        Negative since NN has to maximize Sortino but minimize loss
+    """
+    # Portfolio returns per step
+    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
+    # Log portfolio returns
+    log_returns = torch.log(1.0 + port + eps)
+
+    # Downside deviation: std of negative deviations from target
+    # downside: smooth or hard
+    if use_soft_downside:
+        # softplus approximates clamp(target - port, min=0)
+        # we feed (target - port) so positive means downside
+        downside = softplus(target - log_returns, beta=beta)
+    else:
+        downside = torch.clamp(target - log_returns, min=0.0)
+
+    downside_var = downside.var(dim=1) 
+    
+    mean_return = log_returns.mean(dim=1)  # (B,)
+    sortino = mean_return / (downside_var.sqrt() + eps)  # (B,)
+    
+    # Maximize Sortino -> minimize negative Sortino
+    return -sortino.mean()
 
 # -------------------- Max Drawdown -------------------- #
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
@@ -883,7 +951,6 @@ def smooth_calmar_objective(
 # -------------------- Combination Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
 def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
-    #### Most Stable, for now ####
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
@@ -942,6 +1009,8 @@ def custom_loss_6(
     """
     loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
     """
+    #### Most Stable
+    #### Best performing for now ####
     sharpe = differentiable_sharpe_objective(weights, returns)
     cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
     risk_parity = risk_parity_regularizer(weights, returns)
@@ -949,4 +1018,53 @@ def custom_loss_6(
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
     # print('RP:', risk_parity)
-    return sharpe + (lambda1 * cvar) + (lambda2 * risk_parity) 
+    return sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
+
+@LossLibrary.register(category='custom')
+def custom_loss_7(
+    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+) -> Tensor: 
+
+    log_sharpe = log_sharpe_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    # print('Sharpe:', sharpe)
+    # print('Log Ret:', log_returns)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    return log_sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
+
+@LossLibrary.register(category='custom')
+def custom_loss_8(
+    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float, lambda3: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """
+    ### 2nd Best
+    sharpe = differentiable_sharpe_objective(weights, returns)
+    log_returns = log_return_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    return sharpe + (lambda1 * log_returns) + (lambda2 * cvar) + (lambda3 * risk_parity)
+
+@LossLibrary.register(category='custom')
+def custom_loss_9(
+    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """
+    log_sortino = log_sortino_objective(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    return log_sortino + (lambda1 * cvar) + (lambda2 * risk_parity)

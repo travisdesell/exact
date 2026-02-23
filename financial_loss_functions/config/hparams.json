@@ -33,7 +33,7 @@
             },
             "optimizer": {
                 "lr": 1e-4,
-                "weight_decay": 1e-5
+                "weight_decay": 1e-4
             },
             "train": {
                 "train_batch_size": 256,
@@ -60,6 +60,19 @@
             "lambda1": 10
         },
         "custom_loss_6" : {
+            "lambda1": 0.01,
+            "lambda2": 0.1
+        },
+        "custom_loss_7" : {
+            "lambda1": 0.01,
+            "lambda2": 0.1
+        },
+        "custom_loss_8" : {
+            "lambda1": 0.01,
+            "lambda2": 0.01,
+            "lambda3": 0.1
+        },
+        "custom_loss_9" : {
             "lambda1": 0.01,
             "lambda2": 0.1
         }
