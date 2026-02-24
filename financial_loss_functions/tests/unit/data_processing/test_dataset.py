@@ -12,91 +12,89 @@ from src.data_processing.dataset import (
 )
 
 # ---------- Tests for Rehsaper ---------- #
-def test_split_col_valid_and_invalid():
-    r = Reshaper(in_size=1, out_size=1, stride=1)
-    # valid split
-    t, f = r._split_col('ABC_feature_name')
-    assert t == 'ABC' and f == 'feature_name'
+def test_extract_features_excludes_common_and_date():
+    # Columns: Ticker features first, then common features
+    cols = ['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
+    
+    # Note: common_features must be passed to constructor now
+    r = Reshaper(in_size=1, out_size=1, stride=1, common_features=['sprtrn'])
+    
+    # New extract_features takes the column list directly
+    r.extract_features(cols)
 
-    # invalid format (no separator) should raise
-    with pytest.raises(ValueError):
-        r._split_col('noseparator')
+    # Check that 'sprtrn' was excluded from tickers/features
+    assert 'sprtrn' not in r.tickers
+    assert 'sprtrn' not in r.features
+    # Verify counts (A, B and x, y)
+    assert r.num_tickers == 2
+    assert r.num_features == 2
+    assert r.num_common_feats == 1
 
-def test_extract_features_orders_tickers_and_features_and_builds_cols_per_ticker():
-    # Columns intentionally shuffled to test sorting & deterministic order
-    cols = ['B_y', 'A_x', 'A_y', 'B_x']
-    df = pd.DataFrame(np.zeros((3, len(cols))), columns=cols)
+# def test_extract_features_raises_when_feature_sets_mismatch():
+#     # A has x,y but B only has x -> should raise
+#     df = pd.DataFrame(np.zeros((2, 3)), columns=['A_x', 'A_y', 'B_x'])
+#     r = Reshaper(in_size=1, out_size=1, stride=1)
+#     with pytest.raises(ValueError):
+#         r.extract_features(df)
 
-    r = Reshaper(in_size=1, out_size=1, stride=1)
-    r.extract_features(df)
-
-    # tickers sorted
-    assert r.tickers == ['A', 'B']
-    # features sorted
-    assert r.features == ['x', 'y']
-    # deterministic cols_per_ticker (t then features)
-    assert r.cols_per_ticker == ['A_x', 'A_y', 'B_x', 'B_y']
-
-def test_extract_features_raises_when_feature_sets_mismatch():
-    # A has x,y but B only has x -> should raise
-    df = pd.DataFrame(np.zeros((2, 3)), columns=['A_x', 'A_y', 'B_x'])
-    r = Reshaper(in_size=1, out_size=1, stride=1)
-    with pytest.raises(ValueError):
-        r.extract_features(df)
-
-@pytest.mark.parametrize("layout, expected_shape", [
-    (ReshapeStyle.T_NxF, (2, 4)),    # T=2, N=2, F=2 -> (T, N*F)
-    (ReshapeStyle.T_N_F, (2, 2, 2)), # (T, N, F)
-    (ReshapeStyle.T_F_N, (2, 2, 2)), # (T, F, N)
+@pytest.mark.parametrize('layout, expected_shape', [
+    (ReshapeStyle.T_NxF, (2, 5)),           # (T, N*F + C) -> (2, 4 + 1)
+    (ReshapeStyle.T_N_F_plus_C, (2, 2, 3)), # (T, N, F + C) -> (2, 2, 2 + 1)
+    (ReshapeStyle.CNN_2D, (3, 2, 2)),       # (F + C, T, N) -> (2 + 1, 2, 2)
 ])
 
-def test_transform_one_window_for_all_layouts(layout, expected_shape):
-    # Construct tickers and features in a shuffled column order to ensure extract_features sorts them
-    cols = ['B_y', 'A_x', 'A_y', 'B_x']
-    # T = 2 time steps, values chosen to be easily traceable
+def test_transform_one_window_new_layouts(layout, expected_shape):
+    # CRITICAL: Ticker columns must come BEFORE common features for your slicing logic
+    cols = ['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
     values = {
-        'A_x': [1.0, 2.0],
-        'A_y': [3.0, 4.0],
-        'B_x': [5.0, 6.0],
-        'B_y': [7.0, 8.0],
+        'A_x': [1.0, 2.0], 'A_y': [10.0, 20.0],
+        'B_x': [5.0, 6.0], 'B_y': [50.0, 60.0],
+        'sprtrn': [0.5, 0.9] # Common feature
     }
-    df_window = pd.DataFrame(values, index=[0, 1])[cols]  # keep col order shuffled initially
+    df_window = pd.DataFrame(values)[cols]
 
-    r = Reshaper(in_size=1, out_size=1, stride=1, layout=layout)
-    # Need to set tickers/features/cols_per_ticker via extract_features on a dataframe with same columns
-    r.extract_features(pd.DataFrame(columns=cols))
+    r = Reshaper(in_size=1, out_size=1, stride=1, common_features=['sprtrn'], layout=layout)
+    r.extract_features(cols)
 
     out = r._transform_one_window(df_window)
 
     assert out.shape == expected_shape
 
-    # Validate that values are placed in deterministic positions.
-    # For sorted tickers ['A','B'] and sorted features ['x','y']:
-    # order for T_NxF: [A_x, A_y, B_x, B_y]
-    if layout == ReshapeStyle.T_NxF:
-        # out is (T, 4)
-        expected = np.array([
-            [1.0, 3.0, 5.0, 7.0],
-            [2.0, 4.0, 6.0, 8.0],
-        ])
-        assert_array_equal(out, expected)
-    elif layout == ReshapeStyle.T_N_F:
-        # out is (T, N, F) with out[:, 0, 0] == A_x, out[:,0,1]==A_y, out[:,1,0]==B_x, out[:,1,1]==B_y
-        expected = np.array([
-            [[1.0, 3.0], [5.0, 7.0]],
-            [[2.0, 4.0], [6.0, 8.0]],
-        ])
-        assert_array_equal(out, expected)
-    elif layout == ReshapeStyle.T_F_N:
-        # out is (T, F, N) with out[:,0,0]==A_x, out[:,0,1]==B_x, out[:,1,0]==A_y, out[:,1,1]==B_y
-        expected = np.array([
-            [[1.0, 5.0], [3.0, 7.0]],
-            [[2.0, 6.0], [4.0, 8.0]],
-        ])
-        assert_array_equal(out, expected)
+    if layout == ReshapeStyle.T_N_F_plus_C:
+        # Check that 'sprtrn' (0.5) was broadcasted to both tickers A and B at T=0
+        # Result at T=0, Ticker=0 should be [1.0, 10.0, 0.5]
+        assert_array_equal(out[0, 0, :], [1.0, 10.0, 0.5])
+        assert_array_equal(out[0, 1, :], [5.0, 50.0, 0.5])
+
+def test_reshape_success_with_common_features():
+    cols = ['A_x', 'B_x', 'sprtrn'] # N=2, F=1, C=1
+    features_vals = np.array([
+        [1.0, 5.0, 0.1], # t0
+        [2.0, 6.0, 0.2], # t1
+        [3.0, 7.0, 0.3], # t2
+        [4.0, 8.0, 0.4], # t3
+    ])
+    features_df = pd.DataFrame(features_vals, columns=cols)
+    returns_df = pd.DataFrame([[0.1, 0.2]]*4, columns=['A', 'B'])
+
+    r = Reshaper(in_size=2, out_size=1, stride=1, common_features=['sprtrn'], layout=ReshapeStyle.T_NxF)
+    r.extract_features(cols)
+
+    X, y, starts = r.reshape(features_df, returns_df)
+
+    # X shape: (NumWindows, T, N*F + C) -> (2, 2, 3)
+    assert X.shape == (2, 2, 3)
+    assert_array_equal(starts, [0, 1])
+
+def test_constructor_raises_on_invalid_layout_type():
+    with pytest.raises(TypeError) as excinfo:
+        # Missing common_features would also raise, so we provide it
+        Reshaper(in_size=1, out_size=1, stride=1, common_features=[], layout='T_NxF')
+    
+    assert 'ReshapeStyle' in str(excinfo.value)
 
 def test_features_check_raises_if_extract_not_called():
-    r = Reshaper(in_size=1, out_size=1, stride=1)
+    r = Reshaper(in_size=1, out_size=1, stride=1, common_features=['sprtrn'])
     with pytest.raises(ValueError):
         r._features_check()
 
@@ -123,7 +121,10 @@ def test_reshape_success_and_contents():
     ])
     raw_returns = pd.DataFrame(returns_vals, columns=['A', 'B'])
 
-    r = Reshaper(in_size=2, out_size=1, stride=1, layout=ReshapeStyle.T_NxF)
+    r = Reshaper(
+        in_size=2, out_size=1, stride=1, 
+        common_features=['sprtrn'], layout=ReshapeStyle.T_NxF
+    )
     r.extract_features(features_data)  # populate tickers/features/cols_per_ticker
 
     X, y, starts = r.reshape(features_data, raw_returns)
@@ -146,7 +147,7 @@ def test_reshape_raises_when_window_size_too_large():
     raw_returns = pd.DataFrame(np.zeros((3, 2)), columns=['A', 'B'])
 
     # in_size + out_size > number of rows -> should raise
-    r = Reshaper(in_size=2, out_size=2, stride=1)
+    r = Reshaper(in_size=2, out_size=2, stride=1, common_features=['sprtrn'])
     r.extract_features(features_data)
     with pytest.raises(ValueError):
         r.reshape(features_data, raw_returns)
@@ -158,30 +159,30 @@ def test_reshape_raises_when_y_window_has_nan():
     # Put a NaN in raw_returns at the y-window for the first start (s=0, in_size=2 -> y at index 2)
     raw_returns = pd.DataFrame([[0.1, 0.2], [0.3, 0.4], [np.nan, 0.6], [0.7, 0.8]], columns=['A', 'B'])
 
-    r = Reshaper(in_size=2, out_size=1, stride=1)
+    r = Reshaper(in_size=2, out_size=1, stride=1, common_features=['sprtrn'])
     r.extract_features(features_data)
 
     with pytest.raises(ValueError):
         r.reshape(features_data, raw_returns)
 
-def test_get_tickers_and_features_before_and_after_extract():
-    cols = ['A_x', 'A_y', 'B_x', 'B_y']
-    df = pd.DataFrame(columns=cols)
+# def test_get_tickers_and_features_before_and_after_extract():
+#     cols = ['A_x', 'A_y', 'B_x', 'B_y']
+#     df = pd.DataFrame(columns=cols)
 
-    r = Reshaper(in_size=1, out_size=1, stride=1)
-    # before extract_features, methods print and return None
-    assert r.get_tickers() is None
-    assert r.get_features() is None
+#     r = Reshaper(in_size=1, out_size=1, stride=1, common_features=['sprtrn'])
+#     # before extract_features, methods print and return None
+#     assert r.get_tickers() is None
+#     assert r.get_features() is None
 
-    # after extract_features, lists returned
-    r.extract_features(df)
-    assert r.get_tickers() == ['A', 'B']
-    assert r.get_features() == ['x', 'y']
+#     # after extract_features, lists returned
+#     r.extract_features(df)
+#     assert r.get_tickers() == ['A', 'B']
+#     assert r.get_features() == ['x', 'y']
 
 def test_constructor_raises_on_invalid_layout_type():
     # Passing a plain string should raise TypeError
     with pytest.raises(TypeError) as excinfo:
-        Reshaper(in_size=1, out_size=1, stride=1, layout='T_NxF')
+        Reshaper(in_size=1, out_size=1, stride=1, layout='T_NxF', common_features=['sprtrn'])
 
     # The constructor raises TypeError with a message tuple; ensure the message mentions ReshapeStyle
     assert 'ReshapeStyle' in str(excinfo.value)

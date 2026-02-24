@@ -8,10 +8,11 @@ def extract_req_cols(columns_list: list, suffix: str) -> list:
     
     @return required_cols List of required column names for the given suffix
     """
-    required_cols = [col for col in columns_list if suffix in col]
+    # required_cols = [col for col in columns_list if suffix in col]
+    required_cols = [col for col in columns_list if col.endswith(suffix)]
     return required_cols
 
-def split_col(col_sep, col: str) -> tuple[str, str]:
+def split_col(col_sep: str, col: str) -> tuple[str, str]:
     """Split column into (ticker, feature) using first underscore only."""
     parts = col.split(col_sep, 1)
     if len(parts) != 2:
