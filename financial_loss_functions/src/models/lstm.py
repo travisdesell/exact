@@ -13,7 +13,13 @@ class BaseLSTM(nn.Module):
     Base line LSTM model
     """
     def __init__(
-            self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
+            self,
+            input_size: int, 
+            hidden_size: int, 
+            num_layers: int,
+            num_stocks: int,
+            dropout: float = 0.2,
+            equal_prior: bool = False
         ):
         """
         Initialize BaseLSTM model which inherits from `torch.nn.Module`
@@ -34,15 +40,26 @@ class BaseLSTM(nn.Module):
             dropout=dropout,
         )
 
+        self.equal_prior = equal_prior
         # self.ln = nn.LayerNorm(hidden_size)
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
+
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass method
         @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
@@ -58,13 +75,16 @@ class BaseLSTM(nn.Module):
         last = self.dropout(last)
         
         logits = self.fc(last)     # (B, N)
-        # Strong equal-weight prior that never goes away
-        equal_prior = torch.full_like(
-            logits,
-            fill_value=np.log(1.0 / logits.shape[-1]),
-            device=logits.device
-        )
-        logits = logits + equal_prior
+
+        # if self.equal_prior:
+        #     # Strong equal-weight prior that never goes away
+        #     equal_prior = torch.full_like(
+        #         logits,
+        #         fill_value=np.log(1.0 / logits.shape[-1]),
+        #         device=logits.device
+        #     )
+        #     logits = logits + equal_prior
+        
         weights = torch.softmax(logits, dim=-1)
         return weights
 
@@ -72,7 +92,14 @@ class BaseLSTM(nn.Module):
 class AttentionLSTM(nn.Module):
     """AttentionLSTM Model"""
     def __init__(
-        self, input_size, hidden_size, num_layers, num_stocks, dropout=0.2
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int,
+        num_stocks: int,
+        attention_heads: int,
+        dropout: float = 0.2,
+        equal_prior: bool = False
     ):
         """
         Initialize Attention LSTM object which inherits from torch.nn.Module
@@ -93,20 +120,35 @@ class AttentionLSTM(nn.Module):
             dropout=dropout,
         )
 
+        self.equal_prior = equal_prior
         self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
         
         # Attention layer components
-        self.attn = nn.MultiheadAttention(hidden_size, num_heads=2, batch_first=True)
+        self.attn = nn.MultiheadAttention(
+            hidden_size,
+            num_heads=attention_heads,
+            batch_first=True
+        )
         
         self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
+        
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
         # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
         # nn.init.zeros_(self.fc.bias)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass method
         @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
@@ -131,12 +173,14 @@ class AttentionLSTM(nn.Module):
         context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)
-        # Strong equal-weight prior that never goes away
-        equal_prior = torch.full_like(
-            logits,
-            fill_value=np.log(1.0 / logits.shape[-1]),
-            device=logits.device
-        )
-        logits = logits + equal_prior
+        # if self.equal_prior:
+        #     # Strong equal-weight prior that never goes away
+        #     equal_prior = torch.full_like(
+        #         logits,
+        #         fill_value=np.log(1.0 / logits.shape[-1]),
+        #         device=logits.device
+        #     )
+        #     logits = logits + equal_prior
+        
         weights = torch.softmax(logits, dim=-1)
         return weights

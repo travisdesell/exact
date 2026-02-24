@@ -173,30 +173,36 @@ def test_cov_preprocessor():
 # ---------- NN Preprocessor ---------- #
 @pytest.fixture
 def preprocessor():
-    return Preprocessor(col_sep='_', common_features=['sp500r'])
+    return Preprocessor(common_features=['sp500r'], broadcast=False)
 
-def test_extract_tickers(preprocessor):
-    test_list = ['ABCD','EFGH']
-    preprocessor.all_col_names = [
-        'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_VOL_CHANGE', 'sp500r'
+# def test_extract_tickers(preprocessor):
+#     test_list = ['ABCD','EFGH']
+#     preprocessor.all_col_names = [
+#         'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_VOL_CHANGE', 'sp500r'
+#     ]
+#     tickers_list = preprocessor._extract_tickers()
+
+#     assert tickers_list == test_list, 'Only tickers should be extracted, and sorted alphabetically.'
+#     assert 'sp500r' not in tickers_list, 'Common features should not be in all_tickers list.'
+
+def test_build_feats_order(preprocessor):
+    unordered_cols = [
+        'sp500r', 'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 
+        'EFGH_VOL_CHANGE', 'ABCD_BA_SPREAD', 'EFGH_BA_SPREAD'
     ]
-    tickers_list = preprocessor._extract_tickers()
 
-    assert tickers_list == test_list, 'Only tickers should be extracted, and sorted alphabetically.'
-    assert 'sp500r' not in tickers_list, 'Common features should not be in all_tickers list.'
-
-def test_extract_req_cols(preprocessor):
-    test_columns = [
-        'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sp500r'
+    expected_ticker = ['ABCD', 'EFGH']
+    expected_order = [
+        'ABCD_BA_SPREAD', 'ABCD_RET', 'ABCD_VOL_CHANGE', 
+        'EFGH_BA_SPREAD', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sp500r'
     ]
-    suffix = '_VOL_CHANGE'
-    test_required = [f'ABCD{suffix}', f'EFGH{suffix}']
+    preprocessor.unordered_cols = unordered_cols
 
-    req_cols = preprocessor._extract_req_cols(test_columns, suffix)
+    all_ordered, tickers = preprocessor._build_feats_order()
 
-    assert req_cols == test_required
-    assert 'ABCD_RET' not in req_cols
-    assert 'sp500r' not in req_cols
+    assert all_ordered == expected_order, 'All features must be sorted by ticker first,\
+        then feature, and lastly sorted common features'
+    assert tickers == expected_ticker, 'Only tickers should be extracted, and sorted alphabetically.'
 
 def make_sample_train(n=100, seed=0):
     rng = np.random.default_rng(seed)
@@ -226,21 +232,20 @@ def test_transform_fit_and_split_applies_power_transforms(preprocessor):
     train = make_sample_train(n=50, seed=1)
     split = make_sample_train(n=20, seed=2)
 
-    preprocessor.all_col_names = list(train.columns)
+    preprocessor.unordered_cols = list(train.columns)
 
     # fit mode
     transformed_train = preprocessor._transform(train.copy(), mode='fit')
 
     # Ensure transformers were fitted and transformed data changed for the relevant cols
-    vol_cols = [c for c in preprocessor.all_col_names if '_VOL_CHANGE' in c]
-    turn_cols = [c for c in preprocessor.all_col_names if '_TURNOVER' in c]
+    vol_cols = [c for c in preprocessor.unordered_cols if '_VOL_CHANGE' in c]
+    turn_cols = [c for c in preprocessor.unordered_cols if '_TURNOVER' in c]
 
     # At least one value should differ from original after fit-transform
     assert not np.allclose(train[vol_cols].values, transformed_train[vol_cols].values)
     assert not np.allclose(train[turn_cols].values, transformed_train[turn_cols].values)
 
     # split mode
-    preprocessor.all_col_names = list(split.columns)
     # Manually compute expected transformed values
     expected_split = split.copy()
     expected_split[vol_cols] = preprocessor._yeo_john.transform(split[vol_cols])
@@ -285,7 +290,7 @@ def test_power_transform_reduces_skewness(preprocessor):
     })
 
     # Preprocessor needs all_col_names set before calling _transform
-    preprocessor.all_col_names = list(df.columns)
+    preprocessor.unordered_cols = list(df.columns)
 
     # Skewness BEFORE transformation
     before_skew = df.apply(lambda s: skew(s.dropna()))
@@ -333,7 +338,7 @@ def test_broadcast_common_features(preprocessor):
         'B_TURNOVER': rng.uniform(0.2, 8.0, size=n),
         'sp500r': np.linspace(2.0, 3.0, n),
     }, index=dates)
-
+    preprocessor.broadcast = True # Set to true, since default is false
     processed = preprocessor.process_train_data(df.copy())
 
     # Original macro column 'GDP' must be removed

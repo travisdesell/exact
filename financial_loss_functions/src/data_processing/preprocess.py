@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from typing import Tuple, List, Dict, Optional
 from sklearn.preprocessing import PowerTransformer, RobustScaler
+from src.utils.formatting import extract_req_cols, split_col
 
 
 class MacroCombiner:
@@ -13,12 +13,12 @@ class MacroCombiner:
     def __init__(self, resample_freq: str = 'B'):
         self.resample_freq = resample_freq
 
-    def combine_macro_data(self, raw_macro: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def combine_macro_data(self, raw_macro: dict[str, pd.DataFrame]) -> pd.DataFrame:
         """
         Concatenate all macro dataframes column-wise after enforcing datetime
         indices and sorting by date.
 
-        @param raw_macro Dict[str, pd.DataFrame] 
+        @param raw_macro dict[str, pd.DataFrame] 
             Dictionary containing all amcro-econimic dataframes
         
         @return pd.Dataframe Combined dataframe for all macro-economic data
@@ -67,7 +67,7 @@ class MacroCombiner:
             train_index: pd.Index,
             val_index: pd.Index,
             test_index: pd.Index
-        ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Align the daily macro dataframe to the CRSP train/val/test date indices.
 
@@ -76,7 +76,7 @@ class MacroCombiner:
         @param val_index pd.Index Date index from CRSP validation data split
         @param train_index pd.DataFrame Date index from CRSP test data split
 
-        @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] containing aligned split with CRSP data
+        @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] containing aligned split with CRSP data
         """
 
         def _align(index: pd.Index) -> pd.DataFrame:
@@ -89,10 +89,16 @@ class MacroCombiner:
 
         return macro_train, macro_val, macro_test
 
+def _handle_missing_data(df: pd.DataFrame, col_suffix: str, limit: int = 1):
+    req_cols = extract_req_cols(df.columns, col_suffix)
+
+    df[req_cols] = df[req_cols].bfill(limit=limit)
+
+    return df
 
 def clean_inplace(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Cleans dataset by removing dupilcate columns and duplicate rows. It makes date the index.
     This process is inplace, i.e., Refrence of dataset is used, not copy.
@@ -101,7 +107,7 @@ def clean_inplace(
     @param val pd.DataFrame validation data
     @param test pd.DataFrame test data
     
-    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
             Cleaned train data, validation data and test data
     """
 
@@ -130,6 +136,7 @@ def clean_inplace(
     val.drop_duplicates(subset=['date'], keep='first', inplace=True)
     test.drop_duplicates(subset=['date'], keep='first', inplace=True)
     
+    # Setting index to datetime
     train['date'] = pd.to_datetime(train['date'])
     train.set_index('date', inplace=True)
 
@@ -139,11 +146,16 @@ def clean_inplace(
     test['date'] = pd.to_datetime(test['date'])
     test.set_index('date', inplace=True)
 
+    # Handling missing data #### Add missing data handling for each col here, if needed
+    train = _handle_missing_data(train, '_BA_SPREAD')
+    val = _handle_missing_data(val, '_BA_SPREAD')
+    test = _handle_missing_data(test, '_BA_SPREAD')
+    
     return train, val, test
 
 def get_only_returns(
         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Extract only return columns from each of the split datasets.
 
@@ -151,15 +163,17 @@ def get_only_returns(
     @param val pd.DataFrame Validation data.
     @param test pd.DataFrame Test data.
     
-    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
             ret_train, ret_val, and ret_test
 
     """
-    return_cols = []
+    # return_cols = []
     return_suffix = '_RET'
-    for col in train.columns:
-        if return_suffix in col:
-            return_cols.append(col)
+    # for col in train.columns:
+    #     if return_suffix in col:
+    #         return_cols.append(col)
+    
+    return_cols = extract_req_cols(train.columns, return_suffix)
     
     ret_train = train[return_cols]
     ret_val = val[return_cols]
@@ -169,40 +183,36 @@ def get_only_returns(
     ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
     ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
 
-    return ret_train, ret_val, ret_test
+    return (
+        ret_train.sort_index(axis=1),
+        ret_val.sort_index(axis=1),
+        ret_test.sort_index(axis=1)
+    )
     
 class Preprocessor:
+    col_sep = '_'
+    
     def __init__(
-            self, col_sep: str = '_', common_features: List[str] | None = None
+            self,
+            common_features: list[str] | None = None,
+            broadcast: bool = False
         ):
         """
         Initialize Preprocessor which transorforms and normalizes the given dataset
         
         @param col_sep str
             Special character that separates the ticker string from the feature string.
-        @param common_features List[str] List of common features in the dataset. Default = None
+        @param common_features list[str] List of common features in the dataset. Default = None
         """
         self.common_features = common_features
-        self.col_sep = col_sep
+        self.broadcast = broadcast
+        
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
         self._robust_scaler = RobustScaler()
 
-        self.all_col_names = None
+        self.unordered_cols = None
         self.all_tickers = None
-
-    def _extract_req_cols(self, columns_list: List, suffix: str) -> List:
-        """
-        Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
-
-        @param columns_list List List of all column names.
-        @param suffix str 
-            Suffix str to extract its respective columns. e.g., VOL_CHANGE, RETURN
-        
-        @return required_cols List of required column names for the given suffix
-        """
-        required_cols = [col for col in columns_list if suffix in col]
-        return required_cols
 
     def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
@@ -217,8 +227,8 @@ class Preprocessor:
 
         @return pd.DataFrame Transformed dataset
         """
-        vol_change_cols = self._extract_req_cols(self.all_col_names, '_VOL_CHANGE')
-        turnover_cols = self._extract_req_cols(self.all_col_names, '_TURNOVER')
+        vol_change_cols = extract_req_cols(self.unordered_cols, '_VOL_CHANGE')
+        turnover_cols = extract_req_cols(self.unordered_cols, '_TURNOVER')
         
         # For training split
         if mode == 'fit':
@@ -262,32 +272,32 @@ class Preprocessor:
         
         return data
 
-    def _extract_tickers(self) -> List[str]:
-        """
-        Extract ticker symbols from column names of the dataset.
+    # def _extract_tickers(self) -> list[str]:
+    #     """
+    #     Extract ticker symbols from column names of the dataset.
 
-        @return List[str] List of the ticker symbols sorted alphabetically
-        """
-        tickers = []
-        for col in self.all_col_names :
-            if col != 'date':
-                ticker = col.split(self.col_sep, 1)[0]
-                tickers.append(ticker)
+    #     @return list[str] List of the ticker symbols sorted alphabetically
+    #     """
+    #     tickers = []
+    #     for col in self.unordered_cols :
+    #         if col != 'date':
+    #             ticker = col.split(self.col_sep, 1)[0]
+    #             tickers.append(ticker)
         
-        if self.common_features:
-            tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
-            return tickers
-        else:
-            return sorted(set(tickers))
+    #     if self.common_features:
+    #         tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
+    #         return tickers
+    #     else:
+    #         return sorted(set(tickers))
 
     def _broadcast_common(
-            self, data: pd.DataFrame, features: List[str]
+            self, data: pd.DataFrame, features: list[str]
         ) -> pd.DataFrame:
         """
         Broadcast common features to all tickers with names <ticker>_<common_feature>.
         
         @param data pd.DataFrame dataset which needs broadcasting of common features
-        @param features List[str] List of features which need to be broadcasted to every stock
+        @param features list[str] List of features which need to be broadcasted to every stock
 
         @return pd.DataFrame dataframe with broadcasted common features
         """
@@ -307,19 +317,47 @@ class Preprocessor:
         # Copy to defragment the underlying blocks
         return combined.copy()
 
-    def _update_common_features(self, macro_cols: List[str]):
+    def _update_common_features(self, macro_cols: list[str]):
         """
         Merge macro columns with existing common features without duplicates.
         
-        @param macro_cols List[str] List of column names in macro-economic dataset
+        @param macro_cols list[str] List of column names in macro-economic dataset
         """
         # TODO: Use set instead of dict (more efficient)
         base_common = self.common_features or []
         combined = list(dict.fromkeys(base_common + macro_cols))
         self.common_features = combined if combined else None
 
+    def _build_feats_order(self) -> tuple[list, list]:
+        """Extract tickers and features from full DataFrame column names."""
+        tickers = []
+        features = []
+        
+        for col in self.unordered_cols:
+            if col != 'date' and col not in self.common_features:
+                t, f = split_col(self.col_sep, col)
+                tickers.append(t)
+                features.append(f)
+
+        tickers = sorted(set(tickers)) # Important to sort
+        features = sorted(set(features)) # Important to sort
+        
+        # Build list of <ticker>_<feature> in alphabetical order
+        all_features = []
+        for ticker in tickers:
+            for feat in features:
+                column_name = f'{ticker}_{feat}'
+                if column_name in self.unordered_cols:
+                    all_features.append(column_name)
+                else:
+                    print(f'{column_name}, not found in data, features are not symmetric across tickers')
+        
+        # Append sorted common features, eg., sprtrn (s&p500)
+        all_features.extend(sorted(self.common_features))
+        return all_features, tickers
+
     def process_train_data(
-            self, train: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+            self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> pd.DataFrame:
         """
         Preprocesses given training data
@@ -330,7 +368,7 @@ class Preprocessor:
         @return pd.DataFrame Preprocessed training data
         """
 
-        macro_cols: List[str] = []
+        macro_cols: list[str] = []
         if macro_data is not None:
             macro_cols = list(macro_data.columns)
             train = pd.concat([train, macro_data], axis=1)
@@ -338,21 +376,23 @@ class Preprocessor:
         # Update common features before extracting tickers so macro columns are excluded
         self._update_common_features(macro_cols)
 
-        self.all_col_names = list(train.columns)
-        self.all_tickers = self._extract_tickers()
+        # Reorder columns in alphabetical order
+        self.unordered_cols = list(train.columns)
+        self.ordered_cols, self.all_tickers = self._build_feats_order()
+
+        train = train[self.ordered_cols]
         
         # train = self._transform(train, 'fit')
-
         train = self._normalize(train, 'fit')
 
-        # Broadcasting only if common features are present
-        if self.common_features:
+        # Broadcast common features only if needed
+        if self.broadcast:
             train = self._broadcast_common(train, self.common_features)
 
         return train
 
     def process_split_data(
-            self, split_data: pd.DataFrame, macro_data: Optional[pd.DataFrame] = None
+            self, split_data: pd.DataFrame, macro_data: pd.DataFrame | None = None
         ) -> pd.DataFrame:
         """
         Preprocesses given validation or test data based on statistics 
@@ -364,7 +404,7 @@ class Preprocessor:
         @return pd.DataFrame Preprocessed validation or test data
         """
 
-        macro_cols: List[str] = []
+        macro_cols: list[str] = []
         if macro_data is not None:
             macro_cols = list(macro_data.columns)
             split_data = pd.concat([split_data, macro_data], axis=1)
@@ -373,37 +413,38 @@ class Preprocessor:
             self._update_common_features(macro_cols)
 
         # Ensure column alignment with training data before normalization
-        if self.all_col_names is not None:
-            missing = set(self.all_col_names) - set(split_data.columns)
-            extra = set(split_data.columns) - set(self.all_col_names)
-            if missing:
-                raise ValueError(f'Missing columns in split data: {missing}')
-            if extra:
-                # Drop any unexpected columns to match training schema
-                split_data = split_data[self.all_col_names]
-            else:
-                split_data = split_data[self.all_col_names]
+        missing = set(self.unordered_cols) - set(split_data.columns)
+        extra = set(split_data.columns) - set(self.unordered_cols)
+        if missing:
+            raise ValueError(f'Missing columns in split data: {missing}')
+        if extra:
+            # Drop any unexpected columns to match training schema
+            split_data = split_data[self.unordered_cols]
+        else:
+            split_data = split_data[self.unordered_cols]
 
+        # Reorder columns to match train data
+        split_data = split_data[self.ordered_cols]
         # split_data = self._transform(split_data, 'split')
 
         split_data = self._normalize(split_data, 'split')
 
-        # Broadcast only if common features are present
-        if self.common_features:
+        # Broadcast common features only if needed
+        if self.broadcast:
             split_data = self._broadcast_common(split_data, self.common_features)
 
         return split_data
 
 def preprocessor2(
         returns_is: pd.DataFrame
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Calculates covariance and correlation matrices for returns data
 
     @param train pd.DataFrame Training split data, only returns
     @param val pd.DataFrame Validation split data, only returns
 
-    @return Tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
+    @return tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
     """
 
     returns_is_cov = returns_is.cov()

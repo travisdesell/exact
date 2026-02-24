@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from src.models.cov_models import (
     HierarchialRiskParity,
-    naive_mvp,
+    NaiveMVP,
     BaseQuadraticOptimizer,
     GlobalMinimumVariance,
     MeanVariancePortfolio
@@ -167,7 +167,8 @@ def test_naive_mvp_simple_case():
         [0.01, 0.03, 0.15]
     ])
 
-    weights = naive_mvp(cov)
+    naive_mvp = NaiveMVP()
+    weights = naive_mvp.calculate_weights(cov)
 
     # Check type
     assert isinstance(weights, np.ndarray)
@@ -182,7 +183,8 @@ def test_naive_mvp_simple_case():
 def test_naive_mvp_diagonal_cov():
     # Diagonal covariance matrix: all variances equal
     cov = np.diag([0.1, 0.1, 0.1])
-    weights = naive_mvp(cov)
+    naive_mvp = NaiveMVP()
+    weights = naive_mvp.calculate_weights(cov)
 
     # All weights should be equal for identical variances
     np.testing.assert_allclose(weights, np.array([1/3, 1/3, 1/3]))

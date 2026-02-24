@@ -1,3 +1,4 @@
 {
-    "common_features": ["sprtrn"]
+    "common_features": ["sprtrn"],
+    "sp500_returns": "sprtrn"
 }

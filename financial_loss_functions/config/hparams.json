@@ -4,38 +4,90 @@
         "out_size": 50,
         "stride": 1
     },
-    "BaseLSTM": {
-        "model": {
-            "hidden_size": 256,
-            "num_layers": 2,
-            "dropout": 0.2
+    "nn_models": {
+        "BaseLSTM": {
+            "model": {
+                "hidden_size": 256,
+                "num_layers": 2,
+                "dropout": 0.2,
+                "equal_prior": true
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-5
+            },
+            "train" : {
+                "train_batch_size": 256,
+                "val_batch_size": 2,
+                "clip_grad_norm": 0.5,
+                "epochs": 100
+            }
         },
-        "optimizer": {
-            "lr": 1e-4,
-            "weight_decay": 3e-4
-        },
-        "train" : {
-            "train_batch_size": 256,
-            "val_batch_size": 1,
-            "clip_grad_norm": 0.5,
-            "epochs": 100
+        "AttentionLSTM": {
+            "model": {
+                "hidden_size": 128,
+                "num_layers": 3,
+                "attention_heads": 2,
+                "dropout": 0.2,
+                "equal_prior": true
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-4
+            },
+            "train": {
+                "train_batch_size": 256,
+                "val_batch_size": 2,
+                "clip_grad_norm": 0.5,
+                "epochs": 100
+            }
         }
     },
-    "AttentionLSTM": {
-        "model": {
-            "hidden_size": 128,
-            "num_layers": 3,
-            "dropout": 0.2
+    "losses": {
+        "custom_loss_1" : {
+            "lambda1": 0.01
         },
-        "optimizer": {
-            "lr": 1e-3,
-            "weight_decay": 3e-4
+        "custom_loss_2" : {
+            "lambda1": 0.01
         },
-        "train": {
-            "train_batch_size": 256,
-            "val_batch_size": 1,
-            "clip_grad_norm": 0.5,
-            "epochs": 100
+        "custom_loss_3" : {
+            "lambda1": 0.01
+        },
+        "custom_loss_4" : {
+            "lambda1": 0.01
+        },
+        "custom_loss_5" : {
+            "lambda1": 10
+        },
+        "custom_loss_6" : {
+            "lambda1": 0.01,
+            "lambda2": 0.1
+        },
+        "custom_loss_7" : {
+            "lambda1": 0.01,
+            "lambda2": 0.1
+        },
+        "custom_loss_8" : {
+            "lambda1": 0.01,
+            "lambda2": 0.01,
+            "lambda3": 0.1
+        },
+        "custom_loss_9" : {
+            "lambda1": 0.01,
+            "lambda2": 0.1
+        }
+    },
+    "trad_models": {
+        "GlobalMinimumVariance": {
+            "allow_short": false
+        },
+        "MeanVariancePortfolio": {
+            "expected_returns_method": "arithmetic",
+            "risk_aversion": 1.0,
+            "allow_short": false
+        },
+        "NestedClusteredOptimization": {
+            "de_noise": true
         }
     }
 }

@@ -53,7 +53,14 @@ cp .env.example .env
 ```
 2. Update the .env file in root directory with your Fred API key
 
-## Usage
+
+## Project Pipeline
+The system is divided into three pipelines to ensure scalability and easier debugging. Each stage must be run sequentially:
+1. Data Collection (`scripts.run_data_collection`): Fetches raw macro-economic data from FRED API
+2. Data Processing (`scripts.run_processing`): Preprocesses raw data and places the files in data/processed/
+3. Training (`scripts.run_training`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
+
+## Quick Start
 ### 1. Run macro-economic data collection
 ```bash
 python -m scripts.run_macro_collection
@@ -65,38 +72,9 @@ python -m scripts.run_processing
 ```
 
 ### 3. Run candidates training grid
-Run the training pipeline using the following command structure:
-```bash
-python -m scripts.run_training [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
-```
-
-#### Arguments Reference
-| Flag | Long Flag | Choices / Type | Default | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss` | `all` | The scope of the grid search. |
-| `-lm` | `--loss_mode` | `all`, `custom` | `all` |  Use all available loss functions or only custom combinations |
-| `-model`| `--model` | *string* | None | **Required** if grid mode is `one_model`. Name of model.|
-| `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss`. Name of loss function.|
-
-#### Examples:
-1. Run everything (Uses defaults: grid_mode='all', loss_mode='all')
+Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
 python -m scripts.run_training
-```
-
-2. Run specific model with all available loss functions
-```bash
-python -m scripts.run_training --grid_mode one_model --model 'BaseLSTM' --loss_mode all
-```
-
-3. Run specific loss function with all available models
-```bash
-python -m scripts.run_training --grid_mode one_loss --loss 'differentiable_sharpe_objective'
-```
-
-4. To get help
-```bash
-python -m scripts.run_training --help
 ```
 
 ### 4. Run feature selection analysis
@@ -104,10 +82,9 @@ python -m scripts.run_training --help
 python -m scripts.run_feature_selection --crsp-dir 2023_sp_500_select_50
 ```
 
-### Run tests
-```bash
-pytest tests
-```
+## For Detailed Usage Instructions
+- [Data Collection Guide](/financial_loss_functions/src/data_collection/README.md)
+- [Training Guide](/financial_loss_functions/src/training/README.md)
 
 ## Directory Structure
 ```text
@@ -117,7 +94,7 @@ financial_loss_functions                    # Root directory for this project
 ├── data
 │   ├── processed
 │   └── raw
-│       ├── macro                           # gitignored since, data can be acquired
+│       ├── macro                           # gitignored, since data can be acquired
 │       │   ├── Consumption_Orders_Inventories.csv
 │       │   ├── Housing.csv
 │       │   ├── Labor_Market.csv

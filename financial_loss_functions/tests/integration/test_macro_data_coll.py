@@ -6,6 +6,8 @@ from src.data_collection.pipeline import run_macro_pipeline
 
 load_dotenv()
 
+# ---------- Integration test for Macro-Economic Data Collection Pipeline ---------- #
+
 @pytest.mark.integration
 def test_run_macro_pipeline(tmp_path):
     # Load real FRED API key from env

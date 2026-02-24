@@ -1,10 +1,9 @@
 import pandas as pd
-from typing import Tuple, Dict
-from src.utils import check_if_files_exist
+from src.utils.io import check_if_files_exist
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str
-    )-> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    )-> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Load all CRSP datasets files from a directory which are split into train,
     validation and test.
@@ -24,34 +23,34 @@ def load_raw_crsp_datasets(
     
     return train_data, val_data, test_data
 
-def load_csv_files(paths_dict: Dict[str, str]) -> Dict[str, pd.DataFrame]:
+def load_csv_files(paths_dict: dict[str, str]) -> dict[str, pd.DataFrame]:
     """
     Loads csv data files. Provide dictionary of 
     name key and path strings value to be loaded.
 
-    @param paths_dict Dict[str, str] Dictionary of name key and path strings value to be loaded
+    @param paths_dict dict[str, str] dictionary of name key and path strings value to be loaded
     
-    @return Dict[str, pd.DataFrame] Dictionary of name key and loaded dataframe as value
+    @return dict[str, pd.DataFrame] dictionary of name key and loaded dataframe as value
     """
     # Check if all files exist
     check_if_files_exist(list(paths_dict.values()))
 
     loaded_dfs = {}
     for name, f_path in paths_dict.items():
-        temp_df = pd.read_csv(f_path, index_col=0)
-        temp_df.index = pd.to_datetime(temp_df.index)
+        temp_df = pd.read_csv(f_path, index_col=0) # Can use parse_dates=True here,but
+        temp_df.index = pd.to_datetime(temp_df.index) #.but pd.to_datetime for control.
         loaded_dfs[name] = temp_df
 
     return loaded_dfs
 
-def load_macro_data(macro_dir_path: str) -> Dict[str, pd.DataFrame]:
+def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
     """
     Loads macro-economic data csv files from given directory path.
 
     @param macro_dir_path str 
         Path to directory where macro-ecnomic data is store as separate csv files
 
-    @return Dict[str, pd.DataFrame] Contains category name as key and dataframe as value
+    @return dict[str, pd.DataFrame] Contains category name as key and dataframe as value
     """
     
     file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files

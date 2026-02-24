@@ -2,7 +2,7 @@ import os
 import sys
 import signal
 import argparse
-from scripts.utils import load_path_config, load_config
+from src.utils.io import load_path_config, load_config
 from src.training.pipeline import run_training_pipeline
 
 _interrupted = False
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         )
 
         parser.add_argument(
-            '-model',
+            '-m',
             '--model',
             help="Model name required if grid_mode is 'one_model'"
         )
@@ -119,16 +119,17 @@ if __name__ == '__main__':
                 parser.error("--loss is required when --grid_mode is 'one_loss'")
 
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
-
         hparams_config = load_config(os.path.join('config', 'hparams.json'))
+        features_config = load_config(os.path.join('config', 'features.json'))
 
         run_training_pipeline(
             paths_config,
             hparams_config, 
+            features_config,
             grid_mode = args.grid_mode, 
             loss_mode = args.loss_mode, 
-            model = args.model,
-            loss = args.loss
+            model_name = args.model,
+            loss_name = args.loss
         )
 
     except SystemExit:
