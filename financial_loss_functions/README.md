@@ -99,6 +99,11 @@ python -m scripts.run_training --grid_mode one_loss --loss 'differentiable_sharp
 python -m scripts.run_training --help
 ```
 
+### 4. Run feature selection analysis
+```bash
+python -m scripts.run_feature_selection --crsp-dir 2023_sp_500_select_50
+```
+
 ### Run tests
 ```bash
 pytest tests

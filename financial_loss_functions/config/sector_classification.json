@@ -1,0 +1,302 @@
+{
+  "AKAM": {
+    "company": "Akamai Technologies, Inc.",
+    "sector": "Information Technology",
+    "secondary_sector": null,
+    "key_business": "CDN, cybersecurity, and cloud computing"
+  },
+  "ATO": {
+    "company": "Atmos Energy Corporation",
+    "sector": "Utilities",
+    "secondary_sector": null,
+    "key_business": "Natural gas utility"
+  },
+  "BXP": {
+    "company": "BXP, Inc.",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Office REIT (Class A workplaces)"
+  },
+  "CAG": {
+    "company": "Conagra Brands, Inc.",
+    "sector": "Consumer Staples",
+    "secondary_sector": null,
+    "key_business": "Branded food products"
+  },
+  "CINF": {
+    "company": "Cincinnati Financial Corporation",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Property and casualty insurance"
+  },
+  "CHRW": {
+    "company": "C.H. Robinson Worldwide, Inc.",
+    "sector": "Industrials",
+    "secondary_sector": null,
+    "key_business": "Third-party logistics (3PL)"
+  },
+  "COO": {
+    "company": "The Cooper Companies, Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Contact lenses and women's health devices"
+  },
+  "CPB": {
+    "company": "The Campbell's Company",
+    "sector": "Consumer Staples",
+    "secondary_sector": null,
+    "key_business": "Packaged foods (soups, snacks, sauces)"
+  },
+  "CPT": {
+    "company": "Camden Property Trust",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Multifamily residential REIT"
+  },
+  "DECK": {
+    "company": "Deckers Outdoor Corporation",
+    "sector": "Consumer Discretionary",
+    "secondary_sector": null,
+    "key_business": "Footwear (UGG, HOKA, Teva)"
+  },
+  "DPZ": {
+    "company": "Domino's Pizza, Inc.",
+    "sector": "Consumer Discretionary",
+    "secondary_sector": null,
+    "key_business": "Quick-service restaurant (pizza delivery)"
+  },
+  "DVA": {
+    "company": "DaVita Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Kidney dialysis services"
+  },
+  "ED": {
+    "company": "Consolidated Edison, Inc.",
+    "sector": "Utilities",
+    "secondary_sector": null,
+    "key_business": "Electric, gas, and steam utility"
+  },
+  "EIX": {
+    "company": "Edison International",
+    "sector": "Utilities",
+    "secondary_sector": null,
+    "key_business": "Electric utility (Southern California Edison)"
+  },
+  "EMN": {
+    "company": "Eastman Chemical Company",
+    "sector": "Materials",
+    "secondary_sector": null,
+    "key_business": "Specialty chemicals and materials"
+  },
+  "ESS": {
+    "company": "Essex Property Trust, Inc.",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Multifamily residential REIT"
+  },
+  "ETR": {
+    "company": "Entergy Corporation",
+    "sector": "Utilities",
+    "secondary_sector": null,
+    "key_business": "Electric utility"
+  },
+  "EXPD": {
+    "company": "Expeditors International of Washington, Inc.",
+    "sector": "Industrials",
+    "secondary_sector": null,
+    "key_business": "Freight forwarding and logistics"
+  },
+  "EXR": {
+    "company": "Extra Space Storage Inc.",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Self-storage REIT"
+  },
+  "FDS": {
+    "company": "FactSet Research Systems Inc.",
+    "sector": "Financials",
+    "secondary_sector": "Information Technology",
+    "key_business": "Financial data and analytics software"
+  },
+  "FFIV": {
+    "company": "F5, Inc.",
+    "sector": "Information Technology",
+    "secondary_sector": null,
+    "key_business": "Application security and delivery"
+  },
+  "FRT": {
+    "company": "Federal Realty Investment Trust",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Retail REIT (mixed-use properties)"
+  },
+  "HBAN": {
+    "company": "Huntington Bancshares Incorporated",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Regional banking"
+  },
+  "HOLX": {
+    "company": "Hologic, Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Women's health diagnostics and imaging"
+  },
+  "HSIC": {
+    "company": "Henry Schein, Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Healthcare distribution"
+  },
+  "IEX": {
+    "company": "Indian Energy Exchange",
+    "sector": "Utilities",
+    "secondary_sector": "Financials",
+    "key_business": "Power trading exchange"
+  },
+  "IRM": {
+    "company": "Iron Mountain Incorporated",
+    "sector": "Real Estate",
+    "secondary_sector": "Information Technology",
+    "key_business": "Records management and data centers"
+  },
+  "IVZ": {
+    "company": "Invesco Ltd.",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Asset management"
+  },
+  "JBHT": {
+    "company": "J.B. Hunt Transport Services, Inc.",
+    "sector": "Industrials",
+    "secondary_sector": null,
+    "key_business": "Transportation and logistics"
+  },
+  "JKHY": {
+    "company": "Jack Henry & Associates, Inc.",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "FinTech and payment processing"
+  },
+  "KIM": {
+    "company": "Kimco Realty Corporation",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Retail REIT (grocery-anchored shopping centers)"
+  },
+  "KMB": {
+    "company": "Kimberly-Clark Corporation",
+    "sector": "Consumer Staples",
+    "secondary_sector": null,
+    "key_business": "Personal care products (Huggies, Kleenex, Kotex)"
+  },
+  "KMX": {
+    "company": "CarMax, Inc.",
+    "sector": "Consumer Discretionary",
+    "secondary_sector": null,
+    "key_business": "Used vehicle retail"
+  },
+  "LH": {
+    "company": "Labcorp Holdings Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Clinical laboratory services"
+  },
+  "LNT": {
+    "company": "Alliant Energy Corporation",
+    "sector": "Utilities",
+    "secondary_sector": null,
+    "key_business": "Electric and gas utility"
+  },
+  "MHK": {
+    "company": "Mohawk Industries, Inc.",
+    "sector": "Consumer Discretionary",
+    "secondary_sector": null,
+    "key_business": "Flooring manufacturer"
+  },
+  "NDSN": {
+    "company": "Nordson Corporation",
+    "sector": "Industrials",
+    "secondary_sector": "Health Care",
+    "key_business": "Precision dispensing and medical devices"
+  },
+  "NTRS": {
+    "company": "Northern Trust Corporation",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Asset servicing and wealth management"
+  },
+  "NVR": {
+    "company": "NVR, Inc.",
+    "sector": "Consumer Discretionary",
+    "secondary_sector": "Financials",
+    "key_business": "Home construction and mortgage banking"
+  },
+  "PKG": {
+    "company": "Packaging Corporation of America",
+    "sector": "Industrials",
+    "secondary_sector": null,
+    "key_business": "Containerboard and corrugated packaging"
+  },
+  "PODD": {
+    "company": "Insulet Corporation",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Diabetes medical devices (Omnipod)"
+  },
+  "REG": {
+    "company": "Regency Centers Corporation",
+    "sector": "Real Estate",
+    "secondary_sector": null,
+    "key_business": "Retail REIT (grocery-anchored)"
+  },
+  "RHI": {
+    "company": "Robert Half Inc.",
+    "sector": "Industrials",
+    "secondary_sector": null,
+    "key_business": "Staffing and consulting services"
+  },
+  "STLD": {
+    "company": "Steel Dynamics, Inc.",
+    "sector": "Materials",
+    "secondary_sector": null,
+    "key_business": "Steel production and metals recycling"
+  },
+  "TECH": {
+    "company": "Bio-Techne Corporation",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Life sciences reagents and instruments"
+  },
+  "TFX": {
+    "company": "Teleflex Incorporated",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Medical devices (vascular and surgical)"
+  },
+  "TRMB": {
+    "company": "Trimble Inc.",
+    "sector": "Industrials",
+    "secondary_sector": "Information Technology",
+    "key_business": "Geospatial and construction technology"
+  },
+  "TRV": {
+    "company": "The Travelers Companies, Inc.",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Property and casualty insurance"
+  },
+  "UHS": {
+    "company": "Universal Health Services, Inc.",
+    "sector": "Health Care",
+    "secondary_sector": null,
+    "key_business": "Hospital and behavioral health services"
+  },
+  "WRB": {
+    "company": "W. R. Berkley Corporation",
+    "sector": "Financials",
+    "secondary_sector": null,
+    "key_business": "Commercial lines property and casualty insurance"
+  }
+}
