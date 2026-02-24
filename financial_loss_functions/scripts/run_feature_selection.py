@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from scripts.utils import load_path_config
+from src.utils.io import load_path_config
 from src.feature_selection.analysis import run_feature_selection_pipeline
 
 
