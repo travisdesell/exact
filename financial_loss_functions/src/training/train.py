@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import build_dataset
-from src.data_processing.preprocess import preprocessor2
+from src.data_processing.preprocess_crsp import preprocessor2
 from typing import Callable, Type, Any, TYPE_CHECKING, Optional
 
 # For type hints. To avoid circular dependencies

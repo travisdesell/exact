@@ -1,4 +1,5 @@
 {
     "common_features": ["sprtrn"],
-    "sp500_returns": "sprtrn"
+    "sp500_returns": "sprtrn",
+    "macro_per_stock": 2
 }

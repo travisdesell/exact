@@ -10,7 +10,7 @@ from src.feature_selection.rules import (
     get_sector_prior_weights,
     load_sector_mapping,
 )
-from src.data_processing.preprocess import MacroCombiner
+from src.data_processing.preprocess_macro import MacroCombiner
 
 
 @dataclass

@@ -1,13 +1,11 @@
 from pathlib import Path
 from src.utils.io import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
-from src.data_processing.preprocess import (
-    MacroCombiner,
+from src.data_processing.preprocess_crsp import (
     clean_inplace,
     get_only_returns,
     Preprocessor
 )
-
 
 def run_processing_pipeline(paths_config: dict, features_config: dict):
     """
@@ -35,30 +33,14 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
         test_path
     )
 
-    # Extracting macro-economic directory path
+    # Loading raw macro-economic data
     # macro_dir_path = Path(paths_config['data']['raw_macro_dir']) 
+    # raw_macro = load_macro_data(macro_dir_path) ### LOAD MACRO ###
     
-    #### Uncomment All these lines to add macro-ecoomic data ####
-
-    # # Loading raw macro-economic data
-    # raw_macro = load_macro_data(macro_dir_path). #### MACRO REMOVED FOR TESTING
-    
-    # -------------------- Cleaning -------------------- #
+    # -------------------- CRSP Cleaning -------------------- #
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
-    # # Process macro-economic data and align with CRSP dates
-    # macro_preprocessor = MacroPreprocessor()
-    # combined_macro = macro_preprocessor.combine_macro_data(raw_macro)
-    # daily_macro = macro_preprocessor.to_daily(combined_macro)
-    # macro_train, macro_val, macro_test = macro_preprocessor.split_by_crsp_dates(
-    #     daily_macro,
-    #     train_data.index,
-    #     val_data.index,
-    #     test_data.index
-    # )
-    # print('Macro data processed and aligned with CRSP splits.')
-
-    # -------------------- Split Returns and S&P 500 Returns -------------------- #
+    # -------------------- CRSP Split Returns and S&P 500 Returns -------------------- #
     # Common processing (realized returns)
     ret_train, ret_val, ret_test = get_only_returns(train_data, val_data, test_data)
     save_to_csv(
@@ -93,6 +75,35 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
         test_data[sp500_col_name],
         Path(paths_config['processed_paths']['benchmark_test'])
     )
+
+    # -------------------- Macro Cleaning -------------------- #
+    # TODO: For Atharva
+    # 1. Combine all macro csv files (Already done using  MacroCombiner.combine_macro_data())
+    # 2. Make Macro daily and match CRSP (Already done) [ONLY Forward fill, DO NOT backfill, its data leak!]
+    # 3. Run feature selection for macro data using crsp train (Use features_config['macro_per_stock'] for number)
+    # 4. Provide all three splits of macro data to the Preprocessor.process_*() methods (same as before)
+    # 5. Dump a json of sorted common features list in data/processed/updated_common_features.json at the end
+    #       Use Preprocessor.get_common_features(), use path in paths_config['data']['processed_paths'][updated_common_features']
+    # Notes:
+    #   Put all macro code in src/data_processing/preprocess_macro.py, just to put everything in one place
+    #   !All file io operations must happen in this file (src/data_processing/pipeline.py)!
+    #   Its important for now, for the columns to look like <ticker1>_<feature1>,..., <macro1>, <macro2>,...<macroN>
+    #   Also see Preprocessor._update_common_features()
+
+    #### Old Macro Code ####
+    # # Process macro-economic data and align with CRSP dates
+    # macro_preprocessor = MacroPreprocessor()
+    # combined_macro = macro_preprocessor.combine_macro_data(raw_macro)
+    # daily_macro = macro_preprocessor.to_daily(combined_macro)
+    # macro_train, macro_val, macro_test = macro_preprocessor.split_by_crsp_dates(
+    #     daily_macro,
+    #     train_data.index,
+    #     val_data.index,
+    #     test_data.index
+    # )
+    # print('Macro data processed and aligned with CRSP splits.')
+
+    # -------------------- Macro Feature Selection -------------------- #
 
     # -------------------- Preporcessing -------------------- #
 

@@ -22,7 +22,8 @@
         "processed_test": "data/processed/processed_test.csv",
         "benchmark_train": "data/processed/benchmark_train.csv",
         "benchmark_val": "data/processed/benchmark_val.csv",
-        "benchmark_test": "data/processed/benchmark_test.csv"
+        "benchmark_test": "data/processed/benchmark_test.csv",
+        "updated_common_features": "data/processed/updated_common_features.json"
     },
     "artifacts": {
         "artifacts_dir": "artifacts/",
