@@ -20,10 +20,9 @@ test_output/*
 financial_loss_functions/exploration/.ipynb_checkpoints
 
 # Dataset directories
-financial_loss_functions/data/
-!financial_loss_functions/data/raw/
-!financial_loss_functions/data/raw/sample/
-!financial_loss_functions/data/raw/sample/*.csv
+financial_loss_functions/data/raw/2023_sp_500_select_50/
+financial_loss_functions/data/raw/macro/
+financial_loss_functions/data/processed/
 # financial_loss_functions/scripts/generate_synthetic_data.py
 
 # Artifacts & Results
