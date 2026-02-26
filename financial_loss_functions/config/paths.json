@@ -28,7 +28,8 @@
     "artifacts": {
         "artifacts_dir": "artifacts/",
         "results": "artifacts/results/",
-        "plots": "artifacts/results/plots/"
+        "plots": "artifacts/results/plots/",
+        "temp": "artifacts/temp/"
     },
     "models_module": "src.models"
 }

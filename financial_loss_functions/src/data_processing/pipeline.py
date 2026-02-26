@@ -82,7 +82,7 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     # 2. Make Macro daily and match CRSP (Already done) [ONLY Forward fill, DO NOT backfill, its data leak!]
     # 3. Run feature selection for macro data using crsp train (Use features_config['macro_per_stock'] for number)
     # 4. Provide all three splits of macro data to the Preprocessor.process_*() methods (same as before)
-    # 5. Dump a json of sorted common features list in data/processed/updated_common_features.json at the end
+    # 5. Dump a json of sorted common features list in artifacts/temp/updated_common_features.json at the end
     #       Use Preprocessor.get_common_features(), use path in paths_config['data']['processed_paths'][updated_common_features']
     # 6. Write unit tests to test logic of all new methods and classes.
     # 7. Update tests/integration/test_data_processing.py for new feature additions to test the entire data_procoessing pipeline. 
