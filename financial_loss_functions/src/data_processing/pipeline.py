@@ -84,9 +84,13 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     # 4. Provide all three splits of macro data to the Preprocessor.process_*() methods (same as before)
     # 5. Dump a json of sorted common features list in data/processed/updated_common_features.json at the end
     #       Use Preprocessor.get_common_features(), use path in paths_config['data']['processed_paths'][updated_common_features']
+    # 6. Write unit tests to test logic of all new methods and classes.
+    # 7. Update tests/integration/test_data_processing.py for new feature additions to test the entire data_procoessing pipeline. 
+    #   Use data/raw/sample for CRSP data as tests should pass without the CRSP dataset.
+    # 
     # Notes:
-    #   Put all macro code in src/data_processing/preprocess_macro.py, just to put everything in one place
-    #   !All file io operations must happen in this file (src/data_processing/pipeline.py)!
+    #   Put all macro code in src/data_processing/preprocess_macro.py, just to put everything in one place.
+    #   !All file io operations must happen in this file (src/data_processing/pipeline.py)! You can use functions from utils/io/py.
     #   Its important for now, for the columns to look like <ticker1>_<feature1>,..., <macro1>, <macro2>,...<macroN>
     #   Also see Preprocessor._update_common_features()
 

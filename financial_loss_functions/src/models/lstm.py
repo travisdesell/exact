@@ -1,6 +1,7 @@
 import torch
-import numpy as np
+# import numpy as np
 import torch.nn as nn
+from torch import Tensor
 from src.models.registry import NNModelLibrary
 
 #### All models MUST get a registration decorator with a category.
@@ -9,8 +10,7 @@ from src.models.registry import NNModelLibrary
 @NNModelLibrary.register(category='lstm')
 class BaseLSTM(nn.Module):
     """
-    Implementation BaseLSTM Model
-    Base line LSTM model
+    Implementation BaseLSTM Model with an initial equal prior option.
     """
     def __init__(
             self,
@@ -24,12 +24,16 @@ class BaseLSTM(nn.Module):
         """
         Initialize BaseLSTM model which inherits from `torch.nn.Module`
 
-        @param input_size int Size of input window
-        @param hidden_size int Number of nodes in hidden layers
-        @param num_layers int Number of hidden layers
-        @param num_stocks int Number of stocks in dataset. 
-            It is the number of output nodes.
-        @param dropout float Dropout rate. Default = 0.2
+        Args:
+            input_size (int): Size of input window.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            dropout (float): Dropout rate. Default = 0.2.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
         """
         super().__init__()
         self.lstm = nn.LSTM(
@@ -56,15 +60,15 @@ class BaseLSTM(nn.Module):
             # Softmax(0) = 1/N
             nn.init.constant_(self.fc.bias, 0.0)
 
-        # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
-        # nn.init.zeros_(self.fc.bias)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """
-        Forward pass method
-        @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
+        Forward pass method for the neural network.
 
-        @return torch.tensor Portfolio allocation weights calcuated from the forward pass
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
         """
         out, _ = self.lstm(x)      # (B, T, hidden)
         last = out[:, -1, :]      # (B, hidden)
@@ -85,8 +89,8 @@ class BaseLSTM(nn.Module):
         #     )
         #     logits = logits + equal_prior
         
-        weights = torch.softmax(logits, dim=-1)
-        return weights
+        pf_weights = torch.softmax(logits, dim=-1)
+        return pf_weights
 
 @NNModelLibrary.register(category='lstm')
 class AttentionLSTM(nn.Module):
@@ -102,14 +106,19 @@ class AttentionLSTM(nn.Module):
         equal_prior: bool = False
     ):
         """
-        Initialize Attention LSTM object which inherits from torch.nn.Module
+        Initialize Attention LSTM object which inherits from `torch.nn.Module`.
 
-        @param input_size int Size of input window
-        @param hidden_size int Number of nodes in hidden layers
-        @param num_layers int Number of hidden layers
-        @param num_stocks int Number of stocks in dataset. 
-            It is the number of output nodes.
-        @param dropout float Dropout rate. Default = 0.2
+        Args:
+            input_size (int): Size of input window.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            attention_heads (int): Number of attention heads.
+            dropout (float): Dropout rate. Default = 0.2.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
         """
         super().__init__()
         self.lstm = nn.LSTM(
@@ -145,15 +154,15 @@ class AttentionLSTM(nn.Module):
             # Softmax(0) = 1/N
             nn.init.constant_(self.fc.bias, 0.0)
 
-        # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
-        # nn.init.zeros_(self.fc.bias)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """
-        Forward pass method
-        @param x torch.tensor Input window for forward pass. Shape = (B, T, E)
+        Forward pass method for the neural network.
 
-        @return torch.tensor Portfolio allocation weights calcuated from the forward pass
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
         """
         out, _ = self.lstm(x)  # (B, T, hidden)
         
@@ -182,5 +191,5 @@ class AttentionLSTM(nn.Module):
         #     )
         #     logits = logits + equal_prior
         
-        weights = torch.softmax(logits, dim=-1)
-        return weights
+        pf_weights = torch.softmax(logits, dim=-1)
+        return pf_weights

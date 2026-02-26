@@ -1,5 +1,4 @@
-#### -------------------- All Covariance based Models (Classical) -------------------- ####
-
+#### -------------------- All Covariance based Models (Classical/Tradional) -------------------- ####
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -26,11 +25,13 @@ class NaiveMVP:
     @staticmethod
     def calculate_weights(cov: pd.DataFrame | np.ndarray) -> np.ndarray:
         """
-        Naive Implmentation of Minimum Variance Portfolio
+        Naive Implmentation of Minimum Variance Portfolio.
 
-        @param cov (pd.DataFrame | np.array) Covariance matrix of the returns
+        Args:
+            cov (pd.DataFrame | np.array): Covariance matrix of the returns.
         
-        @return np.ndarray Weights of the portfolio
+        Returns:
+            np.ndarray: Allocation weights of the portfolio, which sum to 1.
         """
         cov = np.array(cov)
         n = cov.shape[0]
@@ -64,12 +65,15 @@ class BaseQuadraticOptimizer:
 
     def __init__(self, solver: str = 'auto', reg: float|str = 1e-8):
         """
-        @param solver str 'auto' | 'cvxopt' | 'scipy'
+        Shared quadratic-optimizer utilities initalizer.
 
-        @param reg float | 'auto'
-            small ridge added to diagonal of covariance to stabilize inversion.
-            - If float >= 0: used as ridge added to diagonal of P.
-            - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
+        Args:
+            solver (str): 'auto', 'cvxopt' or 'scipy'. Python module to be used for optimization.
+                Default = 'auto', auto detects is cvxopt is avaiable or uses SciPy as a fallback.
+
+            reg (float | str): small ridge added to diagonal of covariance to stabilize inversion.
+                - If float >= 0: used as ridge added to diagonal of P.
+                - If 'auto': ridge = eps * trace(P)/n where eps = 1e-8 (safe default).
         """
         self.solver = solver
         self.reg = reg
@@ -79,25 +83,29 @@ class BaseQuadraticOptimizer:
     def _ensure_symmetry(mat: np.ndarray, constant: float = 0.5) -> np.ndarray:
         """
         Ensures symmetry of matrix by multiplying the sum of the matrix 
-        and its transpose by a constant. constant * (mat + mat.T)
+        and its transpose by a constant. constant * (mat + mat.T).
 
-        @param mat np.ndarray Matrix
-        @param constant float Constant value to be multiplied. Default = 0.5
+        Args:
+            mat (np.ndarray): Matrix that will be transformed to ensure symmetry.
+            constant (float) Constant value to be multiplied. Default = 0.5.
 
-        @return np.ndarray Symmetric matrix
+        Returns:
+            np.ndarray: Symmetric matrix
         """
         mat = np.asarray(mat, dtype=float)
         return constant * (mat + mat.T)
 
     @staticmethod
-    def _to_numpy(mat: np.ndarray) -> np.ndarray:
+    def _to_numpy(mat: pd.DataFrame) -> np.ndarray:
         """
         Converts matrix from dataframe to numpy array or enforces float if 
         already numpy array.
 
-        @param mat np.ndarray Matrix
+        Args:
+            mat (pd.Dataframe): Matrix in a dataframe to be converted to a numpy array. 
 
-        @return np.ndarray
+        Returns:
+            np.ndarray: Matrix as a numpy array.
         """
         if isinstance(mat, pd.DataFrame):
             return mat.values
@@ -110,9 +118,11 @@ class BaseQuadraticOptimizer:
         - computes numeric ridge via _compute_ridge
         - returns inverse of (mat + ridge * I)
 
-        @param mat np.ndarray Matrix to be inverted safely
+        Args:
+            mat (np.ndarray): Matrix to be inverted safely.
 
-        @retun np.ndarray Inverted matrix 
+        Returns:
+            np.ndarray: Inverted matrix 
         """
         mat = self._ensure_symmetry(mat)
         ridge = self._compute_ridge(mat)
@@ -128,8 +138,10 @@ class BaseQuadraticOptimizer:
         """
         Compute ridge value based on P, used to stabilize inversion of matrix.
 
-        @param P np.ndarray Matrix used to calculate the ridge value
-        @return float Ridge value
+        Args:
+            P (np.ndarray): Matrix used to calculate the ridge value.
+        Returns:
+            float: Ridge value.
         """
         if isinstance(self.reg, str) and str(self.reg.lower()) == 'auto':
             # scale by matrix size and trace so ridge is relative to magnitude of P
@@ -157,15 +169,17 @@ class BaseQuadraticOptimizer:
         """
         Solve Quadratic Problem using CVXOPT if available (and requested) else SciPy SLSQP.
 
-        @param P np.ndarray (n,n) symmetric positive semidef
-        @param q np.ndarray (n,) vector
-        @param A (np.ndarray | None) (m_eq, n) equality matrix
-        @param b (np.ndarray | None) (m_eq,) equality RHS
-        @param G (np.ndarray | None) (m_ineq, n) inequality matrix (G x <= h)
-        @param h (np.ndarray | None) (m_ineq,) inequality RHS
-        @param bounds: (Tuple[Tuple[float, float], ...] | None) tuple of (low, high) per variable or None
+        Args:
+            P (np.ndarray): (n,n) symmetric positive semidef
+            q (np.ndarray): (n,) vector
+            A (np.ndarray | None): (m_eq, n) equality matrix
+            b (np.ndarray | None): (m_eq,) equality RHS
+            G (np.ndarray | None): (m_ineq, n) inequality matrix (G x <= h)
+            h (np.ndarray | None): (m_ineq,) inequality RHS
+            bounds: (tuple[tuple[float, float], ...] | None): tuple of (low, high) per variable or None
 
-        @return x Tuple[np.ndarray, bool] (n,), success (bool)
+        Returns:
+            x (tuple[np.ndarray, bool]): (n,), success (bool)
         """
         P = self._ensure_symmetry(P)
         q = np.asarray(q, dtype=float).flatten()
@@ -252,9 +266,10 @@ class BaseQuadraticOptimizer:
     def set_ridge(self, reg: float|str):
         """
         Setter function to set a small ridge to diagonal of
-        covariance to stabilize inversion
+        covariance to stabilize inversion.
         
-        @param reg: (float|str) small ridge added to diagonal of covariance to stabilize inversion
+        Args:
+            reg (float | str): small ridge added to diagonal of covariance to stabilize inversion.
         """
         self.reg = float(reg)
 
@@ -269,12 +284,15 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
             self, allow_short: bool = False, solver: str = 'auto'
         ):
         """
-        @param allow_short bool
-            If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
-            If False (default), enforce long-only and solve a QP.
-        @param solver str ('auto'|'cvxopt'|'scipy') 
-            Solver library to use. Checks if cvxopt is available by default
-            (passed to BaseQuadraticOptimizer).
+        Initializer for GlobalMinimumVariance Portfolio. 
+        Estimates portfolio allocation weights based on minimum varince of covariance of returns.
+
+        Args:
+            allow_short (bool):
+                - If True, allow negative weights and use analytic formula w ∝ Σ^{-1} 1.
+                - If False (default), enforce long-only and solve a QP.
+            solver (str): 'auto', 'cvxopt' or 'scipy'. Python module to be used for optimization.
+                Default = 'auto', auto detects is cvxopt is avaiable or uses SciPy as a fallback.
         """
         super().__init__(solver=solver)
         self.allow_short = bool(allow_short)
@@ -286,11 +304,14 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
 
     def calculate_weights(self, cov: np.ndarray | pd.DataFrame) -> np.ndarray:
         """
-        Fit Global Minimum Variance to calculate portfolio allocation weights.
+        Fit Global Minimum Variance to calculate portfolio allocation weights 
+        using covariance matrix of returns.
 
-        @param cov (np.ndarray | pd.DataFrame) Covariance matrix
+        Args:
+            cov (np.ndarray | pd.DataFrame): Covariance matrix of returns.
 
-        @return np.ndarray Calculated allocation weights. Shape = (n,)
+        Returns:
+            weights (np.ndarray): Allocation weights of the portfolio, which sum to 1.
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -325,18 +346,23 @@ class GlobalMinimumVariance(BaseQuadraticOptimizer):
                 x = x / x.sum()
         self.weights_ = x
         self.success_ = bool(success)
-        return self.weights_.copy()
+        return self.weights_
 
     def get_weights(self) -> np.ndarray:
         """
         Getter function to get weights for a portfolio that have been 
         estimated by running `calculate_weights(...)`
 
-        @return np.ndarray Array of allocation weights
+        Returns:
+            weights (np.ndarray): Allocation weights of the portfolio, which sum to 1.
+        
+        Raises:
+            ValueError: Exception is raises since portfolio allocation weights 
+                have not been calculated yet.
         """
         if self.weights_ is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
-        return self.weights_.copy()
+        return self.weights_
 
 
 # ---------- Mean-Variance Portfolio (with internal expected-returns calc) ---------- #
@@ -357,13 +383,19 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
             solver: str = 'auto',
         ):
         """
-        @param expected_returns_method (None | 'arithmetic' | 'geometric')
-            If None -> caller must pass expected_returns to calculate_weights().
-            If 'arithmetic' or 'geometric' -> caller must pass `returns` (obs x assets)
-               to calculate_weights() and μ will be computed from those returns.
-        @param risk_aversion float
-        @param allow_short bool
-        @param solver : str ('auto'|'cvxopt'|'scipy')
+        Args:
+            expected_returns_method (str | None): 'arithmetic' or 'geometric' can be used to 
+                calculate the expected returns.
+                - If None -> caller must pass expected_returns to calculate_weights().
+                - If 'arithmetic' or 'geometric' -> caller must pass `returns` (obs x assets)
+                    to calculate_weights() and μ will be computed from those returns.
+            risk_aversion (float): Risk aversion value for the estimation.
+            allow_short (bool): Allow short strategy allocation weights. (-1 to 1)
+            solver (str): 'auto', 'cvxopt' or 'scipy'. Python module to be used for optimization.
+                Default = 'auto', auto detects is cvxopt is avaiable or uses SciPy as a fallback.
+        
+        Raises:
+            ValueError: expected_returns_method must be None, 'arithmetic' or 'geometric'
         """
         super().__init__(solver=solver)
         if expected_returns_method is not None:
@@ -388,22 +420,32 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         """
         Per-period arithmetic mean (returns: DataFrame or 2D ndarray).
         
-        @param returns pd.DataFrame Returns of all stocks
+        Args:
+            returns (pd.DataFrame): Daily returns of all stocks.
 
-        @return np.ndarray Array of arithmetic mean returns for all stocks
+        Returns:
+            np.ndarray: Array of arithmetic mean returns for all stocks.
+        
+        Raises:
+            ValueError: Dimensions of the returns matric must be 2D.
         """
         if returns.ndim != 2:
-            raise ValueError("returns must be 2-D (obs x assets)")
+            raise ValueError('returns must be 2D (obs x assets)')
         return np.nanmean(returns, axis=0)
 
     def _geom_mean_from_returns(self, returns: pd.DataFrame) -> np.ndarray:
         """
         Geometric mean per-period using log1p to avoid overflow and handle NaNs:
-        gm = exp(mean(log1p(returns))) - 1
+        gm = exp(mean(log1p(returns))) - 1.
 
-        @param returns pd.DataFrame Returns of all stocks
+        Args:
+            returns (pd.DataFrame): Daily returns of all stocks.
 
-        @return np.ndarray Array of geometric mean returns for all stocks
+        Returns:
+            gm (np.ndarray): Array of geometric mean returns for all stocks
+        
+        Raises:
+            ValueError: Dimensions of the returns matric must be 2D.
         """
         if returns.ndim != 2:
             raise ValueError('returns must be 2-D (obs x assets)')
@@ -416,19 +458,23 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
     def calculate_weights(
             self,
-            cov: np.ndarray,
-            returns: np.ndarray|None = None,
+            cov: np.ndarray | pd.DataFrame,
+            returns: np.ndarray|pd.DataFrame|None = None,
             expected_returns: np.ndarray|None = None
         ) -> np.ndarray:
         """
-        Compute mean-variance weights. Either returns or expected_returns is required
+        Compute mean-variance portfolio allocation weights. 
+        Either `returns` or `expected_returns` is required
 
-        @param cov (n,n) covariance matrix
-        @param returns (obs, n) optional - used to compute expected_returns if the constructor
-                  set expected_returns_method to 'arithmetic' or 'geometric'
-        @param expected_returns (n,) optional - if provided it will be used directly
+        Args:
+            cov (np.ndarray | pd.Dataframe): (n,n) Covariance matrix of returns.
+            returns (np.ndarray | pd.DataFrame | None): 
+                (obs, n) - used to compute expected_returns if the constructor 
+                set expected_returns_method to 'arithmetic' or 'geometric'
+            expected_returns (np.ndarray | None): (n,) if provided it will be used directly
 
-        @return np.ndarray Calculated allocation weights. Shape = (n,)
+        Returns:
+            weights (np.ndarray): Allocation weights of the portfolio, which sum to 1.
         """
         cov_mat = self._to_numpy(cov)
         self.cov = cov_mat
@@ -515,25 +561,27 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 
         self.weights_ = x
         self.success_ = bool(success)
-        return self.weights_.copy()
+        return self.weights_
 
     def get_weights(self) -> np.ndarray:
         """
         Getter function to get weights for a portfolio that have been 
         estimated by running `calculate_weights(...)`
 
-        @return np.ndarray Array of allocation weights
+        Returns:
+            weights (np.ndarray): Allocation weights of the portfolio, which sum to 1.
         """
         if self.weights_ is None:
             raise ValueError('Estimator not fit - call `calculate_weights(...)` first.')
-        return self.weights_.copy()
+        return self.weights_
 
     def get_expected_returns(self) -> np.ndarray:
         """
         Getter function to get expected returns for a portfolio that have been 
-        estimated during running of `calculate_weights(...)`
+        estimated during running of `calculate_weights(...)`.
 
-        @return np.ndarray Array of expected returns
+        Returns:
+            expected_returns (np.ndarray): Array of expected returns for all stocks.
         """
         if self.expected_returns_ is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
@@ -544,15 +592,16 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
 @TradModelLibrary.register()
 class HierarchialRiskParity:
     """
-    Implementation of Hierarchial Risk Parity Clustering
+    Implementation of Hierarchial Risk Parity Clustering.
     """
     def __init__(self, linkage: str = 'single'):
         """
         Initialize Hierarchial Risk Parity Clustering using given hyperparameters.
 
-        @param linkage str
-            Linkage method to be used for hierarchial clustering. 'single', 'average',
-            'complete', 'ward', 'centroid','mean' or 'median'. 
+        Args:
+            linkage (str): Linkage method to be used for hierarchial clustering. 
+                'single', 'average', 'complete', 'ward', 'centroid','mean' or 'median'.
+                Default = 'single'. 
         """
         self.linkage = linkage
 
@@ -562,9 +611,11 @@ class HierarchialRiskParity:
         """
         Compute correlation distance of correlation matrix.
 
-        @param corr pd.DataFrame Correlation matrix
+        Args:
+            corr (pd.DataFrame): Correlation matrix of returns.
 
-        @return pd.DataFrame Correlation distance matrix
+        Returns:
+            pd.DataFrame: Correlation distance matrix.
         """
         # A distance matrix based on correlation, where 0<=d[i,j]<=1
         # This is a proper distance metric
@@ -579,9 +630,11 @@ class HierarchialRiskParity:
         """
         Compute Quasi Diagonal from clustered items and sort them.
 
-        @param link np.ndarray cCustered link from a hierarchial custering method
+        Args:
+            link (np.ndarray): Custered link from a hierarchial custering method.
 
-        @return list Sorted index of the clustered items
+        Returns:
+            list: List of Sorted indexes of the clustered items.
         """
         # Sort clustered items by distance
         link = link.astype(int)
@@ -602,9 +655,12 @@ class HierarchialRiskParity:
     def _getIVP(self, cov: pd.DataFrame, **kargs) -> np.ndarray:
         """
         Compute the inverse-variance portfolio
-        @param cov pd.DataFrame Covariance matrix
         
-        @return np.ndarray Inverse variance portfolio
+        Args:
+            cov (pd.DataFrame): Covariance matrix
+        
+        Returns:
+            ivp (np.ndarray): Inverse variance portfolio.
         """
         ivp = 1. / np.diag(cov)
         ivp /= ivp.sum()
@@ -615,11 +671,12 @@ class HierarchialRiskParity:
         Compute intra cluster variance.
         Cluster is idenfied from the entire cov matrix using the procided indexes.
 
-        @param cov pd.DataFrame Covariance matrix
-        @param cItems list Items belonging a particular cluster
+        Args:
+            cov (pd.DataFrame): Covariance matrix
+            cItems (list): Items belonging a particular cluster
 
-        @return np.ndarray variance of a particular cluster
-
+        Returns:
+            cVar (np.ndarray): Cariance of a particular cluster.
         """
         # Compute variance per cluster
         cov_=cov.loc[cItems,cItems]
@@ -631,10 +688,12 @@ class HierarchialRiskParity:
         """
         Compute HRP allocation using Risk Parity using intra cluster variance.
 
-        @param cov pd.DataFrame Covariance matrix
-        @param sortIx list Sorted indexes of clustered items
+        Args:
+            cov (pd.DataFrame): Covariance matrix.
+            sortIx (list): Sorted indexes of clustered items.
 
-        @return pd.Series Portfolio allocation weights based on Risk Parity
+        Returns:
+            w (pd.Series): Portfolio allocation weights based on Risk Parity
         """
         # Compute HRP alloc
         w = pd.Series(1.0, index=sortIx)
@@ -656,15 +715,15 @@ class HierarchialRiskParity:
             self, cov: pd.DataFrame, corr: pd.DataFrame
         ) -> pd.Series:
         """
-        Hierachial Risk Parity Clustering for portfolio optimization.
+        Hierachial Risk Parity Clustering for portfolio optimization using covariance 
+        and correlation matrices of returns.
         
-        @param cov pd.DataFrame
-                covariance matrix of returns
-        @param corr pd.DataFrame
-                correlation matrix of returnsx
+        Args:
+            cov (pd.DataFrame): Covariance matrix of returns.
+            corr (pd.DataFrame): Correlation matrix of returns.
         
-        @return weights pd.Series
-                optimized weights for the portfolio out of 1 (not 100)
+        Returns 
+            weights (pd.Series): optimized portfolio allocation weights, which sum to 1.
         """
         # Construct a hierarchical portfolio
         if len(cov) > 1:
@@ -679,16 +738,23 @@ class HierarchialRiskParity:
             hrp = pd.Series(1.0, index=cov.index)
         
         self.weights = hrp.sort_index()
-        return self.weights.copy()
+        return self.weights
     
-    def get_weights(self):
+    def get_weights(self) -> pd.Series:
         """
         Getter function to get weights for a portfolio that have been 
-        estimated by running `calculate_weights(...)`
+        estimated by running `calculate_weights(...)`.
+
+        Returns:
+            weights (pd.Series): Allocation weights of the portfolio, which sum to 1.
+        
+        Raises:
+            ValueError: Exception is raises since portfolio allocation weights 
+                have not been calculated yet.
         """
         if self.weights is None:
             raise ValueError('Estimator not fit -  call `calculate_weights(...) first.`')
-        return self.weights.copy()
+        return self.weights
 
 @TradModelLibrary.register()
 class NestedClusteredOptimization():
@@ -699,7 +765,8 @@ class NestedClusteredOptimization():
         Global Minimum Variance Optimization for inter cluster and intra cluster
         optimization.
         
-        @param de_noise (bool, default = True): Apply de noising to covariance matrix
+        Args:
+            de_noise (bool): Apply de noising to covariance matrix. Default = True.
         """
         self.optimizer = GlobalMinimumVariance() # To use different algo, change here and 
                                                 # returns are available in self.calculate_weights.
@@ -707,15 +774,31 @@ class NestedClusteredOptimization():
 
         self.weights = None
     
-    def _cov2corr(self, cov):
-        # Derive correlation matrix from covariance matrix
+    def _cov2corr(self, cov: np.ndarray) -> np.ndarray:
+        """
+        Derive correlation matrix from covariance matrix.
+
+        Args:
+            cov (np.ndarray): Covariance matrix.
+        
+        Returns:
+            corr (np.ndarray): Correlation Matrix.
+        """
         std = np.sqrt(np.diag(cov))
         corr = cov/np.outer(std,std)
         corr[corr<-1], corr[corr>1] = -1, 1 # numerical error
         return corr
 
-    def _getPCA(self, matrix):
-        # Get eVal, eVec from a Hermitian matrix
+    def _getPCA(self, matrix) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Get eVal, eVec from a Hermitian matrix.
+        
+        Args:
+            matrix (np.ndarray): Hermitian matrix to do PCA on.
+        
+        Returns:
+            tuple[np.ndarray, np.ndarray]: eVal & eVec.
+        """
         eVal, eVec = np.linalg.eigh(matrix)
         indices = eVal.argsort()[::-1] # args for sorting eVal desc
         eVal, eVec = eVal[indices], eVec[:,indices]
@@ -723,17 +806,24 @@ class NestedClusteredOptimization():
         return eVal, eVec
 
     def _mpPDF(self, var, q, pts):
-        # Marcenko- Pastur pdf
-        # q=T/N
+        """
+        Calculate Marcenko-Pastur pdf, q=T/N, to determine signal to 
+        noise ratio to shrink covariance matrix for denoising.
+        """
         eMin, eMax = var * (1-(1./q)**.5)**2, var*(1+(1./q)**.5)**2
         eVal = np.linspace(eMin, eMax, pts)
         pdf = q/(2*np.pi*var*eVal)*((eMax-eVal)*(eVal-eMin))**.5
-        pdf2 = pd.Series(pdf.reshape(pdf.shape[0],), index=eVal.reshape(eVal.shape[0],))
+        pdf2 = pd.Series(
+            pdf.reshape(pdf.shape[0],),
+            index=eVal.reshape(eVal.shape[0],)
+        )
         return pdf2
 
     def _fitKDE(self, obs, bWidth=.25, kernel='gaussian', x=None):
-        # Fit kernel to a series of obs, and derive the prob of obs
+        """
+        Fit kernel density to a series of obs, and derive the prob of obs
         # x is the arraymof values on which the fit KDE will be evaluated
+        """
         if len(obs.shape)==1: obs=obs.reshape(-1,1)
         kde = KernelDensity(kernel=kernel, bandwidth=bWidth).fit(obs)
         if x is None: x=np.unique(obs).reshape(-1,1)
@@ -743,14 +833,14 @@ class NestedClusteredOptimization():
         return pdf
 
     def _errPDFs(self, var, eVal, q, bWidth, pts=1000):
-        # Fit error
+        """Fit error"""
         pdf0 = self._mpPDF(var, q, pts) # theoretical pdf
         pdf1 = self._fitKDE(eVal, bWidth, x=pdf0.index.values) # empirical pdf
         sse = np.sum((pdf1-pdf0) ** 2)
         return sse 
 
     def _findMaxEval(self, eVal, q, bWidth):
-        # Find max random eVal by fitting Marcenko's dist
+        """Find max random eVal by fitting Marcenko's dist"""
         out = minimize(
             lambda *x: self._errPDFs(*x), .5,args=(eVal, q, bWidth),
             bounds=((1E-5, 1-1E-5),)
@@ -761,7 +851,7 @@ class NestedClusteredOptimization():
         return eMax, var
 
     def _denoisedCorr(self, eVal, eVec, nFacts):
-        # Remove noise from corr by fixing random eigenvalues
+        """Remove noise from corr by fixing random eigenvalues"""
         eVal_ = np.diag(eVal).copy()
         eVal_[nFacts:]=eVal_[nFacts].sum()/float(eVal_.shape[0]-nFacts)
         eVal_ = np.diag(eVal_)
@@ -774,6 +864,10 @@ class NestedClusteredOptimization():
         return cov
     
     def _deNoiseCov(self, cov0, q, bWidth):
+        """
+        Denoise covariance matrix using signal to noise ratio from Marcenko-Pastur pdf. 
+        Shrink and reconstructs matrix after shrinkage. 
+        """
         corr0=self._cov2corr(cov0)
         eVal0, eVec0 = self._getPCA(corr0)
         eMax0, var0 = self._findMaxEval(np.diag(eVal0), q, bWidth)
@@ -782,8 +876,18 @@ class NestedClusteredOptimization():
         cov1 = self._corr2cov(corr1, np.diag(cov0) ** .5)
         return cov1
 
-    def _de_noise(self, cov, T, N):
-        # De Noising
+    def _de_noise(self, cov: pd.DataFrame, T: int, N: int) -> pd.DataFrame:
+        """
+        De Noising of covariance matrix of returns of all stocks.
+
+        Args:
+            cov (pd.DataFrame): Covaraince matrix of returns.
+            T (int): Number of time steps or rows.
+            N (int): Number of assets (stocks) or columns.
+        
+        Returns:
+            cov (pd.DataFrame): Denoised covariance matrix.
+        """
         cols = cov.columns
         q = T/N
         cov = self._deNoiseCov(cov, q, bWidth=0.1)
@@ -836,11 +940,12 @@ class NestedClusteredOptimization():
         """
         Fit NCO model to given covariance matrix.
 
-        Parameters:
-            cov (pd.DataFrame) :  covariance matrix of returns
-            returns (pd.DataFrame): each assets returns
+        Args:
+            cov (pd.DataFrame): covariance matrix of returns.
+            returns (pd.DataFrame): asset (stocks) returns.
+        
         Returns:
-            weights (pd.Series) : optimized weights for the portfolio out of 1 (not 100)
+            weights (pd.Series): Optimized portfolio allocation weights. 
         """
         if self.de_noise:
             cov = self._de_noise(cov, T=returns.shape[0], N=returns.shape[1])
