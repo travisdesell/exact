@@ -7,9 +7,9 @@
         "crsp_dir": ""
     },
     "raw_files": {
-        "train": "combined_predictors_train.csv",
-        "val": "combined_predictors_validation.csv",
-        "test": "combined_predictors_test.csv"
+        "train": "crsp_train_2019.csv",
+        "val": "crsp_val_2021.csv",
+        "test": "crsp_test_2023.csv"
     },
     "processed_paths": {
         "returns_train": "data/processed/ret_train.csv",
