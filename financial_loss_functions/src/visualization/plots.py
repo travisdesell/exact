@@ -38,10 +38,10 @@ def train_val_losses_plot(
     bars = ax2.bar(window_labels, eval_losses)
     
     # Add value labels on top of the bars
-    for bar in bars:
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:.4f}', ha='center', va='bottom' if height > 0 else 'top', fontsize=10)
+    # for bar in bars:
+    #     height = bar.get_height()
+    #     ax2.text(bar.get_x() + bar.get_width()/2., height,
+    #             f'{height:.4f}', ha='center', va='bottom' if height > 0 else 'top', fontsize=10)
 
     ax2.set_ylabel('Loss')
     ax2.set_title(f'Evaluation Performance (N={num_windows} Windows)')

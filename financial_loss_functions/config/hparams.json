@@ -25,19 +25,19 @@
         },
         "AttentionLSTM": {
             "model": {
-                "hidden_size": 128,
-                "num_layers": 3,
+                "hidden_size": 64,
+                "num_layers": 2,
                 "attention_heads": 2,
                 "dropout": 0.2,
                 "equal_prior": true
             },
             "optimizer": {
-                "lr": 1e-4,
-                "weight_decay": 1e-4
+                "lr": 1e-5,
+                "weight_decay": 1e-3
             },
             "train": {
-                "train_batch_size": 256,
-                "val_batch_size": 2,
+                "train_batch_size": 64,
+                "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 100
             }

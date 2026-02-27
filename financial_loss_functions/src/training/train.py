@@ -1,6 +1,7 @@
 import gc
 import os
 import time
+import copy
 import torch
 import psutil
 import inspect
@@ -96,6 +97,11 @@ class Trainer:
         self.avg_eval_loss = None
 
         self.eval_alloc_weights = []
+
+        # For Early Stopping
+        self.best_val_loss = float('inf')
+        self.best_model_state = None
+        self.patience_counter = 0
     
     def train(
             self, train_ds: 'WindowDataset', val_ds: Optional['WindowDataset'] = None
@@ -107,6 +113,11 @@ class Trainer:
             Training data split converted to windowed dataset tensors
         """
         start_time = time.time()
+
+        # Pull hyperparameters with sensible defaults
+        patience = self.train_hparams.get('early_stop_patience', 10)
+        min_delta = self.train_hparams.get('early_stop_min_delta', 1e-4)
+        
         train_loader = DataLoader(
             train_ds,
             batch_size=self.train_hparams['train_batch_size'],
@@ -141,20 +152,38 @@ class Trainer:
 
             epoch_avg_loss = total_loss_sum / total_samples
             self.train_losses.append(epoch_avg_loss)
-            epoch_losses_print = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}'
+            status_msg = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}'
+            self.avg_train_loss = epoch_avg_loss
 
+            # --- Validation & Early Stopping Logic ---
             if val_ds is not None:
                 avg_val_loss = self.validate(val_ds)
                 self.val_losses.append(avg_val_loss)
-                epoch_losses_print = epoch_losses_print + f' | Val Loss: {avg_val_loss:.4f}'
-            
-            self.avg_train_loss = epoch_avg_loss
-            
-            epoch_end = time.time()
-            epoch_time = round(epoch_end - epoch_start, 3)
-            
-            print(epoch_losses_print + f' | Time Taken: {epoch_time}s')            
 
+                # Check for improvement
+                if avg_val_loss < (self.best_val_loss - min_delta):
+                    self.best_val_loss = avg_val_loss
+                    self.patience_counter = 0
+                    # Deep copy the weights so we can return to this point later
+                    self.best_model_state = copy.deepcopy(self.model.state_dict())
+                else:
+                    self.patience_counter += 1
+                
+                status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+
+                if self.patience_counter >= patience:
+                    print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
+                    # Load the "Best" weights back into the model
+                    self.model.load_state_dict(self.best_model_state)
+                    break
+            
+            print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
+        
+        if self.best_model_state is not None:
+            self.model.load_state_dict(self.best_model_state)
+            
+        print(f'Training Complete. Best Val Loss: {self.best_val_loss:.4f}')
+            
         end_time = time.time()
         time_taken = round(end_time - start_time, 3)
         print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
