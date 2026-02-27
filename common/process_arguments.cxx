@@ -52,6 +52,10 @@ EXAMM* generate_examm_from_arguments(
     double harada_selection_ratio = 0.0;
     get_argument(arguments, "--harada_selection_ratio", false, harada_selection_ratio);
 
+    // This is for Selection WhilE Evaluating (SWEET)
+    int32_t is_sweet = 0;
+    get_argument(arguments, "--is_sweet", false, is_sweet);
+
     if (max_genomes > 0) {
         Log::info(
             "Setting up examm with %d islands, island size %d, and max_genome %d\n", number_islands, island_size,
@@ -95,7 +99,7 @@ EXAMM* generate_examm_from_arguments(
     EXAMM* examm = new EXAMM(
         island_size, number_islands, max_genomes, max_wallclock_seconds, speciation_strategy, weight_rules, genome_property, output_directory,
         save_genome_option, generate_op_log, generate_visualization_json, growth_phase_genomes, reduction_phase_genomes,
-        genome_size_log, is_harada_selection, harada_selection_ratio
+        genome_size_log, is_harada_selection, harada_selection_ratio, is_sweet
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);
@@ -153,6 +157,9 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
     get_argument(arguments, "--is_harada_selection", false, is_harada_selection);
     double harada_selection_ratio = 0.0;
     get_argument(arguments, "--harada_selection_ratio", false, harada_selection_ratio);
+    // This is for Selection WhilE Evaluating (SWEET)
+    int32_t is_sweet = 0;
+    get_argument(arguments, "--is_sweet", false, is_sweet);
 
 
     double mutation_rate = 0.70, intra_island_co_rate = 0.20, inter_island_co_rate = 0.10;
@@ -177,7 +184,8 @@ IslandSpeciationStrategy* generate_island_speciation_strategy_from_arguments(
         number_islands, island_size, mutation_rate, intra_island_co_rate, inter_island_co_rate, seed_genome,
         island_ranking_method, repopulation_method, extinction_event_generation_number, num_mutations,
         islands_to_exterminate, max_genomes, repeat_extinction, start_filled, transfer_learning,
-        transfer_learning_version, seed_stirs, tl_epigenetic_weights, possible_node_types, is_harada_selection, harada_selection_ratio
+        transfer_learning_version, seed_stirs, tl_epigenetic_weights, possible_node_types,
+        is_harada_selection, harada_selection_ratio, is_sweet
     );
 
     return island_strategy;

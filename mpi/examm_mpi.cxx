@@ -166,6 +166,13 @@ void master(int32_t max_rank) {
             // }
             examm_mutex.lock();
             RNN_Genome* genome = examm->generate_genome();
+            // --- NEW SWEET LOGIC: Add a COPY to the island's pool ---
+            // We must copy it because the original 'genome' is deleted at the end of this block
+            if (genome != NULL) {
+                int32_t island_id = genome->get_group_id();
+                examm->add_evaluating_genome(genome->copy());
+            }
+            // --------------------------------------------------------
             examm_mutex.unlock();
 
             if (genome == NULL) {  // search was completed if it returns NULL for an individual
@@ -195,6 +202,13 @@ void master(int32_t max_rank) {
             RNN_Genome* genome = receive_genome_from(source);
 
             examm_mutex.lock();
+            
+            // --- NEW SWEET LOGIC: Remove from the island's pool ---
+            // Remove it BEFORE we insert it into the evaluated population
+            int32_t island_id = genome->get_group_id();
+            examm->remove_evaluating_genome(genome->copy());
+            // ------------------------------------------------------
+
             examm->insert_genome(genome);
             examm_mutex.unlock();
 

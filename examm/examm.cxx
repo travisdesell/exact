@@ -54,7 +54,7 @@ EXAMM::~EXAMM() {
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, SpeciationStrategy* _speciation_strategy,
     WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio, int32_t _is_sweet
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -98,6 +98,8 @@ EXAMM::EXAMM(
 
     is_harada_selection = _is_harada_selection;
     harada_selection_ratio = _harada_selection_ratio;
+    is_sweet = _is_sweet;
+
 }
 
 void EXAMM::print() {
@@ -366,6 +368,14 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     Log::debug("update log complete\n");
 
     return insert_position >= 0;
+}
+
+void EXAMM::add_evaluating_genome(RNN_Genome* genome) {
+    speciation_strategy->add_evaluating_genome(genome);
+}
+
+void EXAMM::remove_evaluating_genome(RNN_Genome* genome) {
+    speciation_strategy->remove_evaluating_genome(genome);
 }
 
 void EXAMM::save_visualization_json(RNN_Genome* genome, string genome_name) {

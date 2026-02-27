@@ -93,13 +93,18 @@ class EXAMM {
     double harada_selection_ratio;
     int32_t is_harada_selection;
 
+    // The key is the genome's generation_id
+    // This is for Selection WhilE Evaluating (SWEET)
+    int32_t is_sweet;
+
 
    public:
     EXAMM(
         int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, 
         SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property, 
         string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio
+        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, 
+        double _harada_selection_ratio, int32_t _is_sweet
     );
 
     ~EXAMM();
@@ -142,6 +147,8 @@ class EXAMM {
 
     void save_visualization_json(RNN_Genome* genome, string genome_name);
     void save_genome(RNN_Genome* genome, string genome_name);
+    void add_evaluating_genome(RNN_Genome* genome);
+    void remove_evaluating_genome(RNN_Genome* genome);
 
     string get_output_directory() const;
 

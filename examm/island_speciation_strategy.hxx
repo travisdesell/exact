@@ -54,6 +54,7 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
 
     int32_t is_harada_selection;
     double harada_selection_ratio;
+    int32_t is_sweet;
 
     // bool seed_genome_was_minimal; /**< is true if we passed in a minimal genome (i.e., are not using transfer
     // learning) */
@@ -91,7 +92,8 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
         string _island_ranking_method, string _repopulation_method, int32_t _extinction_event_generation_number,
         int32_t _num_mutations, int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction,
         bool _start_filled, bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs,
-        bool _tl_epigenetic_weights, std::vector<std::string> possible_node_types, int32_t is_harada_selection, double _harada_selection_ratio
+        bool _tl_epigenetic_weights, std::vector<std::string> possible_node_types, int32_t is_harada_selection, 
+        double _harada_selection_ratio, int32_t is_sweet
     );
 
     // /**
@@ -156,6 +158,9 @@ class IslandSpeciationStrategy : public SpeciationStrategy {
     int32_t get_other_full_island(
         uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, int32_t first_island
     );
+
+    void add_evaluating_genome(RNN_Genome* genome);
+    void remove_evaluating_genome(RNN_Genome* genome);
 
     /**
      * Inserts a <b>copy</b> of the genome into one of the islands handled by this

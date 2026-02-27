@@ -37,6 +37,10 @@ Island::Island(int32_t _id, vector<RNN_Genome*> _genomes)
       erased(false) {
 }
 
+int32_t Island::get_Id(){
+    return id;
+}
+
 RNN_Genome* Island::get_best_genome() {
     if (genomes.size() == 0) {
         return NULL;
@@ -156,6 +160,123 @@ void Island::copy_two_random_genomes(
     *genome2 = genomes[p2]->copy();
 }
 
+void Island::copy_two_SWEET_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
+) { 
+    RNN_Genome* p1_temp = nullptr;
+    RNN_Genome* p2_temp = nullptr;
+    string selection_type = "";
+
+    // --- Convert map to indexable vector ---
+    vector<RNN_Genome*> eval_vec = get_evaluating_genomes_vector();
+
+    // CASE 1: 0 unevaluated genomes (Fallback to normal island crossover)
+    if (eval_vec.size() == 0) {
+        selection_type = "Fallback (Island Only)";
+        
+        int32_t idx1 = size() * rng_0_1(generator);
+        int32_t idx2 = (size() - 1) * rng_0_1(generator);
+        if (idx2 >= idx1) idx2++; // Ensure distinct parents
+
+        p1_temp = genomes[idx1];
+        p2_temp = genomes[idx2];
+    }
+    // CASE 2: We have at least 2 unevaluated genomes—breed them together!
+    else if (eval_vec.size() >= 2) {
+        selection_type = "Double Unevaluated";
+        
+        int32_t size_eval_pool = eval_vec.size();
+        int32_t idx1 = size_eval_pool * rng_0_1(generator);
+        int32_t idx2 = (size_eval_pool - 1) * rng_0_1(generator);
+        if (idx2 >= idx1) idx2++; // Ensure distinct parents
+
+        p1_temp = eval_vec[idx1];
+        p2_temp = eval_vec[idx2];
+    }
+    // CASE 3: Only 1 unevaluated genome—pair, it with a use another genome from the island.
+    else {
+        selection_type = "Hybrid (Island + Evaluating)";
+        
+        int32_t island_index = size() * rng_0_1(generator);
+        p1_temp = genomes[island_index]; // From Island
+        p2_temp = eval_vec[0];           // The only one in the set
+    }
+
+    // --- Size Comparison (Smallest weights = Parent 1) ---
+    if (p1_temp->get_enabled_number_weights() <= p2_temp->get_enabled_number_weights()) {
+        *genome1 = p1_temp->copy();
+        *genome2 = p2_temp->copy();
+    } else {
+        *genome1 = p2_temp->copy();
+        *genome2 = p1_temp->copy();
+    }
+
+    // --- Log the results ---
+    Log::info("SWEET Selection Type: %s\n", selection_type.c_str());
+    Log::info("Parent 1 (Smaller) Gen ID: %d, Weights: %d\n", 
+              (*genome1)->get_generation_id(), (*genome1)->get_enabled_number_weights());
+    Log::info("Parent 2 (Larger) Gen ID: %d, Weights: %d\n", 
+              (*genome2)->get_generation_id(), (*genome2)->get_enabled_number_weights());
+}
+
+void Island::copy_two_SWEET_Harada_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, double harada_selection_ratio
+    ){
+    // Create a unified pool of ALL possible parents for this island
+    vector<RNN_Genome*> combined_pool = genomes;
+
+    // Get the unevaluated genomes safely converted into a vector format
+    vector<RNN_Genome*> eval_vec = get_evaluating_genomes_vector();
+
+    // Add the unevaluated genomes into the combined pool list
+    combined_pool.insert(combined_pool.end(), 
+                        eval_vec.begin(), 
+                        eval_vec.end());
+
+    // Sort the combined pool by search frequency (Harada Logic)
+    // Genomes with frequency 1 (usually the unevaluated ones) move to the front!
+    std::sort(combined_pool.begin(), combined_pool.end(), [](RNN_Genome* a, RNN_Genome* b) {
+        return a->search_frequency < b->search_frequency;
+    });
+    
+    // Calculate the Harada Pool Size (the "Best" unexplored genomes)
+    int32_t total_size = (int32_t)combined_pool.size();
+    int32_t pool_size = (int32_t)(total_size * harada_selection_ratio);
+    
+    // Safety checks for pool size
+    if (pool_size < 2) pool_size = 2;
+    if (pool_size > total_size) pool_size = total_size;
+
+    // Select two distinct indices from the frequency-restricted pool
+    int32_t idx1 = (int32_t)(pool_size * rng_0_1(generator));
+    int32_t idx2 = (int32_t)((pool_size - 1) * rng_0_1(generator));
+    if (idx2 >= idx1) idx2++;
+
+    RNN_Genome* p1_temp = combined_pool[idx1];
+    RNN_Genome* p2_temp = combined_pool[idx2];
+
+    // 5. Update Search Frequency (so they are less likely to be picked next time)
+    p1_temp->search_frequency += 1.0;
+    p2_temp->search_frequency += 1.0;
+
+    // 6. Final Assignment: Sort by weights (leanness) as a secondary metric
+    // If weights are equal, stick with the frequency-ordered p1/p2
+    if (p1_temp->get_enabled_number_weights() <= p2_temp->get_enabled_number_weights()) {
+        *genome1 = p1_temp->copy();
+        *genome2 = p2_temp->copy();
+    } else {
+        *genome1 = p2_temp->copy();
+        *genome2 = p1_temp->copy();
+    }
+
+    // --- Log the details for transparency ---
+    Log::info("SWEET+Harada Selection - Pool Size: %d/%d\n", pool_size, total_size);
+    Log::info("Parent 1 Gen ID: %d, Freq: %f, Weights: %d\n", 
+            (*genome1)->get_generation_id(), (*genome1)->search_frequency, (*genome1)->get_enabled_number_weights());
+    Log::info("Parent 2 Gen ID: %d, Freq: %f, Weights: %d\n", 
+            (*genome2)->get_generation_id(), (*genome2)->search_frequency, (*genome2)->get_enabled_number_weights());
+}
+
 void Island::copy_two_harada_genomes(
     uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, 
     double harada_selection_ratio
@@ -207,6 +328,70 @@ void Island::copy_two_harada_genomes(
     *genome2 = frequency_sorted[index2]->copy();
 }
 
+void Island::copy_random_SWEET_genome(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome
+) {
+    // Get the safe vector of unevaluated genomes
+    vector<RNN_Genome*> eval_vec = get_evaluating_genomes_vector();
+
+    // Create the unified SWEET pool
+    vector<RNN_Genome*> combined_pool = genomes;
+    combined_pool.insert(combined_pool.end(), eval_vec.begin(), eval_vec.end());
+
+    // Pick exactly one random genome from the unified pool
+    int32_t random_index = combined_pool.size() * rng_0_1(generator);
+    
+    // Safety check just in case floating point math hits the exact bound
+    if (random_index >= combined_pool.size()) {
+        random_index = combined_pool.size() - 1;
+    }
+
+    // Copy and return the chosen genome
+    *genome = combined_pool[random_index]->copy();
+
+    Log::info("1 of the Parent selected using SWEET Selection (Single). Gen ID: %d\n", 
+              (*genome)->get_generation_id());
+}
+
+void Island::copy_random_SWEET_Harada_genome(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome, double harada_selection_ratio
+) {
+    // Get the safe vector of unevaluated genomes
+    vector<RNN_Genome*> eval_vec = get_evaluating_genomes_vector();
+
+    // Create the unified SWEET pool
+    vector<RNN_Genome*> combined_pool = genomes;
+    combined_pool.insert(combined_pool.end(), eval_vec.begin(), eval_vec.end());
+
+    // Sort by Harada search frequency (0s and 1s go to the front)
+    std::sort(combined_pool.begin(), combined_pool.end(), [](RNN_Genome* a, RNN_Genome* b) {
+        return a->search_frequency < b->search_frequency;
+    });
+
+    // Calculate the pool size
+    int32_t total_size = (int32_t)combined_pool.size();
+    int32_t pool_size = (int32_t)(total_size * harada_selection_ratio);
+    
+    // Minimum pool size is 1 since we only need 1 genome
+    if (pool_size < 1) pool_size = 1;
+    if (pool_size > total_size) pool_size = total_size;
+
+    // Select one random index from the Harada-restricted pool
+    int32_t random_index = pool_size * rng_0_1(generator);
+    if (random_index >= pool_size) {
+        random_index = pool_size - 1; // Safety check
+    }
+
+    RNN_Genome* selected_parent = combined_pool[random_index];
+
+    // Update frequency and return copy
+    selected_parent->search_frequency += 1.0;
+    *genome = selected_parent->copy();
+
+    Log::info("Parent 1 selected using SWEET+Harada (Single). Gen ID: %d, Freq: %f\n", 
+              (*genome)->get_generation_id(), selected_parent->search_frequency);
+}
+
 void Island::do_population_check(int32_t line, int32_t initial_size) {
     if (status == Island::FILLED && (int32_t) genomes.size() < max_size) {
         Log::error(
@@ -216,6 +401,25 @@ void Island::do_population_check(int32_t line, int32_t initial_size) {
         );
         status = Island::INITIALIZING;
     }
+}
+
+// Add a genome to this island's evaluating pool when it's sent to a worker
+void Island::add_evaluating_genome(RNN_Genome* genome) {
+    evaluating_genomes[genome->get_generation_id()] = genome;
+}
+
+// Remove a genome from this pool when the worker finishes evaluating it
+void Island::remove_evaluating_genome(int32_t genome_id) {
+    evaluating_genomes.erase(genome_id);
+}
+
+// Convert the map to a vector for your SWEET crossover functions
+std::vector<RNN_Genome*> Island::get_evaluating_genomes_vector() {
+    std::vector<RNN_Genome*> eval_vec;
+    for (auto const& [id, genome] : evaluating_genomes) {
+        eval_vec.push_back(genome);
+    }
+    return eval_vec;
 }
 
 // returns -1 for not inserted, otherwise the index it was inserted at

@@ -27,7 +27,8 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
     string _repopulation_method, int32_t _extinction_event_generation_number, int32_t _num_mutations,
     int32_t _islands_to_exterminate, int32_t _max_genomes, bool _repeat_extinction, bool _start_filled,
     bool _transfer_learning, string _transfer_learning_version, int32_t _seed_stirs, bool _tl_epigenetic_weights,
-    std::vector<std::string> possible_node_types, int32_t _is_harada_selection, double _harada_selection_ratio
+    std::vector<std::string> possible_node_types, int32_t _is_harada_selection, double _harada_selection_ratio,
+    int32_t _is_sweet
 )
     : generation_island(0),
       number_of_islands(_number_of_islands),
@@ -87,6 +88,10 @@ IslandSpeciationStrategy::IslandSpeciationStrategy(
 
     is_harada_selection = _is_harada_selection;
     harada_selection_ratio = _harada_selection_ratio;
+    is_sweet = _is_sweet;
+    Log::info("Is this harada selection %d\n", is_harada_selection);
+    Log::info("The harada selection ratio %f\n", harada_selection_ratio);
+    Log::info("Is this SWEET selection %d\n", is_sweet);
 }
 
 void IslandSpeciationStrategy::initialize_population(function<void(int32_t, RNN_Genome*)>& mutate) {
@@ -443,6 +448,10 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
     RNN_Genome* genome;
     double r = rng_0_1(generator);
 
+    // ========================================================================
+    // 1. MUTATION: INSIDE CURRENT ISLAND ONLY
+    // ========================================================================
+
     // if the island isn't full, or our random number is less
     // than the mutation rate, generate a new genome by mutation.
     if (!island->is_full() || r < mutation_rate) {
@@ -450,38 +459,99 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         island->copy_random_genome(rng_0_1, generator, &genome);
         mutate(num_mutations, genome);
 
+    // ========================================================================
+    // 2. INTRA-ISLAND CROSSOVER: BOTH PARENTS INSIDE CURRENT ISLAND
+    // ========================================================================
+
     } else if (r < intra_island_crossover_rate || number_filled_islands() == 1) {
         // if the island is full and if we're under the intra island crossover rate, or
         // if there are no other filled islands, do intra-island crossover
         Log::debug("performing intra-island crossover\n");
         // select two distinct parent genomes in the same island
         RNN_Genome *parent1 = NULL, *parent2 = NULL;
-        if(is_harada_selection){
+        
+        Log::info("For Using SWEET and Harada Selection, printing the size %d\n", island->evaluating_genomes.size());
+
+        // BOTH SWEET AND HARADA
+        if (is_sweet && island->evaluating_genomes.size() > 0 && is_harada_selection) {
+            Log::info("Using SWEET and Harada Selection\n");
+            island->copy_two_SWEET_Harada_genomes(rng_0_1, generator, &parent1, &parent2, harada_selection_ratio);
+            genome = crossover(parent1, parent2);
+            double inherited_harada_frequency = (parent1->search_frequency + parent2->search_frequency)/2;
+            genome->search_frequency = inherited_harada_frequency;
+        } 
+        // SWEET ONLY (No Harada)
+        else if (is_sweet && island->evaluating_genomes.size() > 0 && !is_harada_selection) {
+            Log::info("Using SWEET Selection\n");
+            island->copy_two_SWEET_genomes(rng_0_1, generator, &parent1, &parent2);
+            genome = crossover(parent1, parent2);
+        }
+        // HARADA ONLY (No Sweet)
+        else if (!is_sweet && is_harada_selection) {
             Log::info("Using Harada Selection: %f\n", harada_selection_ratio);
             island->copy_two_harada_genomes(rng_0_1, generator, &parent1, &parent2, harada_selection_ratio);
             genome = crossover(parent1, parent2);
             double inherited_harada_frequency = (parent1->search_frequency + parent2->search_frequency)/2;
             genome->search_frequency = inherited_harada_frequency;
-
-            delete parent1;
-            delete parent2;
         } else {
             island->copy_two_random_genomes(rng_0_1, generator, &parent1, &parent2);
             genome = crossover(parent1, parent2);
-            delete parent1;
-            delete parent2;
         }
-    } else {
-        if(is_harada_selection) {
+        delete parent1;
+        delete parent2;
+    } 
+    
+    // ========================================================================
+    // 3. INTER-ISLAND CROSSOVER: CROSSING BORDERS (INSIDE + OUTSIDE)
+    // ========================================================================
+
+    else {
+        // get a random genome from this island
+        RNN_Genome* parent1 = NULL;
+        // get the best genome from the other island
+        RNN_Genome* parent2 = NULL;
+        
+        Log::info("For Using SWEET and Harada Selection, printing the size %d\n", island->evaluating_genomes.size());
+        
+        // BOTH SWEET AND HARADA
+        if (is_sweet && island->evaluating_genomes.size() > 0 && is_harada_selection) {
+            Log::info("Using SWEET and Harada Selection\n");
+            island->copy_random_SWEET_Harada_genome(rng_0_1, generator, &parent1, harada_selection_ratio);
+
+            int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
+            islands[other_island_index]->copy_random_SWEET_Harada_genome(rng_0_1, generator, &parent2, harada_selection_ratio);
+
+            // --- Size Comparison (Smallest weights = Parent 1) ---
+            if (parent1->get_enabled_number_weights() > parent2->get_enabled_number_weights()) {
+                RNN_Genome* tmp = parent1;
+                parent1 = parent2;
+                parent2 = tmp;
+            }
+            genome = crossover(parent1, parent2);  // new RNN GENOME
+            genome->search_frequency = (parent1->search_frequency + parent2->search_frequency) / 2.0;
+        } 
+        // SWEET ONLY (No Harada)
+        else if (is_sweet && island->evaluating_genomes.size() > 0 && !is_harada_selection) {
+            Log::info("Using SWEET Selection\n");
+            island->copy_random_SWEET_genome(rng_0_1, generator, &parent1);
+
+            int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
+            islands[other_island_index]->copy_random_SWEET_genome(rng_0_1, generator, &parent2);
+
+            // --- Size Comparison (Smallest weights = Parent 1) ---
+            if (parent1->get_enabled_number_weights() > parent2->get_enabled_number_weights()) {
+                RNN_Genome* tmp = parent1;
+                parent1 = parent2;
+                parent2 = tmp;
+            }
+            genome = crossover(parent1, parent2);  // new RNN GENOME
+        }
+        // HARADA ONLY (No Sweet)
+        else if (!is_sweet && is_harada_selection) {
             Log::info("Using Harada Selection: %f\n", harada_selection_ratio);
-            // get a random genome from this island
-            RNN_Genome* parent1 = NULL;
             island->copy_random_genome_harada_selection(rng_0_1, generator, &parent1, harada_selection_ratio);
 
             int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
-
-            // get the best genome from the other island
-            RNN_Genome* parent2 = NULL;
             islands[other_island_index]->copy_random_genome_harada_selection(rng_0_1, generator, &parent2, harada_selection_ratio);
 
             // swap so the first parent is the more fit parent
@@ -494,18 +564,13 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
 
             double inherited_harada_frequency = (parent1->search_frequency + parent2->search_frequency)/2;
             genome->search_frequency = inherited_harada_frequency;
-
-            delete parent1;
-            delete parent2;
         } else {
-            // get a random genome from this island
-            RNN_Genome* parent1 = NULL;
             island->copy_random_genome(rng_0_1, generator, &parent1);
 
             int32_t other_island_index = get_other_full_island(rng_0_1, generator, generation_island);
 
             // get the best genome from the other island
-            RNN_Genome* parent2 = islands[other_island_index]->get_best_genome()->copy();  // new RNN GENOME
+            parent2 = islands[other_island_index]->get_best_genome()->copy();  // new RNN GENOME
 
             // swap so the first parent is the more fit parent
             if (parent1->get_fitness() > parent2->get_fitness()) {
@@ -514,10 +579,9 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
                 parent2 = tmp;
             }
             genome = crossover(parent1, parent2);  // new RNN GENOME
-
-            delete parent1;
-            delete parent2;
         }
+        delete parent1;
+        delete parent2;
     }
 
     if (genome->outputs_unreachable()) {
@@ -526,6 +590,18 @@ RNN_Genome* IslandSpeciationStrategy::generate_for_filled_island(
         genome = NULL;
     }
     return genome;
+}
+
+void IslandSpeciationStrategy::add_evaluating_genome(RNN_Genome* genome) {
+    int32_t island_id = genome->get_group_id();
+    islands[island_id]->add_evaluating_genome(genome);
+    Log::info("SWEET DEBUG: Added genome to island %d. Evaluating pool size is now: %lu\n", 
+              island_id, islands[island_id]->evaluating_genomes.size());
+}
+
+void IslandSpeciationStrategy::remove_evaluating_genome(RNN_Genome* genome) {
+    int32_t island_id = genome->get_group_id();
+    islands[island_id]->remove_evaluating_genome(genome->get_generation_id());
 }
 
 void IslandSpeciationStrategy::print(string indent) const {

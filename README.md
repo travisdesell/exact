@@ -349,8 +349,11 @@ log will be generated which will track enabled/disabled nodes, edges, rec edges,
 
 [^harada_selection] Tomohiro Harada. **[A frequency-based parent selection for reducing the effect of evaluation time bias in asynchronous parallel multi-objective evolutionary algorithms.]** *Natural Computing 24.2 (2025)*. pp 211-225.
 
-
 * `--harada_selection_ratio` This decimal (floating-point) value determines the percentage of the population used for the candidate pool. It should be between 0.0 and 1.0. The paper typically recommends values around 0.2 or 0.3 (20-30%).
+
+* `--is_sweet` If this integer flag is 1 (or > 0), the algorithm will enable Selection whilE EvaluaTing (SWEET)[^sweet_selection] to allow currently evaluating genomes to act as parents, which mitigates evaluation time bias and avoids excess computation in asynchronous parallel environments.
+
+[^sweet_selection] Eric O. Scott, Mark Coletti, Catherine D. Schuman, Bill Kay, Shruti R. Kulkarni, Maryam Parsa, Chathika Gunaratne, and Kenneth A. De Jong. [Avoiding excess computation in asynchronous evolutionary algorithms.] Expert Systems 40.5 (2022). https://doi.org/10.1111/exsy.13100
 
 ## [Using Evolved Neural Networks for Inference](#using-evolved-neural-networks-for-inference)
 

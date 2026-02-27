@@ -11,7 +11,7 @@ using std::uniform_real_distribution;
 
 class SpeciationStrategy {
    public:
-    /**
+        /**
      * \return the number of generated genomes.
      */
     virtual int32_t get_generated_genomes() const = 0;
@@ -70,6 +70,9 @@ class SpeciationStrategy {
         uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator,
         function<void(int32_t, RNN_Genome*)>& mutate, function<RNN_Genome*(RNN_Genome*, RNN_Genome*)>& crossover
     ) = 0;
+
+    virtual void add_evaluating_genome(RNN_Genome* genome) {}
+    virtual void remove_evaluating_genome(RNN_Genome* genome) {}
 
     /**
      * Prints out all the island's populations

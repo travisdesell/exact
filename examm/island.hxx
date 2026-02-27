@@ -43,6 +43,8 @@ class Island {
     bool erased;         /**< a flag to track if this islands has been erased */
 
    public:
+    // NEW: A map specifically for this island's unevaluated genomes
+    std::unordered_map<int32_t, RNN_Genome*> evaluating_genomes;
     const static int32_t INITIALIZING = 0; /**< status flag for if the island is initializing. */
     const static int32_t FILLED = 1;       /**< status flag for if the island is filled. */
     const static int32_t REPOPULATING = 2; /**< status flag for if the island is repopulating. */
@@ -59,6 +61,9 @@ class Island {
      * of the supplied genome vector. The island status is set to filled.
      */
     Island(int32_t id, vector<RNN_Genome*> genomes);
+
+
+    int32_t get_Id();
 
     /**
      * Returns the fitness of the best genome in the island
@@ -153,6 +158,32 @@ class Island {
     void copy_two_harada_genomes(
     uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, double harada_selection_ratio
     );
+
+    void copy_two_SWEET_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2
+    );
+
+    void copy_two_SWEET_Harada_genomes(
+    uniform_real_distribution<double>& rng_0_1, minstd_rand0& generator, RNN_Genome** genome1, RNN_Genome** genome2, double harada_selection_ratio
+    );
+
+    void copy_random_SWEET_genome(
+    std::uniform_real_distribution<double>& rng_0_1, 
+    std::minstd_rand0& generator, 
+    RNN_Genome** genome
+    );
+    
+    void copy_random_SWEET_Harada_genome(
+    std::uniform_real_distribution<double>& rng_0_1, 
+    std::minstd_rand0& generator, 
+    RNN_Genome** genome, 
+    double harada_selection_ratio
+);
+
+    // NEW: Helper methods to manage this pool
+    void add_evaluating_genome(RNN_Genome* genome);
+    void remove_evaluating_genome(int32_t genome_id);
+    std::vector<RNN_Genome*> get_evaluating_genomes_vector();
 
     void do_population_check(int32_t line, int32_t initial_size);
 
