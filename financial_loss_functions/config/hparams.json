@@ -1,45 +1,51 @@
 {
     "rolling_windows": {
-        "in_size": 200,
-        "out_size": 50,
+        "in_size": 120,
+        "out_size": 60,
         "stride": 1
     },
     "nn_models": {
         "BaseLSTM": {
             "model": {
-                "hidden_size": 256,
-                "num_layers": 2,
+                "hidden_size": 16,
+                "num_layers": 4,
                 "dropout": 0.2,
                 "equal_prior": true
+            },
+            "optimizer": {
+                "lr": 1e-3,
+                "weight_decay": 1e-4
+            },
+            "train" : {
+                "train_batch_size": 128,
+                "val_batch_size": 128,
+                "clip_grad_norm": 0.5,
+                "epochs": 100,
+                "early_stopping": true,
+                "early_stop_patience": 30,
+                "early_stop_min_delta": 1e-5
+            }
+        },
+        "AttentionLSTM": {
+            "model": {
+                "hidden_size": 16,
+                "num_layers": 8,
+                "attention_heads": 1,
+                "dropout": 0.2,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
                 "weight_decay": 1e-5
             },
-            "train" : {
-                "train_batch_size": 256,
-                "val_batch_size": 2,
-                "clip_grad_norm": 0.5,
-                "epochs": 100
-            }
-        },
-        "AttentionLSTM": {
-            "model": {
-                "hidden_size": 64,
-                "num_layers": 2,
-                "attention_heads": 2,
-                "dropout": 0.2,
-                "equal_prior": true
-            },
-            "optimizer": {
-                "lr": 1e-5,
-                "weight_decay": 1e-3
-            },
             "train": {
-                "train_batch_size": 64,
-                "val_batch_size": 64,
+                "train_batch_size": 256,
+                "val_batch_size": 256,
                 "clip_grad_norm": 0.5,
-                "epochs": 100
+                "epochs": 500,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
             }
         }
     },

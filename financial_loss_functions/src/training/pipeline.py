@@ -142,7 +142,7 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
     for metric, df in kwargs.items():
         # Cleaning up the metric name
         title = metric.replace('_', ' ').upper()
-        print(f'\n{title} for each window:\n', df)
+        print(f'\n{title} summary for each window:\n', df.describe())
 
 def run_training_pipeline(
         paths_config: dict,
@@ -348,18 +348,18 @@ def run_training_one_model(
         evaluator = Evaluator(y_val)
 
         # -------------------- Training Tradional Models -------------------- #
-        trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-        trad_alloc_weights = trad_grid.train_all(
-            in_wind_idxs,
-            out_wind_idxs,
-            returns_train,
-            returns_val
-        )
+        # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
+        # trad_alloc_weights = trad_grid.train_all(
+        #     in_wind_idxs,
+        #     out_wind_idxs,
+        #     returns_train,
+        #     returns_val
+        # )
 
-        for trad_model_name, alloc_weights in trad_alloc_weights.items():
-            evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+        # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
         
-        del trad_grid
+        # del trad_grid
 
         # -------------------- Training Neural Network -------------------- #
         print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)

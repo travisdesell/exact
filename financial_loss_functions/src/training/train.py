@@ -115,8 +115,9 @@ class Trainer:
         start_time = time.time()
 
         # Pull hyperparameters with sensible defaults
-        patience = self.train_hparams.get('early_stop_patience', 10)
-        min_delta = self.train_hparams.get('early_stop_min_delta', 1e-4)
+        patience = self.train_hparams.get('early_stop_patience', 20)
+        min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
+        early_stopping = self.train_hparams.get('early_stopping', True)
         
         train_loader = DataLoader(
             train_ds,
@@ -160,22 +161,26 @@ class Trainer:
                 avg_val_loss = self.validate(val_ds)
                 self.val_losses.append(avg_val_loss)
 
-                # Check for improvement
-                if avg_val_loss < (self.best_val_loss - min_delta):
-                    self.best_val_loss = avg_val_loss
-                    self.patience_counter = 0
-                    # Deep copy the weights so we can return to this point later
-                    self.best_model_state = copy.deepcopy(self.model.state_dict())
-                else:
-                    self.patience_counter += 1
-                
-                status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+                if early_stopping:
+                    # Check for improvement
+                    if avg_val_loss < (self.best_val_loss - min_delta):
+                        self.best_val_loss = avg_val_loss
+                        self.patience_counter = 0
+                        # Deep copy the weights so we can return to this point later
+                        self.best_model_state = copy.deepcopy(self.model.state_dict())
+                    else:
+                        self.patience_counter += 1
+                    
+                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
 
-                if self.patience_counter >= patience:
-                    print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
-                    # Load the "Best" weights back into the model
-                    self.model.load_state_dict(self.best_model_state)
-                    break
+                    if self.patience_counter >= patience:
+                        print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
+                        # Load the "Best" weights back into the model
+                        self.model.load_state_dict(self.best_model_state)
+                        break
+                        
+                else:
+                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
             
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         

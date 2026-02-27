@@ -41,7 +41,7 @@ class BaseLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout,
+            dropout=dropout if num_layers > 1 else 0
         )
 
         self.equal_prior = equal_prior
@@ -126,7 +126,7 @@ class AttentionLSTM(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             batch_first=True,
-            dropout=dropout,
+            dropout=dropout if num_layers > 1 else 0
         )
 
         self.equal_prior = equal_prior
