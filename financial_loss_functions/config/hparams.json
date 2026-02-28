@@ -39,8 +39,8 @@
                 "weight_decay": 1e-4
             },
             "train": {
-                "train_batch_size": 256,
-                "val_batch_size": 256,
+                "train_batch_size": 64,
+                "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
                 "early_stopping": true,
