@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 import random
 
-def set_seed(seed=69):
+def set_seed(seed=50):
     # 1. Basic Python and Numpy seeds
     random.seed(seed)
     np.random.seed(seed)
@@ -42,7 +42,7 @@ def set_seed(seed=69):
         
     print(f"Seeds set to {seed} across all available backends.")
 
-# set_seed(42)
+set_seed(50)
 
 
 class Trainer:

@@ -1244,7 +1244,7 @@ def custom_loss_7(
 
 @LossLibrary.register(category='custom')
 def custom_loss_8(
-    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float, lambda3: float
+    weights: Tensor, returns: Tensor, log_ret_lambda: float, cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
@@ -1258,7 +1258,11 @@ def custom_loss_8(
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
     # print('RP:', risk_parity)
-    return sharpe + (lambda1 * log_returns) + (lambda2 * cvar) + (lambda3 * risk_parity)
+    loss = sharpe + \
+        (log_ret_lambda * log_returns) + \
+            (cvar_lambda * cvar) + \
+                (risk_p_lambda * risk_parity)
+    return loss
 
 @LossLibrary.register(category='custom')
 def custom_loss_9(
@@ -1275,3 +1279,23 @@ def custom_loss_9(
     # print('CVaR:', cvar)
     # print('RP:', risk_parity)
     return log_sortino + (lambda1 * cvar) + (lambda2 * risk_parity)
+
+@LossLibrary.register(category='custom')
+def custom_loss_10(
+    weights: Tensor, returns: Tensor, cvar_lambda: float, risk_p_lambda: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """
+    ### 2nd Best
+    sharpe = smooth_neglog_sharpe_loss(weights, returns)
+    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    risk_parity = risk_parity_regularizer(weights, returns)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    loss = sharpe + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity)
+    return loss

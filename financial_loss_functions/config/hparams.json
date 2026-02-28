@@ -31,7 +31,7 @@
                 "hidden_size": 16,
                 "num_layers": 4,
                 "attention_heads": 4,
-                "dropout": 0.2,
+                "dropout": 0.1,
                 "equal_prior": false
             },
             "optimizer": {
@@ -79,13 +79,17 @@
             "lambda2": 0.1
         },
         "custom_loss_8" : {
-            "lambda1": 0.01,
-            "lambda2": 0.01,
-            "lambda3": 0.1
+            "log_ret_lambda": 0.01,
+            "cvar_lambda": 0.1,
+            "risk_p_lambda": 0.1
         },
         "custom_loss_9" : {
             "lambda1": 0.01,
             "lambda2": 0.1
+        },
+        "custom_loss_10" : {
+            "cvar_lambda": 0.1,
+            "risk_p_lambda": 0.1
         }
     },
     "trad_models": {
