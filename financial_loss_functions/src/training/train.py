@@ -17,35 +17,6 @@ from typing import Callable, Type, Any, TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from src.data_processing.dataset import WindowDataset
 
-import random
-
-def set_seed(seed=50):
-    # 1. Basic Python and Numpy seeds
-    random.seed(seed)
-    np.random.seed(seed)
-    # os.environ['PYTHONHASHSEED'] = str(seed)
-    
-    # 2. Basic PyTorch seed (covers CPU)
-    torch.manual_seed(seed)
-    
-    # 3. NVIDIA CUDA Specifics
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed) # for multi-GPU
-        # These two ensure deterministic behavior but may slow down training slightly
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-        
-    # 4. Apple Silicon (MPS) Specifics
-    if hasattr(torch, "mps") and torch.backends.mps.is_available():
-        torch.mps.manual_seed(seed)
-        # Note: MPS is still maturing; some operations might not be 100% deterministic yet
-        
-    print(f"Seeds set to {seed} across all available backends.")
-
-set_seed(50)
-
-
 class Trainer:
     """
     Class to train provided models with provided hyperparameters.

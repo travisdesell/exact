@@ -1,4 +1,6 @@
 import time
+import torch
+import numpy as np
 import pandas as pd
 from torch import optim
 from pathlib import Path
@@ -29,11 +31,38 @@ from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Implement early stopping
-# Implement Learning Rate Scheduler
 # Add other NN models
 # Add Best model ranker
 # Unit test NCO
+
+import random
+
+def set_seed(seed=50):
+    # 1. Basic Python and Numpy seeds
+    random.seed(seed)
+    np.random.seed(seed)
+    # os.environ['PYTHONHASHSEED'] = str(seed)
+    
+    # 2. Basic PyTorch seed (covers CPU)
+    torch.manual_seed(seed)
+    
+    # 3. NVIDIA CUDA Specifics
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed) # for multi-GPU
+        # These two ensure deterministic behavior but may slow down training slightly
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        
+    # 4. Apple Silicon (MPS) Specifics
+    if hasattr(torch, "mps") and torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
+        # Note: MPS is still maturing; some operations might not be 100% deterministic yet
+        
+    print(f"Seeds set to {seed} across all available backends.")
+
+set_seed(50)
+
 
 def _common_setup(paths_config):
     # Create plots directory if it doesnt exist
