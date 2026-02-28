@@ -142,7 +142,7 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
     for metric, df in kwargs.items():
         # Cleaning up the metric name
         title = metric.replace('_', ' ').upper()
-        print(f'\n{title} summary for each window:\n', df.describe())
+        print(f'\n{title} summary for each window:\n', df)
 
 def run_training_pipeline(
         paths_config: dict,
@@ -268,22 +268,25 @@ def run_training_pipeline(
     # Adding s&p500 returns to the evaluator as a benchmark
     evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
     
-    plot_windowed_comparison(
-        evaluator.get_all_daily_returns(),
-        out_win_date_cols,
-        plots_dir / (f'Daily Returns' + '.png')
-    )
+    # plot_windowed_comparison(
+    #     evaluator.get_all_daily_returns(),
+    #     out_win_date_cols,
+    #     plots_dir / (f'Daily Returns' + '.png')
+    # )
 
     total_returns = evaluator.calc_total_performance('returns')
-    total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
     total_sharpes = evaluator.calc_total_performance('sharpe')
-    total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 
     plot_models_comparison(
         total_sharpes,
         'Out-of-Sample Sharpe Ratio Comparison',
         plots_dir / f'Sharpe Comprison.png'
     )
+
+    total_returns = total_returns.describe().T
+    total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
+    total_sharpes = total_sharpes.describe().T
+    total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 
     _print_evaludation_info(
             in_win_date_cols,
@@ -348,18 +351,18 @@ def run_training_one_model(
         evaluator = Evaluator(y_val)
 
         # -------------------- Training Tradional Models -------------------- #
-        # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-        # trad_alloc_weights = trad_grid.train_all(
-        #     in_wind_idxs,
-        #     out_wind_idxs,
-        #     returns_train,
-        #     returns_val
-        # )
+        trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
+        trad_alloc_weights = trad_grid.train_all(
+            in_wind_idxs,
+            out_wind_idxs,
+            returns_train,
+            returns_val
+        )
 
-        # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+        for trad_model_name, alloc_weights in trad_alloc_weights.items():
+            evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
         
-        # del trad_grid
+        del trad_grid
 
         # -------------------- Training Neural Network -------------------- #
         print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
@@ -426,27 +429,30 @@ def run_training_one_model(
         # Adding s&p500 returns to the evaluator as a benchmark
         evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
 
-        plot_windowed_comparison(
-            evaluator.get_all_daily_returns(),
-            out_win_date_cols,
-            plots_dir /
-            (f'Daily Returns_{model_name}-{loss_name}' + '.png')
-        )
+        # plot_windowed_comparison(
+        #     evaluator.get_all_daily_returns(),
+        #     out_win_date_cols,
+        #     plots_dir /
+        #     (f'Daily Returns_{model_name}-{loss_name}' + '.png')
+        # )
 
         total_returns = evaluator.calc_total_performance('returns')
-        total_returns.to_csv(
-            results_dir / f'total_returns_{model_name}-{loss_name}.csv', sep=','
-        )
         total_sharpes = evaluator.calc_total_performance('sharpe')
-        total_sharpes.to_csv(
-            results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
-        )  
 
         plot_models_comparison(
             total_sharpes,
             'Out-of-Sample Sharpe Ratio Comparison',
             plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
         )
+
+        total_returns = total_returns.describe().T
+        total_returns.to_csv(
+            results_dir / f'total_returns_{model_name}-{loss_name}.csv', sep=','
+        )
+        total_sharpes = total_sharpes.describe().T
+        total_sharpes.to_csv(
+            results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
+        ) 
 
         _print_evaludation_info(
             in_win_date_cols,

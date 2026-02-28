@@ -7,6 +7,7 @@ import psutil
 import inspect
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
@@ -809,7 +810,7 @@ class TradModelsTrainer:
 
         # Get hyperparameters of the current model
         current_hparams = self.hparams_config[self.models_hparams].get(model_name) or {}
-        print('Model hyperparameters:\n', current_hparams)
+        # print('Model hyperparameters:\n', current_hparams)
         
         model_obj = model_class(**current_hparams)
         alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
@@ -829,7 +830,7 @@ class TradModelsTrainer:
         # Loop over every model
         for model_name, model_class in self.model_lib.items():
             
-            print('\n', '-'*10, f' Training {model_name} ', '-'*10)
+            # print('\n', '-'*10, f' Training {model_name} ', '-'*10)
             
             self.all_alloc_weights.setdefault(model_name, [])
 
@@ -872,12 +873,17 @@ class TradModelsTrainer:
             returns_val: pd.DataFrame,
             returns_test: pd.DataFrame | None = None
         ) -> dict[str, list[pd.Series | np.ndarray]]:
-
+        
+        num_slices = len(in_sample_indexes)
         if returns_test is None: # To use Validation Set (Combines Train + in-sample Val)
             # Calculate indexes for in-sample and out-of-sample to match the neural networks
 
             # Loop over dataset slices
-            for i in range(len(in_sample_indexes)): # len(in-sample) = len(out-of-sample)
+            for i in tqdm(
+                range(num_slices),
+                desc=f'Training tradional models on {num_slices} slices',
+                unit='slice'
+            ): # len(in-sample) = len(out-of-sample)
                 returns_is, _ = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
@@ -885,13 +891,15 @@ class TradModelsTrainer:
                     returns_val
                 )
                 
-                print(f'\nTraining all models on slice {i+1} of the data...')
-                
                 self._process_train_1_ds(returns_is)     
         
         else: # To use Test Set (Combines Train + Val + in-sample Test)
 
-            for i in range(len(in_sample_indexes)): 
+            for i in tqdm(
+                range(num_slices),
+                desc=f'Training tradional models on {num_slices} slices',
+                unit='slice'
+            ):
                 returns_is, _ = build_dataset(
                     in_sample_indexes[i],
                     out_sample_indexes[i],
