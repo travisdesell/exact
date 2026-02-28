@@ -32,6 +32,7 @@ class Trainer:
         in_size: int,
         num_stocks: int,
         device: torch.device | str,
+        scheduler_hparams: dict[str, Any] | None = None,
         loss_hparams: dict[str, Any] | None = None
     ):
         """
@@ -83,6 +84,19 @@ class Trainer:
             self.model.parameters(),
             **optimizer_hparams
         )
+
+        if scheduler_hparams:
+            # 2. Initialize Scheduler
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                self.optimizer, 
+                mode='min',       # We want to minimize loss
+                **scheduler_hparams
+            )
+
+            self.lr_schedule = True
+        else:
+            self.lr_schedule = False
+
         self.loss = loss
 
         self.train_hparams = train_hparams
@@ -160,6 +174,11 @@ class Trainer:
             if val_ds is not None:
                 avg_val_loss = self.validate(val_ds)
                 self.val_losses.append(avg_val_loss)
+
+                # --- STEP THE SCHEDULER HERE ---
+                # It takes the current validation loss to decide if it should drop the LR
+                if self.lr_schedule:
+                    self.scheduler.step(avg_val_loss)
 
                 if early_stopping:
                     # Check for improvement
@@ -372,6 +391,7 @@ class CandidatesGrid:
             ][model_name]['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
+            scheduler_hparams=self.hparams_config[model_name]['scheduler'],
             loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             device=self.torch_device
         )

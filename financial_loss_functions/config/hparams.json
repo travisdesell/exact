@@ -46,6 +46,11 @@
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-6
             }
         }
     },
