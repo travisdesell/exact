@@ -176,3 +176,81 @@ class AttentionLSTM(nn.Module):
         
         pf_weights = torch.softmax(logits, dim=-1)
         return pf_weights
+
+@NNModelLibrary.register(category='lstm')
+class LSTMTransformer(nn.Module):
+    """
+    Hybrid Model: LSTM for local temporal features + Transformer for global attention.
+    """
+    def __init__(
+        self,
+        input_size: int,       # 251 features
+        hidden_size: int,      # Embedding dimension
+        num_layers: int,       # LSTM layers
+        num_stocks: int,       # 50 stocks
+        attention_heads: int,
+        dropout: float,
+        expansion_factor: int,
+        max_seq_len: int
+    ):
+        super().__init__()
+        
+        # 1. Feature Projection (Initial step to clean up features)
+        self.feature_proj = nn.Linear(input_size, hidden_size)
+        
+        # 2. LSTM Layer (Local Temporal Smoothing)
+        self.lstm = nn.LSTM(
+            input_size=hidden_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+        
+        # 3. Position Encoding (Crucial for the Transformer part)
+        self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
+        nn.init.trunc_normal_(self.pos_embedding, std=0.02)
+
+        # 4. Transformer Block (Global Context)
+        # Replacing simple Attention with a full Encoder Layer (includes FFN + Norms)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden_size,
+            nhead=attention_heads,
+            dim_feedforward=hidden_size * expansion_factor,
+            dropout=dropout,
+            batch_first=True,
+            activation='gelu'
+        )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=1)
+
+        # 5. Output Head
+        self.ln_final = nn.LayerNorm(hidden_size)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(hidden_size, num_stocks)
+
+    def forward(self, x: Tensor) -> Tensor:
+        # x: (B, T, 251)
+        
+        # Initial Projection
+        x = self.feature_proj(x)
+        
+        # Step 1: LSTM local processing
+        # This helps the Transformer 'see' the sequence as a flow
+        x, _ = self.lstm(x) # (B, T, H)
+        
+        # Step 2: Add Positional Information
+        x = x + self.pos_embedding[:, :x.size(1), :]
+        
+        # Step 3: Transformer Global Attention
+        # Every day now looks at every other day through the lens of the LSTM output
+        x = self.transformer(x) # (B, T, H)
+        
+        # Step 4: Pooling
+        # Mean pooling the context of the whole 120-day window
+        context = x.mean(dim=1)
+        context = self.ln_final(context)
+        context = self.dropout(context)
+        
+        # Step 5: Portfolio Allocation
+        logits = self.fc(context)  # (B, N)
+        return torch.softmax(logits, dim=-1)

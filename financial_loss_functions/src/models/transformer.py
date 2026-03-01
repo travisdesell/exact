@@ -20,6 +20,7 @@ class TemporalTransformerEncoder(nn.Module):
         num_stocks: int,    # Output size
         attention_heads: int,
         dropout: float,
+        expansion_factor: int,
         max_seq_len: int # Length of your lookback window
     ):
         super().__init__()
@@ -35,7 +36,7 @@ class TemporalTransformerEncoder(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=hidden_size,
             nhead=attention_heads,
-            dim_feedforward=hidden_size * 4,
+            dim_feedforward=hidden_size * expansion_factor,
             dropout=dropout,
             batch_first=True,
             activation='gelu' # GELU is standard for SOTA Transformers
@@ -145,6 +146,7 @@ class TFT(nn.Module):
             num_stocks: int,
             attention_heads: int,
             dropout: float,
+            expansion_factor: int,
             max_seq_len: int
         ):
         super().__init__()
@@ -160,7 +162,7 @@ class TFT(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=hidden_size,
             nhead=attention_heads,
-            dim_feedforward=hidden_size * 4,
+            dim_feedforward=hidden_size * expansion_factor,
             dropout=dropout,
             batch_first=True,
             activation='gelu'
