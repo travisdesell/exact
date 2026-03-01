@@ -374,7 +374,8 @@ class CandidatesGrid:
         ) -> np.ndarray:
         #### Hyperparamater searching can be done here ####
 
-        set_seed(50) # Per model seed for fair comparison
+        set_seed(self.hparams_config['seed']) # Per model seed for fair comparison
+        
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
             self._memory_diagnostics()

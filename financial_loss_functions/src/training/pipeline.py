@@ -35,8 +35,8 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 # Add Best model ranker
 # Unit test NCO
 
-def _common_setup(paths_config):
-    set_seed(50) # Global seed for reproducibility
+def _common_setup(paths_config, seed_value: int):
+    set_seed(seed_value) # Global seed for reproducibility
     # Create plots directory if it doesnt exist
     plots_dir = (Path(paths_config['artifacts']['plots']))
     create_directory(plots_dir)
@@ -167,7 +167,9 @@ def run_training_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, results_dir, best_device = _common_setup(paths_config)
+    plots_dir, results_dir, best_device = _common_setup(
+        paths_config, hparams_config['seed']
+    )
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)

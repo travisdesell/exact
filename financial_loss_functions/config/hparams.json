@@ -1,4 +1,5 @@
-{
+{   
+    "seed": 50,
     "rolling_windows": {
         "in_size": 120,
         "out_size": 60,
@@ -144,15 +145,15 @@
         },
         "InvertedAttentionLSTM": {
             "model": {
-                "hidden_size": 32,
-                "num_layers": 2,
+                "hidden_size": 16,
+                "num_layers": 4,
                 "attention_heads": 8,
                 "dropout": 0.5,
                 "max_seq_len": 120
             },
             "optimizer": {
                 "lr": 1e-4,
-                "weight_decay": 1e-2
+                "weight_decay": 1e-3
             },
             "train": {
                 "train_batch_size": 64,
