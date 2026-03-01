@@ -53,10 +53,10 @@
                 "min_lr": 1e-6
             }
         },
-        "TFT": {
+        "TemporalTransformerEncoder": {
             "model": {
                 "hidden_size": 8,
-                "num_layers": 2,
+                "num_layers": 4,
                 "attention_heads": 2,
                 "dropout": 0.2,
                 "max_seq_len": 120
@@ -69,6 +69,33 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.1,
+                "epochs": 500,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-6
+            }
+        }, 
+        "TFT": {
+            "model": {
+                "hidden_size": 16,
+                "num_layers": 1,
+                "attention_heads": 2,
+                "dropout": 0.2,
+                "max_seq_len": 120
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-2
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "early_stopping": true,
                 "early_stop_patience": 20,
