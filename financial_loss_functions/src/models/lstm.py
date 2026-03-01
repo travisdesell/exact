@@ -18,7 +18,7 @@ class BaseLSTM(nn.Module):
             hidden_size: int, 
             num_layers: int,
             num_stocks: int,
-            dropout: float = 0.2,
+            dropout: float,
             equal_prior: bool = False
         ):
         """
@@ -178,6 +178,80 @@ class AttentionLSTM(nn.Module):
         return pf_weights
 
 @NNModelLibrary.register(category='lstm')
+class InvertedAttentionLSTM(nn.Module):
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int,
+        num_stocks: int,
+        attention_heads: int,
+        dropout: float,
+        max_seq_len: int, # Needed for the inverted Attention/Norm layers
+    ):
+        super().__init__()
+        # 1. Temporal Extraction (Standard)
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+        self.ln_lstm = nn.LayerNorm(hidden_size)
+
+        # 2. THE INVERSION: Attention now operates on the Time dimension (max_seq_len)
+        # We treat each hidden node as a token, and its sequence over time as the 'embedding'
+        self.attn = nn.MultiheadAttention(
+            embed_dim=max_seq_len, 
+            num_heads=attention_heads,
+            batch_first=True
+        )
+        self.ln_attn = nn.LayerNorm(max_seq_len)
+    
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(hidden_size, num_stocks)
+
+        # 3. Decision Space (Expansion FFN)
+        # After inversion and pooling, we go from hidden_size -> stocks
+        # self.ffn = nn.Sequential(
+        #     nn.Linear(hidden_size, hidden_size * expansion_factor),
+        #     nn.GELU(),
+        #     nn.Dropout(dropout),
+        #     nn.Linear(hidden_size * expansion_factor, num_stocks)
+        # )
+
+    def forward(self, x: Tensor) -> Tensor:
+        # Step 1: Standard LSTM processing
+        # x shape: (Batch, Time, Features) -> (B, 120, 251)
+        out, _ = self.lstm(x)  # (B, 120, hidden_size)
+        out = self.ln_lstm(out)
+        out = torch.relu(out)
+        out = self.dropout(out)
+        
+        # Step 2: INVERT (Transpose)
+        # Swap Time (120) and Hidden (32)
+        # New shape: (Batch, hidden_size, Time) -> (B, 16, 120)
+        out_inverted = out.transpose(1, 2)
+        
+        # Step 3: Feature-wise Attention
+        # The model asks: "How do these hidden features correlate across the whole window?"
+        attn_out, _ = self.attn(out_inverted, out_inverted, out_inverted)
+        
+        # Residual Connection on the inverted shape
+        out_inverted = out_inverted + attn_out 
+        out_inverted = self.ln_attn(out_inverted)
+        
+        # Step 4: Pooling across the temporal "embeddings"
+        # We mean-pool the time dimension (dim=2) to get one vector per hidden feature
+        context = out_inverted.mean(dim=-1) # (B, hidden_size)
+        context = self.dropout(context)
+        
+        # Step 5: Final Portfolio Weights
+        logits = self.fc(context) 
+        return torch.softmax(logits, dim=-1)
+
+@NNModelLibrary.register(category='lstm')
 class LSTMTransformer(nn.Module):
     """
     Hybrid Model: LSTM for local temporal features + Transformer for global attention.
@@ -237,6 +311,8 @@ class LSTMTransformer(nn.Module):
         # Step 1: LSTM local processing
         # This helps the Transformer 'see' the sequence as a flow
         x, _ = self.lstm(x) # (B, T, H)
+        # x = nn.functional.gelu(x)
+        # x = self.dropout(x)
         
         # Step 2: Add Positional Information
         x = x + self.pos_embedding[:, :x.size(1), :]
@@ -254,3 +330,4 @@ class LSTMTransformer(nn.Module):
         # Step 5: Portfolio Allocation
         logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
+    
