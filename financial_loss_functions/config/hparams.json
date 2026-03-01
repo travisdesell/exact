@@ -58,7 +58,7 @@
                 "min_lr": 1e-6
             }
         },
-        "TemporalTransformerEncoder": {
+        "TemporalTransformer": {
             "model": {
                 "hidden_size": 16,
                 "num_layers": 2,
@@ -119,8 +119,8 @@
                 "hidden_size": 16,
                 "num_layers": 4,
                 "attention_heads": 2,
-                "dropout": 0.3,
-                "expansion_factor": 2, 
+                "dropout": 0.2,
+                "expansion_factor": 1, 
                 "max_seq_len": 120
             },
             "optimizer": {
@@ -139,7 +139,7 @@
             "scheduler": {
                 "factor": 0.5,
                 "patience": 10,
-                "min_lr": 1e-6
+                "min_lr": 1e-8
             }
         }
     },
