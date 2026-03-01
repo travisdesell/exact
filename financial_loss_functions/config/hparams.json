@@ -144,10 +144,10 @@
         },
         "InvertedAttentionLSTM": {
             "model": {
-                "hidden_size": 16,
-                "num_layers": 4,
-                "attention_heads": 4,
-                "dropout": 0.2,
+                "hidden_size": 32,
+                "num_layers": 2,
+                "attention_heads": 8,
+                "dropout": 0.5,
                 "max_seq_len": 120
             },
             "optimizer": {
