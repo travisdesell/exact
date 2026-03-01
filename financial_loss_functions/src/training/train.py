@@ -8,6 +8,7 @@ import inspect
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from src.utils.device import set_seed
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
@@ -373,6 +374,7 @@ class CandidatesGrid:
         ) -> np.ndarray:
         #### Hyperparamater searching can be done here ####
 
+        set_seed(50) # Per model seed for fair comparison
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
             self._memory_diagnostics()
@@ -392,7 +394,9 @@ class CandidatesGrid:
             ][model_name]['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
-            scheduler_hparams=self.hparams_config[model_name]['scheduler'],
+            scheduler_hparams=self.hparams_config[
+                self.models_hparams
+            ][model_name]['scheduler'],
             loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             device=self.torch_device
         )
