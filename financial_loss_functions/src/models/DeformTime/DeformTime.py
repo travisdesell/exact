@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from src.models.registry import NNModelLibrary
 
 from src.models.DeformTime.layers.TemporalDeformAttention import Encoder, CrossDeformAttn
 from src.models.DeformTime.layers.Embed import Deform_Temporal_Embedding, Local_Temporal_Embedding
@@ -15,67 +16,80 @@ class Layernorm(nn.Module):
         bias = torch.mean(x_hat, dim=1).unsqueeze(1).repeat(1, x.shape[1], 1)
         return x_hat - bias
 
-class Model(nn.Module):
-    def __init__(self, configs) -> None:
-        super(Model, self).__init__()
-        self.seq_len = configs.seq_len
-        self.pred_len = configs.pred_len
-        self.e_layers = configs.e_layers
-        self.d_layers = configs.d_layers
-        self.d_model = configs.d_model
-        self.f_dim = configs.enc_in
-        self.c_out = configs.c_out
-        self.dropout = configs.dropout
-        self.kernel_size = configs.kernel
+
+@NNModelLibrary.register(category='transformer')
+class DeformTime(nn.Module):
+    def __init__(
+            self,
+            input_size: int,
+            num_stocks: int,
+            seq_len: int,
+            e_layers: int,
+            d_layers: int,
+            d_model: int,
+            attention_heads: int,
+            kernel_size: int,
+            dropout: float,
+            n_reshape: int,
+            patch_len: int,
+            stride: int
+    ) -> None:
+        super().__init__()
+
+        self.input_size = input_size
+        self.num_stocks = num_stocks
+        
+        self.d_layers = d_layers
+        self.d_model = d_model
 
         # Embedding
-        if configs.enc_in == 1:
-            self.enc_value_embedding = Deform_Temporal_Embedding(self.f_dim, self.d_model, freq='d')
+        if self.input_size == 1:
+            self.enc_value_embedding = Deform_Temporal_Embedding(self.input_size, self.d_model, freq='d')
         else:
             self.s_group = 4
             assert self.d_model % self.s_group == 0
             # Embedding local patches
-            self.pad_in_len = ceil(1.0 * configs.enc_in / self.s_group) * self.s_group
-            self.enc_value_embedding = Local_Temporal_Embedding(self.pad_in_len//self.s_group, self.d_model, self.pad_in_len-configs.enc_in, self.s_group)
+            self.pad_in_len = ceil(1.0 * self.input_size / self.s_group) * self.s_group
+            self.enc_value_embedding = Local_Temporal_Embedding(self.pad_in_len//self.s_group, self.d_model, self.pad_in_len-self.input_size, self.s_group)
 
-        self.pre_norm = nn.LayerNorm(configs.d_model)
+        self.pre_norm = nn.LayerNorm(self.d_model)
         # Encoder
-        n_days = [1,configs.n_reshape,configs.n_reshape]
-        assert len(n_days) > self.e_layers-1
-        drop_path_rate=configs.dropout
-        dpr = [x.item() for x in torch.linspace(drop_path_rate, drop_path_rate, self.e_layers)]
+        n_days = [1,n_reshape,n_reshape]
+        assert len(n_days) > e_layers-1
+        drop_path_rate=dropout
+        dpr = [x.item() for x in torch.linspace(drop_path_rate, drop_path_rate, e_layers)]
         self.encoder = Encoder(
             [
-                CrossDeformAttn(seq_len=configs.seq_len, 
-                                d_model=configs.d_model, 
-                                n_heads=configs.n_heads, 
-                                dropout=configs.dropout, 
+                CrossDeformAttn(seq_len=seq_len, 
+                                d_model=self.d_model, 
+                                n_heads=attention_heads, 
+                                dropout=dropout, 
                                 droprate=dpr[l], 
                                 n_days=n_days[l], 
-                                window_size=configs.kernel, 
-                                patch_len=configs.patch_len, 
-                                stride=configs.stride) for l in range(configs.e_layers)
+                                window_size=kernel_size, 
+                                patch_len=patch_len, 
+                                stride=stride) for l in range(e_layers)
             ],
-            norm_layer=Layernorm(configs.d_model)
+            norm_layer=Layernorm(self.d_model)
         )
 
         # GRU layers
         self.gru = torch.nn.GRU(
-            self.d_model, self.d_model, self.d_layers, batch_first=True, dropout=configs.dropout
+            self.d_model, self.d_model, self.d_layers, batch_first=True, dropout=dropout
         )
 
         # MLP layer
         self.fc = nn.Sequential(
-            nn.Linear(self.seq_len, self.d_model),
+            nn.Linear(seq_len, self.d_model),
             nn.LeakyReLU(),
-            nn.Linear(self.d_model, self.pred_len)
+            nn.Linear(self.d_model, self.num_stocks)
         )
 
         # Projection layer
-        self.projection = nn.Linear(self.d_model, self.f_dim)
+        self.projection = nn.Linear(self.d_model, self.input_size)
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
-        assert x_enc.shape[-1] == self.f_dim
+        assert x_enc.shape[-1] == self.input_size
 
         # Series Stationarization adopted from NSformer, optional
         mean_enc = x_enc.mean(1, keepdim=True).detach() # B x 1 x E
@@ -102,7 +116,7 @@ class Model(nn.Module):
     
     def forward(self, x_enc, x_mark_enc=None, x_dec=None, x_mark_dec=None, mask=None):
         dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
-        return dec_out[:, -self.pred_len:, :]
+        return dec_out[:, -self.num_stocks:, :]
 
 
 

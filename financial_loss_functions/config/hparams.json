@@ -169,6 +169,18 @@
                 "patience": 10,
                 "min_lr": 1e-6
             }
+        },
+        "DeformTime": {
+            "seq_len": 120,
+            "e_layers": 0,
+            "d_layers": 0,
+            "d_model": null,
+            "attention_heads": 0,
+            "kernel_size": 0,
+            "dropout": 0.0,
+            "n_reshape": 0,
+            "patch_len": 0,
+            "stride": 0
         }
     },
     "losses": {

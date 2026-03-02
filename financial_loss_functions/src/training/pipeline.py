@@ -325,7 +325,9 @@ def run_training_one_model(
     if loss_cat not in ['objectives', 'custom']:
         raise ValueError('Loss category must be `objectives` or `custom`.')
     
-    plots_dir, results_dir, best_device = _common_setup(paths_config)
+    plots_dir, results_dir, best_device = _common_setup(
+        paths_config, hparams_config['seed']
+    )
     
     # -------------------- Model and loss search -------------------- #    
     model_cls = NNModelLibrary.get(model_cat, model_name)
