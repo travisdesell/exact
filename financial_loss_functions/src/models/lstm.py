@@ -311,8 +311,9 @@ class LSTMTransformer(nn.Module):
         # Step 1: LSTM local processing
         # This helps the Transformer 'see' the sequence as a flow
         x, _ = self.lstm(x) # (B, T, H)
-        # x = nn.functional.gelu(x)
-        # x = self.dropout(x)
+        # x = torch.relu(x)
+        x = nn.functional.gelu(x)
+        x = self.dropout(x)
         
         # Step 2: Add Positional Information
         x = x + self.pos_embedding[:, :x.size(1), :]

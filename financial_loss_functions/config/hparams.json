@@ -117,16 +117,16 @@
         },
         "LSTMTransformer": {
             "model": {
-                "hidden_size": 16,
-                "num_layers": 4,
+                "hidden_size": 32,
+                "num_layers": 2,
                 "attention_heads": 2,
-                "dropout": 0.3,
-                "expansion_factor": 2, 
+                "dropout": 0.5,
+                "expansion_factor": 4, 
                 "max_seq_len": 120
             },
             "optimizer": {
-                "lr": 1e-4,
-                "weight_decay": 1e-2
+                "lr": 1e-5,
+                "weight_decay": 1e-3
             },
             "train": {
                 "train_batch_size": 64,
