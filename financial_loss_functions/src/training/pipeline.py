@@ -7,7 +7,7 @@ from pathlib import Path
 from src.utils.io import create_directory
 from src.evaluation.evaluator import Evaluator
 from src.data_processing.loading import load_csv_files
-from src.utils.device import get_best_device, set_seed
+from src.utils.device import get_best_device, set_seed, deformtime_device
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
@@ -53,31 +53,6 @@ def _common_setup(paths_config, seed_value: int):
     best_device = get_best_device()
     
     return plots_dir, results_dir, best_device
-
-def _deformtime_device(best_device: torch.device | str) -> torch.device | str:
-    """
-    Variables
-        • best_device
-            type: device name or device object
-            usage: used to store the preferred runtime device chosen by the project
-                   before DeformTime-specific compatibility checks are applied
-
-    This function helps in downgrading DeformTime to CPU when the selected device is
-    MPS and its unsupported backward operators would otherwise break training.
-    @author: Atharva Vaidya
-    """
-    # Check whether the selected device is an MPS device object that DeformTime should avoid.
-    if isinstance(best_device, torch.device) and best_device.type == 'mps':
-        # Return CPU so DeformTime avoids unsupported MPS backward operations.
-        print('DeformTime uses CPU because its backward pass requires ops unsupported on MPS.')
-        return torch.device('cpu')
-    # Check whether the selected device is the string form of MPS from the surrounding runtime.
-    if isinstance(best_device, str) and best_device == 'mps':
-        # Return CPU in string form so the Trainer receives a safe runtime device.
-        print('DeformTime uses CPU because its backward pass requires ops unsupported on MPS.')
-        return 'cpu'
-    # Keep the originally selected device when no DeformTime-specific MPS workaround is needed.
-    return best_device
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -356,7 +331,7 @@ def run_training_one_model(
     # @author: Atharva Vaidya - Apply the DeformTime-specific device workaround before trainer construction.
     if model_name == 'DeformTime':
         # Move DeformTime off MPS so unsupported backward operators do not stop training.
-        best_device = _deformtime_device(best_device)
+        best_device = deformtime_device(best_device)
     
     # -------------------- Model and loss search -------------------- #    
     model_cls = NNModelLibrary.get(model_cat, model_name)
