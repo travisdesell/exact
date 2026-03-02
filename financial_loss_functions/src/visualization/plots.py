@@ -148,7 +148,7 @@ def plot_models_comparison(
     ):
     
     eval_metrics.boxplot(figsize=(12, 6))
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.title(title)
     plt.tight_layout() # Ensures labels aren't cut off
 

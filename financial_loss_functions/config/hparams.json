@@ -175,10 +175,10 @@
                 "seq_len": 120,
                 "e_layers": 2,
                 "d_layers": 2,
-                "d_model": 64,
+                "d_model": 16,
                 "attention_heads": 4,
                 "kernel_size": 4,
-                "dropout": 0.0,
+                "dropout": 0.2,
                 "n_reshape": 12,
                 "patch_len": 6,
                 "stride": 6

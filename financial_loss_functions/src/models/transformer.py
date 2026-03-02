@@ -136,7 +136,7 @@ class TFT(nn.Module):
         return torch.softmax(logits, dim=-1)
 
 
-@NNModelLibrary.register(category='transformer')
+# @NNModelLibrary.register(category='transformer')
 class PatchTST(nn.Module):
     def __init__(
             self, 

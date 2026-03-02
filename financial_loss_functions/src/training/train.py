@@ -399,7 +399,7 @@ class CandidatesGrid:
                 self.models_hparams
             ][model_name]['scheduler'],
             loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
-            device=self.torch_device
+            device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
         )
         trainer.train(train_ds, val_ds)
         trainer.evaluate(val_ds)
