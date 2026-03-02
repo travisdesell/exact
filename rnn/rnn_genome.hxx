@@ -78,6 +78,8 @@ class RNN_Genome {
     vector<string> input_parameter_names;
     vector<string> output_parameter_names;
 
+    vector<string> arguments;
+
     string normalize_type;
     map<string, double> normalize_mins;
     map<string, double> normalize_maxs;
@@ -318,7 +320,7 @@ class RNN_Genome {
     void print_equations();
     void write_equations(ostream& outstream);
 
-    RNN_Genome(string binary_filename);
+    RNN_Genome(string binary_filename, const vector<string>& arguments);
     RNN_Genome(char* array, int32_t length);
     RNN_Genome(istream& bin_infile);
     void write_manual_txt(const std::string& filename);

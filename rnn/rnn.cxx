@@ -24,6 +24,8 @@ using std::uniform_real_distribution;
 #include <vector>
 using std::vector;
 
+# include <cmath>
+
 #include "gru_node.hxx"
 #include "lstm_node.hxx"
 #include "rnn/rnn_genome.hxx"
@@ -39,6 +41,7 @@ using std::vector;
 #include "random_dag_node.hxx"
 #include "time_series/time_series.hxx"
 // #include "word_series/word_series.hxx"
+#include "stock_loss.hxx"
 
 void RNN::validate_parameters(
     const vector<string>& input_parameter_names, const vector<string>& output_parameter_names
@@ -200,11 +203,15 @@ RNN::RNN(
 
 RNN::RNN(
     vector<RNN_Node_Interface*>& _nodes, vector<RNN_Edge*>& _edges, vector<RNN_Recurrent_Edge*>& _recurrent_edges,
-    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names
+    const vector<string>& input_parameter_names, const vector<string>& output_parameter_names, const vector<string>& arguments
 ) {
     nodes = _nodes;
     edges = _edges;
     recurrent_edges = _recurrent_edges;
+
+    this->arguments = arguments;
+
+    get_argument(arguments, "--loss", false, this->loss);
 
     // sort nodes by depth
     // sort edges by depth
@@ -569,6 +576,14 @@ double RNN::prediction_mae(
     return calculate_error_mae(expected_outputs);
 }
 
+double RNN::prediction_stock_loss(
+    const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+    bool training, double dropout_probability
+) {
+    forward_pass(series_data, using_dropout, training, dropout_probability);
+    return calculate_error_stock_loss(series_data, expected_outputs);
+}
+
 vector<double> RNN::get_predictions(
     const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
     double dropout_probability
@@ -654,13 +669,27 @@ void RNN::get_analytic_gradient(
     const vector<vector<double> >& outputs, double& mse, vector<double>& analytic_gradient, bool using_dropout,
     bool training, double dropout_probability
 ) {
+    
     analytic_gradient.assign(test_parameters.size(), 0.0);
+
+    // get_argument(arguments, "--loss", false, this->loss);
 
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
 
-    mse = calculate_error_mse(outputs);
-    backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    if (this->loss == "mse"){
+        mse = calculate_error_mse(outputs);
+        backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    } else if (this->loss == "mae") {
+        mse = calculate_error_mae(outputs);
+        backward_pass(mse * (1.0 / outputs[0].size()) * 2.0, using_dropout, training, dropout_probability);
+    } else if (this->loss == "stock") {
+        mse = calculate_error_stock_loss(inputs, outputs);
+        backward_pass(mse, using_dropout, training, dropout_probability);
+    } else {
+        Log::fatal("ERROR: incorrect loss function provided\n");
+        exit(1);
+    }
 
     vector<double> current_gradients;
 
@@ -693,7 +722,7 @@ void RNN::get_analytic_gradient(
 
 void RNN::get_empirical_gradient(
     const vector<double>& test_parameters, const vector<vector<double> >& inputs,
-    const vector<vector<double> >& outputs, double& mse, vector<double>& empirical_gradient, bool using_dropout,
+    const vector<vector<double> >& outputs, double& loss, vector<double>& empirical_gradient, bool using_dropout,
     bool training, double dropout_probability
 ) {
     empirical_gradient.assign(test_parameters.size(), 0.0);
@@ -702,11 +731,25 @@ void RNN::get_empirical_gradient(
 
     set_weights(test_parameters);
     forward_pass(inputs, using_dropout, training, dropout_probability);
-    double original_mse = calculate_error_mse(outputs);
+    double original_loss = 0.0;
+
+    if (this->loss == "mse"){
+        original_loss = calculate_error_mse(outputs);
+    
+    } else if (this->loss == "mae") {
+        original_loss = calculate_error_mae(outputs);
+    
+    } else if (this->loss == "stock") {
+        original_loss = calculate_error_stock_loss(inputs, outputs);
+    
+    } else {
+        Log::fatal("ERROR: incorrect loss function provided\n");
+        exit(1);
+    }
 
     double save;
     double diff = 0.00001;
-    double mse1, mse2;
+    double loss1, loss2;
 
     vector<double> parameters = test_parameters;
     for (int32_t i = 0; i < (int32_t) parameters.size(); i++) {
@@ -715,20 +758,48 @@ void RNN::get_empirical_gradient(
         parameters[i] = save - diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse1, deltas);
+        // get_mse(this, outputs, loss1, deltas);
+
+        if (this->loss == "mse"){
+            get_mse(this, outputs, loss1, deltas);
+    
+        } else if (this->loss == "mae") {
+            get_mae(this, outputs, loss1, deltas);
+        
+        } else if (this->loss == "stock") {
+            get_stock_loss(this, outputs, loss1, deltas, inputs, outputs);
+        
+        } else {
+            Log::fatal("ERROR: incorrect loss function provided\n");
+            exit(1);
+        }
 
         parameters[i] = save + diff;
         set_weights(parameters);
         forward_pass(inputs, using_dropout, training, dropout_probability);
-        get_mse(this, outputs, mse2, deltas);
+        // get_mse(this, outputs, loss2, deltas);
 
-        empirical_gradient[i] = (mse2 - mse1) / (2.0 * diff);
-        empirical_gradient[i] *= original_mse;
+        if (this->loss == "mse"){
+            get_mse(this, outputs, loss2, deltas);
+    
+        } else if (this->loss == "mae") {
+            get_mae(this, outputs, loss2, deltas);
+        
+        } else if (this->loss == "stock") {
+            get_stock_loss(this, outputs, loss2, deltas, inputs, outputs);
+        
+        } else {
+            Log::fatal("ERROR: incorrect loss function provided\n");
+            exit(1);
+        }
+
+        empirical_gradient[i] = (loss2 - loss1) / (2.0 * diff);
+        empirical_gradient[i] *= original_loss;
 
         parameters[i] = save;
     }
 
-    mse = original_mse;
+    loss = original_loss;
 }
 
 void RNN::initialize_randomly() {
@@ -761,3 +832,100 @@ RNN* RNN::copy() {
     return new RNN(node_copies, edge_copies, recurrent_edge_copies);
 }
 */
+
+
+template <typename T>
+double signum(T x) {
+  if (x > 0) {
+    return 1.0;
+  } else if (x < 0) {
+    return -1.0;
+  } else {
+    return 0.0;
+  }
+}
+
+// double RNN::calculate_error_stock_loss (const vector<vector<double> >& expected_outputs,
+//     const vector<double> return_at_t,
+//     const vector<double> return_at_t_plus_1)
+// {
+//     double loss_sum = 0.0;
+//     double sum_v_i = 0.0;
+
+//     for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
+//         for (int32_t j = 0; j < (int32_t) output_nodes[i]->output_values.size(); j++) {
+//             sum_v_i += fabs(output_nodes[i]->output_values[j]);
+//         }
+//     }
+
+//     for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
+
+//         double v_i = 0.0;
+
+//         for (int32_t j = 0; j < (int32_t) output_nodes[i]->output_values.size(); j++) {
+//             v_i = 1.0 * fabs(output_nodes[i]->output_values[j]) / sum_v_i;
+//             loss_sum += v_i * (return_at_t_plus_1[i] - return_at_t[i]) * signum(output_nodes[i]->output_values[j]);
+//         }
+//     }
+
+//     return loss_sum;
+// }
+
+double RNN::calculate_error_stock_loss(const vector<vector<double> >& return_at_t, const vector<vector<double> >& return_at_t_plus_1){
+
+    double loss_sum = 0.0;
+    double sum_v_i = 0.0;
+    double absolute_sum = 0.0;
+
+    for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
+        // output_nodes[i]->error_values.resize(expected_outputs[i].size());
+
+        // tanh convert input to -1 and 1
+
+        for (int32_t j = 0; j < (int32_t) return_at_t_plus_1[i].size(); j++) {
+            sum_v_i += fabs(output_nodes[i]->output_values[j]);
+            // absolute_sum += fabs(tanh(output_nodes[i]->output_values[j]));
+        }
+    }
+
+
+    for (int32_t i = 0; i < (int32_t) output_nodes.size(); i++) {
+        // output_nodes[i]->error_values.resize(expected_outputs[i].size());
+
+        double v_i = 0.0;
+        double gradient_at_k = 0.0;
+        double gradient_at_not_k = 0.0;
+
+        for (int32_t j = 0; j < (int32_t) return_at_t_plus_1[i].size(); j++) {
+
+            v_i = 1.0 * fabs(output_nodes[i]->output_values[j]) / sum_v_i;
+            loss_sum += v_i * (return_at_t_plus_1[i][j] - return_at_t[i][j]) * signum(output_nodes[i]->output_values[j]);
+
+            gradient_at_k += -1.0 * (return_at_t_plus_1[i][j] - return_at_t[i][j]) * 
+            ((sum_v_i - output_nodes[i]->output_values[j]) * 
+            signum(output_nodes[i]->output_values[j])) / pow(sum_v_i, 2);
+
+            output_nodes[i]->error_values[j] += gradient_at_k;
+        }
+
+        for (int32_t j = 0; j < (int32_t) output_nodes.size(); j++) {
+            for (int32_t k = 0; j < (int32_t) return_at_t_plus_1[j].size(); k++) {
+                if (i == j){
+                    continue;
+                }
+                
+                gradient_at_not_k += -1.0 * (return_at_t_plus_1[i][j] - return_at_t[i][j]) * 
+                signum(output_nodes[i]->output_values[k]) / pow(absolute_sum, 2);
+
+            }
+            output_nodes[i]->error_values[j] += gradient_at_not_k;
+        }
+
+    }
+    
+    return loss_sum;
+}
+
+string RNN::get_loss() {
+    return this->loss;
+}
