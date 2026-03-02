@@ -214,7 +214,8 @@ def rms_sharpe_objective(pf_returns: Tensor, eps: float = 1e-8, **kwargs
 def smooth_neglog_sharpe_loss(
     pf_returns: Tensor,
     eps: float = 1e-8,
-    beta: float = 1.0
+    beta: float = 1.0,
+    **kwargs
 ) -> Tensor:
     """
     Smooth, always-differentiable Sharpe loss.
