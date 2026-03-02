@@ -115,16 +115,15 @@ class LossLibrary:
 
 # -------------------- Returns -------------------- #
 @LossLibrary.register(category='objectives')
-def log_return_objective(
-    weights: Tensor, returns: Tensor, eps: float = 1e-8
+def log_return_objective(port_returns: Tensor, eps: float = 1e-8
 )-> Tensor:
     """
     PyTorch loss function to calculate the log returns for the 
     given portfolio allocation loss objective.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
     
@@ -132,12 +131,9 @@ def log_return_objective(
         Tensor: Batch mean negative log returns
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    # Daily portfolio returns
-    daily_port_returns = (weights.unsqueeze(1) * returns).sum(dim=-1)
-    
     # Convert to log returns: log(1 + R)
     # We add a tiny epsilon to avoid log(0) if a portfolio hits -100%
-    log_returns = torch.log(1.0 + daily_port_returns + eps)
+    log_returns = torch.log(1.0 + port_returns + eps)
     
     # Sum of log returns = Cumulative log growth
     cum_log_return = log_returns.sum(dim=1)
@@ -146,15 +142,14 @@ def log_return_objective(
 
 # -------------------- Sharpe -------------------- #
 @LossLibrary.register(category='objectives')
-def raw_sharpe_objective(
-        weights: Tensor, returns: Tensor, eps: float = 1e-8
+def raw_sharpe_objective(pf_returns: Tensor, eps: float = 1e-8, **kwargs
     ) -> Tensor:
     """
     Raw Sharpe ratio using standard deviation directly.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
 
@@ -163,17 +158,15 @@ def raw_sharpe_objective(
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
     # portfolio returns per step
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    mean_ret = port.mean(dim=1)                          # (B,)
+    mean_ret = pf_returns.mean(dim=1)                          # (B,)
     # population std: set unbiased=False
-    port_std = port.std(dim=1, unbiased=False) + eps     # (B,)
+    port_std = pf_returns.std(dim=1, unbiased=False) + eps     # (B,)
     sharpe = mean_ret / port_std                         # (B,)
     # maximize Sharpe -> minimize negative Sharpe
     return -sharpe.mean()
 
 @LossLibrary.register(category='objectives')
-def differentiable_sharpe_objective(
-        weights: Tensor, returns: Tensor, eps: float = 1e-6
+def differentiable_sharpe_objective(pf_returns: Tensor, eps: float = 1e-6, **kwargs
     ):
     """
     Differentiable Sharpe ratio where we calculate square root of variance 
@@ -181,8 +174,8 @@ def differentiable_sharpe_objective(
     PyTorch backprop as its broken down into 2 steps.
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
 
@@ -190,23 +183,21 @@ def differentiable_sharpe_objective(
         Tensor: Batch mean Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
-    mean_ret = port_ret.mean(dim=1)
-    var  = port_ret.var(dim=1)          # variance, not std
+    mean_ret = pf_returns.mean(dim=1)
+    var  = pf_returns.var(dim=1)          # variance, not std
     # Avoiding the std entirely
     return -(mean_ret / (var.sqrt() + eps)).mean()
 
 @LossLibrary.register(category='objectives')
-def rms_sharpe_objective(
-    weights: Tensor, returns: Tensor, eps: float = 1e-8
+def rms_sharpe_objective(pf_returns: Tensor, eps: float = 1e-8, **kwargs
 ) -> Tensor:
     """
     Sharpe ratio where we use RMS instead of standard deviation.
     RMS is the population standard deviation.
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
 
@@ -214,26 +205,24 @@ def rms_sharpe_objective(
         Tensor: Batch mean RMS Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
-    mean_ret = port.mean(dim=1, keepdim=True)            # (B,1)
-    rms = torch.sqrt(torch.mean((port - mean_ret)**2, dim=1) + eps)  # (B,)
+    mean_ret = pf_returns.mean(dim=1, keepdim=True)            # (B,1)
+    rms = torch.sqrt(torch.mean((pf_returns - mean_ret)**2, dim=1) + eps)  # (B,)
     sharpe = mean_ret.squeeze(1) / rms
     return -sharpe.mean()
 
 @LossLibrary.register(category='objectives')
 def smooth_neglog_sharpe_loss(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     eps: float = 1e-8,
-    beta: float = 1.0,
+    beta: float = 1.0
 ) -> Tensor:
     """
     Smooth, always-differentiable Sharpe loss.
     Uses softplus to map Sharpe -> positive before log.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8.
         beta (float): Beta sharpness for softplus; larger -> closer to clamp. Default = 1.0
@@ -242,10 +231,9 @@ def smooth_neglog_sharpe_loss(
         Tensor: Batch mean smooth negative log Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
-    mean_ret = port.mean(dim=1)
+    mean_ret = pf_returns.mean(dim=1)
 
-    var = port.var(dim=1)
+    var = pf_returns.var(dim=1)
     std = torch.sqrt(var + eps)
     sharpe = mean_ret / (std + eps)
 
@@ -256,9 +244,7 @@ def smooth_neglog_sharpe_loss(
     return -loss.mean()
 
 @LossLibrary.register(category='objectives')
-def log_sharpe_objective(
-    weights: Tensor, returns: Tensor, eps: float = 1e-8
-) -> Tensor: 
+def log_sharpe_objective(pf_returns: Tensor, eps: float = 1e-8, **kwargs) -> Tensor: 
     """
     Differentiable Sharpe using mean log returns instead of mean returns. 
     This essential changes the ratio from arthimetic mean to geometric mean.
@@ -266,8 +252,8 @@ def log_sharpe_objective(
     Variance and Standard Deviation is calculated on log of portfolio returns.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
 
@@ -275,9 +261,8 @@ def log_sharpe_objective(
         Tensor: Batch mean log Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    port_ret = (weights.unsqueeze(1) * returns).sum(-1)   # (B, T)
 
-    log_returns = torch.log(1.0 + port_ret + eps)
+    log_returns = torch.log(1.0 + pf_returns + eps)
     
     mean_log_ret = log_returns.mean(dim=1)
     var_log  = log_returns.var(dim=1)          # variance, not std
@@ -287,14 +272,17 @@ def log_sharpe_objective(
 # -------------------- Sortino -------------------- #
 @LossLibrary.register(category='objectives')
 def raw_sortino_objective(
-        weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
+    pf_returns: Tensor,
+    target: float = 0.0,
+    eps: float = 1e-8,
+    **kwargs
     ):
     """
     PyTorch loss function to calcuate raw Sortino Ratio for the objective.
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         target (float): Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
             Default = 0.0.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
@@ -304,14 +292,11 @@ def raw_sortino_objective(
         Tensor: Batch mean raw Sortino ratio objective 
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    # Portfolio returns per step
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
     # Downside deviation: std of negative deviations from target
-    downside = torch.clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
+    downside = torch.clamp(target - pf_returns, min=0.0)  # (B, T_out), only positive for downside
     downside_std = downside.std(dim=1) + eps  # (B,)
     
-    mean_return = port.mean(dim=1)  # (B,)
+    mean_return = pf_returns.mean(dim=1)  # (B,)
     sortino = mean_return / downside_std  # (B,)
     
     # Maximize Sortino -> minimize negative Sortino
@@ -319,7 +304,7 @@ def raw_sortino_objective(
 
 @LossLibrary.register(category='objectives')
 def differentiable_sortino_objective(
-        weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
+        pf_returns: Tensor, target: float = 0.0, eps: float = 1e-8, **kwargs
     ):
     """
     Differentiable Sortino ratio where we calculate square root of variance 
@@ -327,8 +312,8 @@ def differentiable_sortino_objective(
     Helps with numerical stabilty with PyTorch backprop as its broken down into 2 steps.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         target (float): Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
             Default = 0.0.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
@@ -338,14 +323,11 @@ def differentiable_sortino_objective(
         Tensor: Batch mean differntiable Sortino ratio objective 
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    # Portfolio returns per step
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
     # Downside deviation: std of negative deviations from target
-    downside = torch.clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
+    downside = torch.clamp(target - pf_returns, min=0.0)  # (B, T_out), only positive for downside
     downside_var = downside.var(dim=1) 
     
-    mean_return = port.mean(dim=1)  # (B,)
+    mean_return = pf_returns.mean(dim=1)  # (B,)
     sortino = mean_return / (downside_var.sqrt() + eps)  # (B,)
     
     # Maximize Sortino -> minimize negative Sortino
@@ -353,15 +335,15 @@ def differentiable_sortino_objective(
 
 @LossLibrary.register(category='objectives')
 def rms_sortino_loss(
-        weights: Tensor, returns: Tensor, target: float = 0.0, eps: float = 1e-8
+        pf_returns: Tensor, target: float = 0.0, eps: float = 1e-8, **kwargs
     ):
     """
     Sortino ratio where we use RMS of variance below target value, instead of standard deviation.
     RMS is the population standard deviation.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         target (float): Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
             Default = 0.0.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
@@ -371,16 +353,13 @@ def rms_sortino_loss(
         Tensor: Batch mean RMS Sortino ratio objective 
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
-    # Portfolio returns per step
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
     # Downside deviation: std of negative deviations from target
-    downside = torch.clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
+    downside = torch.clamp(target - pf_returns, min=0.0)  # (B, T_out), only positive for downside
     
     # RMS downside: sqrt(mean(downside**2) + eps) -> for stable gradients
     downside_rms = torch.sqrt(torch.mean(downside ** 2, dim=1) + eps)  # (B,)
     
-    mean_return = port.mean(dim=1)  # (B,)
+    mean_return = pf_returns.mean(dim=1)  # (B,)
     sortino = mean_return / downside_rms  # (B,)
     
     # Maximize Sortino -> minimize negative Sortino
@@ -388,19 +367,19 @@ def rms_sortino_loss(
 
 @LossLibrary.register(category='objectives')
 def smooth_neglog_sortino_objective(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     target: float = 0.0,
     use_soft_downside: bool = True,
     beta: float = 10.0,                # sharpness for softplus; larger -> closer to clamp
-    eps: float = 1e-8
+    eps: float = 1e-8,
+    **kwargs
 ) -> Tensor:
     """
     Smooth, always-differentiable negative log Sortino loss.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         target (float): Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
             Default = 0.0.
         use_soft_downside (bool): Uses softplus on downward variance if True. Uses clamp if False. 
@@ -413,20 +392,17 @@ def smooth_neglog_sortino_objective(
         Tensor: Batch mean smooth negative log Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
-    # prepare weights and portfolio
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B,T)
-
     # downside: smooth or hard
     if use_soft_downside:
         # softplus approximates clamp(target - port, min=0)
         # we feed (target - port) so positive means downside
-        downside = softplus(target - port, beta=beta)
+        downside = softplus(target - pf_returns, beta=beta)
     else:
-        downside = torch.clamp(target - port, min=0.0)
+        downside = torch.clamp(target - pf_returns, min=0.0)
 
     # RMS downside (population)
     downside_rms = torch.sqrt(torch.mean(downside**2, dim=1) + eps)  # (B,)
-    mean_ret = port.mean(dim=1)  # (B,)
+    mean_ret = pf_returns.mean(dim=1)  # (B,)
     sortino = mean_ret / (downside_rms + eps)  # (B,)
 
     sortino_loss = torch.log(softplus(sortino) + eps) 
@@ -434,9 +410,9 @@ def smooth_neglog_sortino_objective(
 
 @LossLibrary.register(category='objectives')
 def log_sortino_objective(
-        weights: Tensor, returns: Tensor,
+        pf_returns: Tensor,
         target: float = 0.0, use_soft_downside: bool = True, 
-        beta: float = 10.0, eps: float = 1e-8
+        beta: float = 10.0, eps: float = 1e-8, **kwargs
     ):
     """
     Differentiable Sortino using mean log returns instead of mean returns. 
@@ -445,8 +421,8 @@ def log_sortino_objective(
     Variance and Standard Deviation is calculated on log of portfolio returns.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         target (float): Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
             Default = 0.0.
         use_soft_downside (bool): Uses softplus on downward variance if True. Uses clamp if False. 
@@ -459,10 +435,8 @@ def log_sortino_objective(
         Tensor: Batch mean log Sortino ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
-    # Portfolio returns per step
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
     # Log portfolio returns
-    log_returns = torch.log(1.0 + port + eps)
+    log_returns = torch.log(1.0 + pf_returns + eps)
 
     # Downside deviation: std of negative deviations from target
     # downside: smooth or hard
@@ -484,12 +458,12 @@ def log_sortino_objective(
 # -------------------- Max Drawdown -------------------- #
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_mdd_regularizer(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     temp: float = 50.0,
     eps: float = 1e-8,
     min_return: float = -0.999,   # to keep log1p safe
-    use_percent: bool = True
+    use_percent: bool = True,
+    **kwargs
 ) -> Tensor:
     """
     Differentiable smooth Max Drawdown regularizer (to MINIMIZE).
@@ -499,8 +473,8 @@ def smooth_mdd_regularizer(
       - `returns` are simple returns shaped (B, T, N) (e.g., 0.01 => +1%).
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         temp (float): Temperature for the log-sum-exp smoothing. Higher -> closer to true max.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8
@@ -512,11 +486,10 @@ def smooth_mdd_regularizer(
     Return:
         Tensor: batch mean smooth max drawdown regularizer.
     """
-    B, T, N = returns.shape
-    port_ret = (weights.unsqueeze(1) * returns).sum(dim=-1)
+    B, T = pf_returns.shape
 
     # clamp port to > -1 for log1p safety
-    port_clamped = torch.clamp(port_ret, min=min_return)
+    port_clamped = torch.clamp(pf_returns, min=min_return)
 
     # cumulative log-wealth (log-returns summed)
     log_ret = torch.log1p(port_clamped)    # (B, T)
@@ -545,11 +518,7 @@ def smooth_mdd_regularizer(
 
 # -------------------- CVaR -------------------- #
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
-def cvar_topk_regularizer(
-    weights: Tensor,
-    returns: Tensor,
-    alpha: float = 0.05
-) -> Tensor:
+def cvar_topk_regularizer(pf_returns: Tensor, alpha: float = 0.05, **kwargs) -> Tensor:
     """
     Empirical CVaR (expected shortfall) over the worst alpha fraction of losses.
     Uses torch.topk to compute average of top-k losses.
@@ -562,11 +531,10 @@ def cvar_topk_regularizer(
     Returns: 
         Tensor: Batch mean Empirical CVaR regularizer term
     """
-    B, T, N = returns.shape
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
+    B, T = pf_returns.shape
     
     # losses = -returns (higher = worse)
-    losses = -port  # (B, T)
+    losses = -pf_returns  # (B, T)
 
     # number of tail points to average (at least 1)
     k = max(1, math.ceil(alpha * T))
@@ -578,13 +546,13 @@ def cvar_topk_regularizer(
 
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_cvar_regularizer(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     temp: float = 1e-2,
     eps: float = 1e-8,
     scale_by_std: bool = True,
     normalize_by_port_std: bool = True,
-    port_std_floor: float = 1e-3
+    port_std_floor: float = 1e-3,
+    **kwargs
 ) -> torch.Tensor:
     """
     Smooth differentiable approximation to CVaR using soft-selection (softmax) over losses.
@@ -598,8 +566,8 @@ def smooth_cvar_regularizer(
     The final value is scaled to approximate the expected loss in the worst alpha fraction.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         alpha (float): alpha tail fraction (0 < alpha <= 1). Default = 0.05.
         temp (float): Temperature for the log-sum-exp smoothing. Higher -> closer to true max.
             smaller temp -> more concentrated on worst losses.
@@ -614,9 +582,7 @@ def smooth_cvar_regularizer(
     Returns: 
         Tensor: Batch mean smooth CVaR regularizer term
     """
-    # port: (B, T)
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
-    losses = -port  # (B, T)
+    losses = -pf_returns  # (B, T)
 
     if scale_by_std:
         scores_std = losses.std(dim=1, keepdim=True) + eps   # (B,1)
@@ -630,7 +596,7 @@ def smooth_cvar_regularizer(
     approx_cvar = weighted_mean  # NOT dividing by alpha here
 
     if normalize_by_port_std:
-        port_std = port.std(dim=1)           # (B,)
+        port_std = pf_returns.std(dim=1)           # (B,)
         port_std = torch.clamp(port_std, min=port_std_floor)
         approx_cvar = approx_cvar / (port_std + eps)
 
@@ -638,21 +604,21 @@ def smooth_cvar_regularizer(
 
 @LossLibrary.register(category='regularizers', subcategory='tail_risk')
 def smooth_rockafellar_cvar_regularizer(
-    weights: torch.Tensor,
-    returns: torch.Tensor,
+    pf_returns: torch.Tensor,
     alpha: float = 0.05,
     temp: float = 1e-2, # In R&U, temp controls the Softplus "smoothness"
     eps: float = 1e-8,
     normalize_by_port_std: bool = True,
-    port_std_floor: float = 1e-3
+    port_std_floor: float = 1e-3,
+    **kwargs
 ) -> torch.Tensor:
     """
     Differentiable CVaR using the Rockafellar & Uryasev formula. 
     Uses alpha tail risk to get average of 5% (Default) worst case scenarios.
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         alpha (float): alpha tail fraction (0 < alpha <= 1). Default = 0.05.
         temp (float): Temperature for the log-sum-exp smoothing. Higher -> closer to true max.
             smaller temp -> more concentrated on worst losses.
@@ -669,8 +635,7 @@ def smooth_rockafellar_cvar_regularizer(
     """
     # Calculate Portfolio Returns and Losses
     # port: (B, T), losses: (B, T)
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
-    losses = -port 
+    losses = -pf_returns 
 
     # Estimate VaR (zeta) for the batch
     # We take the (1-alpha) quantile of the losses as our starting point for zeta
@@ -690,7 +655,7 @@ def smooth_rockafellar_cvar_regularizer(
 
     # Normalization (The 'Tail Ratio')
     if normalize_by_port_std:
-        port_std = port.std(dim=1)
+        port_std = pf_returns.std(dim=1)
         port_std = torch.clamp(port_std, min=port_std_floor)
         # Final value is dimensionless: how many STDs is the average tail loss?
         approx_cvar = approx_cvar / (port_std + eps)
@@ -803,17 +768,17 @@ def risk_parity_regularizer(
 # -------------------- Omega Ratio -------------------- #
 @LossLibrary.register(category='objectives')
 def raw_omega_ratio(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     theta: float = 0.0,
-    eps: float = 1e-8
+    eps: float = 1e-8,
+    **kwargs
 ) -> Tensor:
     """
     Exact empirical Omega ratio (batch mean).
     
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         theta (float): threshold for omega ration (same units as returns). Default = 0.0.
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
             Default = 1e-8.
@@ -822,10 +787,9 @@ def raw_omega_ratio(
         Tensor: Batch mean raw Omega ratio.
     """
 
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)   # (B, T)
     # positives = (R - theta)_+, negatives = (theta - R)_+
-    pos = torch.clamp(port - theta, min=0.0)        # (B, T)
-    neg = torch.clamp(theta - port, min=0.0)        # (B, T)
+    pos = torch.clamp(pf_returns - theta, min=0.0)        # (B, T)
+    neg = torch.clamp(theta - pf_returns, min=0.0)        # (B, T)
 
     # expectations are simple means over time
     pos_mean = pos.mean(dim=1)   # (B,)
@@ -838,13 +802,13 @@ def raw_omega_ratio(
 
 @LossLibrary.register(category='objectives')
 def smooth_omega_objective(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     theta: float = 0.0,
     beta: float = 10.0,
     eps: float = 1e-8,
     use_log_loss: bool = True,
-    cap_omega: float | None = None
+    cap_omega: float | None = None,
+    **kwargs
 ) -> Tensor:
     """
     Smooth Omega objective (LOSS TO MINIMIZE).
@@ -854,8 +818,8 @@ def smooth_omega_objective(
       - regularizer: loss += lambda * smooth_omega_objective(...)
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         theta (float): threshold for omega ration (same units as returns). Default = 0.0.
         beta (float) softplus sharpness (>0).
         eps (float): Epsilon value to avoid divide by zero errors for numerical stability.
@@ -866,13 +830,9 @@ def smooth_omega_objective(
     Returns:
         Tensor: Batch mean smooth omega objective.
     """
-
-    # portfolio returns per timestep
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T)
-
     # smoothed positive / negative parts
-    pos = softplus(port - theta, beta=beta)      # (R - theta)_+
-    neg = softplus(theta - port, beta=beta)      # (theta - R)_+
+    pos = softplus(pf_returns - theta, beta=beta)      # (R - theta)_+
+    neg = softplus(theta - pf_returns, beta=beta)      # (theta - R)_+
 
     # expectations over time
     pos_mean = pos.mean(dim=1)
@@ -1023,21 +983,21 @@ def entropy_conc_regularizer(
 # -------------------- Calmar Ratio -------------------- #
 @LossLibrary.register(category='objectives')
 def raw_calmar_objective(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     theta: float = 0.0,
     apply_theta_to_return: bool = False,
     apply_theta_to_drawdown: bool = False,
     min_return: float = -0.999,
-    eps: float = 1e-8
+    eps: float = 1e-8,
+    **kwargs
 ) -> Tensor:
     """
     Raw Calmar ratio computed on the provided window (no annualization).
     Returns the batch-mean Calmar (higher is better).
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         theta (float): per-period MAR; same units as returns. Default = 0.0.
         apply_theta_to_return (bool): If True, numerator uses (port - theta). Default = False.
         apply_theta_to_drawdown (bool): if True, drawdown path uses (port - theta) (uncommon). 
@@ -1051,12 +1011,9 @@ def raw_calmar_objective(
         Tensor: Batch mean raw Calmar ratio.
     """
 
-    # portfolio returns per period (B, T)
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
-
     # optionally apply theta to numerator and/or drawdown path
-    port_for_return = port - theta if apply_theta_to_return else port
-    port_for_dd     = port - theta if apply_theta_to_drawdown else port
+    port_for_return = pf_returns - theta if apply_theta_to_return else pf_returns
+    port_for_dd     = pf_returns - theta if apply_theta_to_drawdown else pf_returns
 
     # clamp for log1p safety (for cumulative wealth / drawdown)
     port_for_return_clamped = torch.clamp(port_for_return, min=min_return)
@@ -1082,23 +1039,23 @@ def raw_calmar_objective(
 
 @LossLibrary.register(category='objectives')
 def smooth_calmar_objective(
-    weights: Tensor,
-    returns: Tensor,
+    pf_returns: Tensor,
     mdd_temp: float = 50.0,
     theta: float = 0.0,
     apply_theta_to_return: bool = False,
     apply_theta_to_drawdown: bool = False,
     eps: float = 1e-8,
     use_log_loss: bool = False,
-    min_return: float = -0.999
+    min_return: float = -0.999,
+    **kwargs
 ) -> Tensor:
     """
     Smooth Calmar computed directly on the model output horizon (no annualization).
     Minimizing this loss -> maximizes Calmar on the window.
 
     Args:
-        weights (Tensor): (B, N) Portfolio allocation weights (normalized).
-        returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+        pf_returns (Tensor): (B, T_out) Portfolio returns calculated by 
+            weights * returns of all stocks.
         mdd_temp (float): temperature for the smooth max-drawdown surrogate (higher -> closer to max).
         theta (float): Per-period threshold (MAR). If apply_theta_to_return=True, subtract theta from
             portfolio returns before computing numerator (mean). If apply_theta_to_drawdown=True, subtract
@@ -1115,23 +1072,20 @@ def smooth_calmar_objective(
     Returns:
         Tensor: Batch mean smooth calmar ratio.
     """
-    B, T, N = returns.shape
+    B, T = pf_returns.shape
 
-    # 2) portfolio per-step returns (B, T)
-    port = (weights.unsqueeze(1) * returns).sum(dim=-1)
-
-    # 3) apply theta where requested
-    port_for_return = port - theta if apply_theta_to_return else port
-    port_for_dd = port - theta if apply_theta_to_drawdown else port
+    # apply theta where requested
+    port_for_return = pf_returns - theta if apply_theta_to_return else pf_returns
+    port_for_dd = pf_returns - theta if apply_theta_to_drawdown else pf_returns
 
     # clamp for log1p safety (for drawdown path)
     port_for_return_clamped = torch.clamp(port_for_return, min=min_return)
     port_for_dd_clamped     = torch.clamp(port_for_dd,     min=min_return)
 
-    # 4) numerator: mean simple return over the window (per-batch)
+    # numerator: mean simple return over the window (per-batch)
     mean_return = port_for_return_clamped.mean(dim=1)  # (B,)
 
-    # 5) smooth max drawdown on the same window (log-space path)
+    # smooth max drawdown on the same window (log-space path)
     log_ret_dd = torch.log1p(port_for_dd_clamped)        # (B, T)
     cum_log = torch.cumsum(log_ret_dd, dim=1)           # (B, T)
     running_peak = torch.cummax(cum_log, dim=1).values  # (B, T)
@@ -1157,53 +1111,55 @@ def smooth_calmar_objective(
 
 # -------------------- Custom Loss Functions -------------------- #
 @LossLibrary.register(category='custom')
-def custom_loss_1(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+def custom_loss_1(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
-    sharpe = differentiable_sharpe_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    sharpe = differentiable_sharpe_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
     # print('Sharpe:',sharpe)
     # print('CVaR:', cvar * lambda1)
     return sharpe + (lambda1 * cvar) 
 
 @LossLibrary.register(category='custom')
-def custom_loss_2(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+def custom_loss_2(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = RMS sharpe + lambda1 * smooth CVar
     """
-    sharpe = rms_sharpe_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    sharpe = rms_sharpe_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
     # print('Sharpe:',sharpe)
     # print('CVaR:', cvar * lambda1)
     return sharpe + (lambda1 * cvar) 
 
 @LossLibrary.register(category='custom')
-def custom_loss_3(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+def custom_loss_3(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = raw sortino + lambda1 * smooth CVaR
     """
-    sortino = rms_sortino_loss(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+    sortino = rms_sortino_loss(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
     return sortino + (lambda1 * cvar)
 
 @LossLibrary.register(category='custom')
-def custom_loss_4(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
-    sortino = differentiable_sortino_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
+def custom_loss_4(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
+    sortino = differentiable_sortino_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
     return sortino + lambda1 * cvar
 
 @LossLibrary.register(category='custom')
-def custom_loss_5(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
+def custom_loss_5(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, lambda1: float, **kwargs
+) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
     """
-    sharpe = differentiable_sharpe_objective(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    sharpe = differentiable_sharpe_objective(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:',sharpe)
     # print('RP:', risk_parity * lambda1)
@@ -1211,16 +1167,17 @@ def custom_loss_5(weights: Tensor, returns: Tensor, lambda1: float) -> Tensor:
 
 @LossLibrary.register(category='custom')
 def custom_loss_6(
-    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
+    lambda1: float, lambda2: float, **kwargs
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
     """
     #### Most Stable
     #### Best performing for now ####
-    sharpe = differentiable_sharpe_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    sharpe = differentiable_sharpe_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
@@ -1229,12 +1186,13 @@ def custom_loss_6(
 
 @LossLibrary.register(category='custom')
 def custom_loss_7(
-    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
+    lambda1: float, lambda2: float, **kwargs
 ) -> Tensor: 
 
-    log_sharpe = log_sharpe_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    log_sharpe = log_sharpe_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
     # print('Log Ret:', log_returns)
@@ -1244,16 +1202,17 @@ def custom_loss_7(
 
 @LossLibrary.register(category='custom')
 def custom_loss_8(
-    weights: Tensor, returns: Tensor, log_ret_lambda: float, cvar_lambda: float, risk_p_lambda: float
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, log_ret_lambda: float,
+    cvar_lambda: float, risk_p_lambda: float, **kwargs
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
     """
     ### 2nd Best
-    sharpe = differentiable_sharpe_objective(weights, returns)
-    log_returns = log_return_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    sharpe = differentiable_sharpe_objective(pf_returns)
+    log_returns = log_return_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
@@ -1266,14 +1225,15 @@ def custom_loss_8(
 
 @LossLibrary.register(category='custom')
 def custom_loss_9(
-    weights: Tensor, returns: Tensor, lambda1: float, lambda2: float
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    lambda1: float, lambda2: float, **kwargs
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
     """
-    log_sortino = log_sortino_objective(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    log_sortino = log_sortino_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
@@ -1282,15 +1242,16 @@ def custom_loss_9(
 
 @LossLibrary.register(category='custom')
 def custom_loss_10(
-    weights: Tensor, returns: Tensor, cvar_lambda: float, risk_p_lambda: float
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
     """
     ### 2nd Best
-    sharpe = smooth_neglog_sharpe_loss(weights, returns)
-    cvar = smooth_rockafellar_cvar_regularizer(weights, returns)
-    risk_parity = risk_parity_regularizer(weights, returns)
+    sharpe = smooth_neglog_sharpe_loss(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)

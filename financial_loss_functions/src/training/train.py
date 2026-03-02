@@ -8,6 +8,7 @@ import inspect
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from torch import Tensor
 from src.utils.device import set_seed
 from torch.utils.data import DataLoader
 from src.data_processing.dataset import build_dataset
@@ -119,6 +120,22 @@ class Trainer:
         self.best_model_state = None
         self.patience_counter = 0
     
+    def _cal_pf_returns(self, weights: Tensor, returns: Tensor) -> Tensor:
+        """
+        Calculates returns of a portfolio for every time step by 
+        multiplying its weights with the returns of all stocks.
+
+        Args:
+            weights (Tensor): (B, N) Portfolio allocation weights (normalized).
+            returns (Tensor): (B, T, N) Output (future) window of raw returns to calculate the loss term on.
+
+        Returns:
+            port_returns (Tensor): (B, T_out) Returns of a portfolio
+        
+        """
+        port_returns = (weights.unsqueeze(1) * returns).sum(dim=-1) 
+        return port_returns
+
     def train(
             self, train_ds: 'WindowDataset', val_ds: Optional['WindowDataset'] = None
         ):
@@ -152,7 +169,14 @@ class Trainer:
                 yb = yb.to(self.device)
 
                 weights = self.model(xb)  # (B, N)
-                loss = self.loss(weights, yb, **self.loss_hparams)
+
+                port_returns = self._cal_pf_returns(weights, yb)
+                loss = self.loss(
+                    weights = weights,
+                    all_returns = yb,
+                    pf_returns = port_returns,
+                    **self.loss_hparams
+                )
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -232,7 +256,14 @@ class Trainer:
                 b = xb.size(0)
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 weights = self.model(xb)
-                loss = self.loss(weights, yb, **self.loss_hparams)
+
+                port_returns = self._cal_pf_returns(weights, yb)
+                loss = self.loss(
+                    weights = weights,
+                    all_returns = yb,
+                    pf_returns = port_returns,
+                    **self.loss_hparams
+                )
 
                 # --- store per-batch loss ---
                 # self.eval_losses.append(loss.item())
@@ -272,7 +303,15 @@ class Trainer:
                 b = xb.size(0)
                 xb, yb = xb.to(self.device), yb.to(self.device)
                 weights = self.model(xb)
-                loss = self.loss(weights, yb, **self.loss_hparams)
+
+                # Calculating portfolio returns first
+                port_returns = self._cal_pf_returns(weights, yb)
+                loss = self.loss(
+                    weights = weights,
+                    all_returns = yb,
+                    pf_returns = port_returns,
+                    **self.loss_hparams
+                )
 
                 # detach & move to CPU BEFORE appending
                 self.eval_alloc_weights.append(weights.detach().cpu()) 
