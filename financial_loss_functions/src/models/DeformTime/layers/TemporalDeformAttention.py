@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
-from timm.models.layers import trunc_normal_
+from timm.layers import trunc_normal_
 from src.models.DeformTime.layers.MLP import MLP
 from src.models.DeformTime.utils.functions import num_patches
 
