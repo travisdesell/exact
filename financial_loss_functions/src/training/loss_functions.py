@@ -1046,8 +1046,9 @@ def smooth_calmar_objective(
     apply_theta_to_return: bool = False,
     apply_theta_to_drawdown: bool = False,
     eps: float = 1e-8,
-    use_log_loss: bool = False,
+    use_log_loss: bool = True,
     min_return: float = -0.999,
+    beta: float = 1.0,
     **kwargs
 ) -> Tensor:
     """
@@ -1104,7 +1105,8 @@ def smooth_calmar_objective(
 
     # stable loss: -log(calmar) if calmar>0 else penalize strongly
     if use_log_loss:
-        loss_per_batch = torch.log(torch.clamp(calmar, min=eps) + eps)
+        calmar_pos = softplus(calmar, beta=beta)
+        loss_per_batch = torch.log(torch.clamp(calmar_pos, min=eps) + eps)
     else:
         loss_per_batch = calmar
 
@@ -1174,8 +1176,7 @@ def custom_loss_6(
     """
     loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
     """
-    #### Most Stable
-    #### Best performing for now ####
+    #### 2ND BEST
     sharpe = differentiable_sharpe_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1249,15 +1250,32 @@ def custom_loss_10(
     """
     loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
     """
-    ### 2nd Best
+    ### BEST!
     sharpe = smooth_neglog_sharpe_loss(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
 
     # print('Sharpe:', sharpe)
-    # print('CVaR:', cvar)
-    # print('RP:', risk_parity)
+    # print('CVaR:', cvar * cvar_lambda)
+    # print('RP:', risk_parity * risk_p_lambda)
     loss = sharpe + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity)
+    return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_11(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float
+) -> Tensor:
+    omega = smooth_omega_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity)
     return loss
