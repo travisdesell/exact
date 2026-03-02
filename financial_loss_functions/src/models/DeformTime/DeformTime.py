@@ -78,17 +78,59 @@ class DeformTime(nn.Module):
             self.d_model, self.d_model, self.d_layers, batch_first=True, dropout=dropout
         )
 
-        # MLP layer
+        # @author: Atharva Vaidya - This head helps in converting the encoded DeformTime context into portfolio logits expected by the loss pipeline.
         self.fc = nn.Sequential(
-            nn.Linear(seq_len, self.d_model),
+            nn.Linear(self.d_model, self.d_model),
             nn.LeakyReLU(),
             nn.Linear(self.d_model, self.num_stocks)
         )
 
-        # Projection layer
-        self.projection = nn.Linear(self.d_model, self.input_size)
-
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+        """
+        Variables
+            • x_enc
+                type: tensor of numbers
+                usage: used to store the input feature window that is passed from the
+                       trainer for DeformTime encoding
+            • x_mark_enc
+                type: tensor of numbers or empty value
+                usage: reserved encoder marker input that is accepted for interface
+                       compatibility but is not used in this runtime path
+            • x_dec
+                type: tensor of numbers or empty value
+                usage: reserved decoder input kept for compatibility with the
+                       surrounding model interface
+            • x_mark_dec
+                type: tensor of numbers or empty value
+                usage: reserved decoder marker input kept for compatibility with the
+                       surrounding model interface
+            • mean_enc
+                type: tensor of numbers
+                usage: used to store the per-window mean so the input can be
+                       stationarized before attention is applied
+            • std_enc
+                type: tensor of numbers
+                usage: used to store the per-window standard deviation so the input
+                       scaling remains numerically stable
+            • enc_out
+                type: tensor of numbers
+                usage: used to store the encoded deformable-attention representation
+                       produced by the encoder
+            • h0
+                type: tensor of numbers
+                usage: used to store the initial hidden state passed into the GRU
+            • out
+                type: tensor of numbers
+                usage: used to store the GRU sequence output before collapsing it to
+                       a single allocation context
+            • context
+                type: tensor of numbers
+                usage: used to store the last GRU state which becomes the compact
+                       portfolio-allocation context for the final head
+
+        forecast now extracts a portfolio-allocation context from the encoded sequence
+        instead of reconstructing the original feature space. @author: Atharva Vaidya
+        """
         assert x_enc.shape[-1] == self.input_size
 
         # Series Stationarization adopted from NSformer, optional
@@ -106,17 +148,42 @@ class DeformTime(nn.Module):
         # Decoder
         h0 = torch.zeros(self.d_layers, x_enc.size(0), self.d_model).requires_grad_().to(x_enc.device)
         out, _ = self.gru(enc_out, h0.detach())
-        out = self.fc(out.permute(0,2,1)).permute(0,2,1)
-
-        # Projection
-        out = self.projection(out)
-        out = out * std_enc + mean_enc
-
-        return out
+        # Extract the final GRU state so one context vector represents the allocation decision.
+        context = out[:, -1, :]
+        # Apply the portfolio head to convert the context vector into allocation logits.
+        return self.fc(context)
     
     def forward(self, x_enc, x_mark_enc=None, x_dec=None, x_mark_dec=None, mask=None):
-        dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
-        return dec_out[:, -self.num_stocks:, :]
+        """
+        Variables
+            • x_enc
+                type: tensor of numbers
+                usage: used to store the encoded input window passed from the trainer
+                       for a portfolio-weight prediction
+            • x_mark_enc
+                type: tensor of numbers or empty value
+                usage: reserved encoder marker input that is kept for interface
+                       compatibility
+            • x_dec
+                type: tensor of numbers or empty value
+                usage: reserved decoder input that is kept for interface compatibility
+            • x_mark_dec
+                type: tensor of numbers or empty value
+                usage: reserved decoder marker input that is kept for interface
+                       compatibility
+            • mask
+                type: tensor of numbers or empty value
+                usage: reserved mask input accepted for compatibility with the model
+                       interface
+            • logits
+                type: tensor of numbers
+                usage: used to store the raw portfolio scores returned from forecast
+                       before normalization
 
-
+        forward normalizes the DeformTime logits into portfolio weights expected by
+        the training and loss pipeline. @author: Atharva Vaidya
+        """
+        logits = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
+        # Normalize the logits so the downstream losses receive portfolio weights.
+        return torch.softmax(logits, dim=-1)
 

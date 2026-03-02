@@ -3,6 +3,10 @@ import sys
 import signal
 import argparse
 from src.utils.io import load_path_config, load_config
+
+# @author: Atharva Vaidya - This fallback helps in allowing unsupported MPS ops to run through CPU when DeformTime triggers them.
+os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
+
 from src.training.pipeline import run_training_one_model
 
 _interrupted = False
