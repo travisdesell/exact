@@ -370,7 +370,7 @@ class CandidatesGrid:
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
             torch_device: torch.device | str,
-            loss_mode: str = 'all',
+            loss_mode: str = 'custom',
             enable_diagnostics: bool = False
         ):
         """
@@ -540,7 +540,10 @@ class CandidatesGrid:
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
         total_train_count = self._calc_total_models('all')
-        print(f'\nTraining {total_train_count} models.')
+        print(
+            f'\nTraining {total_train_count} models.',
+            '\nRunning all models with {self.loss_mode} losses.'
+        )
         progress_count = 1
         
         # Grid with custom loss functions

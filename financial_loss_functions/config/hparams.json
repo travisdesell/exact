@@ -201,6 +201,33 @@
                 "patience": 10,
                 "min_lr": 1e-6
             }
+        },
+        "AttentionGRU": {
+            "model": {
+                "hidden_size": 16,
+                "num_layers": 4,
+                "attention_heads": 2,
+                "dropout": 0.2,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-2
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 200,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-6
+            }
         }
     },
     "losses": {

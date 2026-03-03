@@ -115,7 +115,7 @@ class LossLibrary:
 
 # -------------------- Returns -------------------- #
 @LossLibrary.register(category='objectives')
-def log_return_objective(port_returns: Tensor, eps: float = 1e-8
+def log_return_objective(port_returns: Tensor, eps: float = 1e-8, **kwargs
 )-> Tensor:
     """
     PyTorch loss function to calculate the log returns for the 

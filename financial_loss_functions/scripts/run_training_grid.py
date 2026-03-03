@@ -89,7 +89,7 @@ if __name__ == '__main__':
             '-lm',
             '--loss_mode', 
             choices=['all', 'custom'],
-            default='all',
+            default='custom',
             help="Required if grid_mode is 'all' or 'one_model'"
         )
 
