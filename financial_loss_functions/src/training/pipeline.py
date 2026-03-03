@@ -332,6 +332,8 @@ def run_training_one_model(
     if model_name == 'DeformTime':
         # Move DeformTime off MPS so unsupported backward operators do not stop training.
         best_device = deformtime_device(best_device)
+    elif model_name == 'AttentionGRU':
+        best_device = torch.device('cpu')
     
     # -------------------- Model and loss search -------------------- #    
     model_cls = NNModelLibrary.get(model_cat, model_name)
