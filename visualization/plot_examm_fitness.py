@@ -83,23 +83,48 @@ for run_directory in base_directories:
         time_seconds = []
         best_mse = []
         with open(input_file) as fp:
-           line = fp.readline()
-           print("headers: {}".format(line))
+           header_line = fp.readline()
+           print("headers: {}".format(header_line))
+
+           header_fields = [h.strip() for h in header_line.split(",")]
+
+           try:
+               inserted_idx = header_fields.index("Inserted Genomes")
+               bp_idx = header_fields.index("Total BP Epochs")
+               time_idx = header_fields.index("Time")
+               task_type_idx = header_fields.index("Task Type")
+               mse_idx = header_fields.index("Best Val. MSE")
+               mae_idx = header_fields.index("Best Val. MAE")
+               softmax_idx = header_fields.index("Best Val. Softmax")
+           except ValueError:
+               print("ERROR: Required columns not found in fitness_log header:", header_fields)
+               break
 
            line = fp.readline()
            while line:
-               values = line.split(",")
-               inserted_genomes.append(int(values[0]))
-               backprop_epochs.append(int(values[1]))
-               time_seconds.append(int(values[2]))
-               best_mse.append(float(values[4]))
+               values = [v.strip() for v in line.split(",")]
+               if len(values) <= max(inserted_idx, bp_idx, time_idx, mse_idx):
+                   line = fp.readline()
+                   continue
+
+               inserted_genomes.append(int(values[inserted_idx]))
+               backprop_epochs.append(int(values[bp_idx]))
+               time_seconds.append(int(values[time_idx]))
+               task_type.append(values[task_type_idx])
+               best_mse.append(float(values[mse_idx]))
+               best_mae.append(float(values[mae_idx]))
+               best_softmax.append(float(values[softmax_idx]))
 
                line = fp.readline()
 
         inserted_genomes_list.append(inserted_genomes)
         backprop_epochs_list.append(backprop_epochs)
         time_seconds_list.append(time_seconds)
-        best_mse_list.append(best_mse)
+        if "classification" in task_type:
+            best_mse_list.append(best_softmax)
+        else:
+            best_mse_list.append(best_mse)
+        # best_mse_list.append(best_mse)
 
     #get these values over each list
     merged_inserted_genomes = []

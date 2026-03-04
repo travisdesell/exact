@@ -17,6 +17,8 @@ using std::setw;
 #include <iostream>
 using std::endl;
 
+#include <limits>
+
 #include <random>
 using std::minstd_rand0;
 using std::uniform_int_distribution;
@@ -108,7 +110,7 @@ void EXAMM::generate_log() {
         Log::info("Generating fitness log\n");
         mkpath(output_directory.c_str(), 0777);
         log_file = new ofstream(output_directory + "/" + "fitness_log.csv");
-        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Best Val. MAE, Best Val. MSE, Enabled Nodes, Enabled "
+        (*log_file) << "Inserted Genomes, Total BP Epochs, Time, Task Type, Best Val. MSE, Best Val. MAE, Best Val. Softmax, Enabled Nodes, Enabled "
                        "Edges, Enabled Rec. Edges";
         (*log_file) << speciation_strategy->get_strategy_information_headers();
         (*log_file) << endl;
@@ -235,10 +237,39 @@ void EXAMM::update_log() {
         if (best_genome == NULL) {
             best_genome = speciation_strategy->get_global_best_genome();
         }
+
+        bool is_classification = best_genome->get_use_classification();
+
+        double best_mse = best_genome->get_best_validation_mse();
+        double best_mae = best_genome->get_best_validation_mae();
+        double best_softmax = best_genome->get_best_validation_softmax();
+
+        // Treat uninitialized metrics (left at EXAMM_MAX_DOUBLE) or non-finite values as missing (NaN)
+        if (!std::isfinite(best_mse) || best_mse >= EXAMM_MAX_DOUBLE) {
+            best_mse = std::numeric_limits<double>::quiet_NaN();
+        }
+        if (!std::isfinite(best_mae) || best_mae >= EXAMM_MAX_DOUBLE) {
+            best_mae = std::numeric_limits<double>::quiet_NaN();
+        }
+        if (!std::isfinite(best_softmax) || best_softmax >= EXAMM_MAX_DOUBLE) {
+            best_softmax = std::numeric_limits<double>::quiet_NaN();
+        }
+
+        // Only keep the metric relevant to the current task type
+        if (is_classification) {
+            best_mse = std::numeric_limits<double>::quiet_NaN();
+            best_mae = std::numeric_limits<double>::quiet_NaN();
+        } else {
+            best_softmax = std::numeric_limits<double>::quiet_NaN();
+        }
+
         std::chrono::time_point<std::chrono::system_clock> currentClock = std::chrono::system_clock::now();
         long milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(currentClock - startClock).count();
         (*log_file) << speciation_strategy->get_evaluated_genomes() << "," << total_bp_epochs << "," << milliseconds
-                    << "," << best_genome->best_validation_mae << "," << best_genome->best_validation_mse << ","
+                    << "," << (is_classification ? "classification" : "regression") << ","
+                    << best_mse << ","
+                    << best_mae << ","
+                    << best_softmax << ","
                     << best_genome->get_enabled_node_count() << "," << best_genome->get_enabled_edge_count() << ","
                     << best_genome->get_enabled_recurrent_edge_count()
                     << speciation_strategy->get_strategy_information_values() << endl;
@@ -376,7 +407,7 @@ void EXAMM::save_visualization_json(RNN_Genome* genome, string genome_name) {
     json_filestream << "{" << endl;
     json_filestream << "\t\"generation_number\" : " << genome->generation_id << "," << endl;
     json_filestream << "\t\"group\" : " << genome->group_id << "," << endl;
-    json_filestream << "\t\"fitness\" : " << genome->best_validation_mse << "," << endl;
+    json_filestream << "\t\"fitness\" : " << genome->get_fitness() << "," << endl;
 
     json_filestream << "\t\"parents\" : [";
     for (int32_t i = 0; i < genome->parent_ids.size(); i++) {
