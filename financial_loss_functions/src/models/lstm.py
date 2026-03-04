@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
+from src.models.layers.temporal import TemporalAttention
 
 #### All models MUST get a registration decorator with a category.
 #### Here category will mostly be the file name.
@@ -123,14 +124,7 @@ class AttentionLSTM(nn.Module):
         self.equal_prior = equal_prior
         self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
         
-        # Attention layer components
-        self.attn = nn.MultiheadAttention(
-            hidden_size,
-            num_heads=attention_heads,
-            batch_first=True
-        )
-        
-        self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
+        self.t_attn = TemporalAttention(hidden_size, attention_heads, dropout)
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
@@ -161,12 +155,7 @@ class AttentionLSTM(nn.Module):
         out = torch.relu(out)
         out = self.dropout(out)
         
-        attn_out, _ = self.attn(out, out, out)  # (B, T, H)
-        
-        # Residual Connection + Norm (Standard Transformer Block trick)
-        # We add the input (out) to the output (attn_out) to help gradients flow
-        attn_out = out + attn_out 
-        attn_out = self.ln_attn(attn_out)
+        attn_out = self.t_attn(out)
         
         # Pooling
         context = attn_out.mean(dim=1)
