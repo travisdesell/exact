@@ -30,12 +30,15 @@ class TemporalTransformer(nn.Module):
         
         # 1. Feature Projection (Initial step to clean up features), kind of denoising
         self.feature_proj = nn.Linear(input_size, hidden_size)
+        # self.feature_stem = LightweightConvStem(input_size, hidden_size)
         
         self.lstm_encoder = LSTMEncoder(hidden_size, lstm_layers, dropout)
         
         self.glob_attn = GlobalAttentionProcessor(
             hidden_size, trans_layers, nheads, expansion_factor, max_seq_len, dropout
         )
+
+        # self.pooler = AttentionPooling(hidden_size)
         # Output Head
         # self.ln_final = nn.LayerNorm(hidden_size)
         self.alpha = nn.Parameter(torch.ones(hidden_size))
@@ -57,9 +60,12 @@ class TemporalTransformer(nn.Module):
         # Every day now looks at every other day through the lens of the LSTM output
         x = self.glob_attn(x)
         
+        # x = lstm_x + trans_x
         # Step 3: Pooling
         # Mean pooling the context of the whole 120-day window
         context = x.mean(dim=1)
+        # context = self._recency_pooling(x)
+        # context = self.pooler(x)
         # context = self.ln_final(context)
 
         # STep 4: Scaling
@@ -69,6 +75,16 @@ class TemporalTransformer(nn.Module):
         # Step 5: Portfolio Allocation
         logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
+    
+    def _recency_pooling(self, x: Tensor) -> Tensor:
+        # x shape: (B, T, H)
+        T = x.size(1)
+        # Create weights that increase linearly: [1, 2, 3, ... 120]
+        weights = torch.linspace(0.5, 1.0, steps=T).to(x.device)
+        weights = weights.view(1, T, 1) # Match dimensions
+        
+        # Weighted average
+        return (x * weights).mean(dim=1)
 
 
 @NNModelLibrary.register(category='transformer')
