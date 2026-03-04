@@ -118,7 +118,9 @@ void master(int32_t max_rank) {
     // the "main" id will have already been set by the main function so we do not need to re-set it here
     Log::debug("MAX int32_t: %d\n", numeric_limits<int32_t>::max());
 
+    auto t_master_start = std::chrono::steady_clock::now();
     int32_t terminates_sent = 0;
+    int32_t genomes_received = 0;
 
     while (true) {
         // wait for a incoming message
@@ -171,6 +173,14 @@ void master(int32_t max_rank) {
             examm->insert_genome(genome);
             examm_mutex.unlock();
 
+            genomes_received++;
+            auto t_now = std::chrono::steady_clock::now();
+            std::cout << "[master] genome received from worker " << source
+                      << " gen_id=" << genome->get_generation_id()
+                      << " (#" << genomes_received << ") at "
+                      << std::fixed << std::setprecision(1)
+                      << std::chrono::duration<double>(t_now - t_master_start).count() << "s" << std::endl;
+
             // delete the genome as it won't be used again, a copy was inserted
             delete genome;
             // this genome will be deleted if/when removed from population
@@ -203,14 +213,21 @@ void worker(int32_t rank) {
         } else if (tag == GENOME_LENGTH_TAG) {
             Log::debug("received genome!\n");
             RNN_Genome* genome = receive_genome_from(0);
+            int32_t gen_id = genome->get_generation_id();
+            std::cout << "[worker " << rank << "] got genome gen_id=" << gen_id << ", starting backprop..." << std::endl;
 
+            auto t_bp_start = std::chrono::steady_clock::now();
             // have each worker write the backproagation to a separate log file
-            string log_id = "genome_" + to_string(genome->get_generation_id()) + "_worker_" + to_string(rank);
+            string log_id = "genome_" + to_string(gen_id) + "_worker_" + to_string(rank);
             Log::set_id(log_id);
             genome->backpropagate_stochastic(
                 training_inputs, training_outputs, validation_inputs, validation_outputs, weight_update_method
             );
             Log::release_id(log_id);
+            auto t_bp_end = std::chrono::steady_clock::now();
+            std::cout << "[worker " << rank << "] backprop gen_id=" << gen_id << " done in "
+                      << std::fixed << std::setprecision(2)
+                      << std::chrono::duration<double>(t_bp_end - t_bp_start).count() << "s" << std::endl;
 
             // go back to the worker's log for MPI communication
             Log::set_id("worker_" + to_string(rank));
@@ -245,28 +262,61 @@ int main(int argc, char** argv) {
     Log::restrict_to_rank(0);
     std::cout << "initailized log!" << std::endl;
 
+    auto t_start = std::chrono::steady_clock::now();
+    auto t_step = t_start;
+
     TimeSeriesSets* time_series_sets = NULL;
     time_series_sets = TimeSeriesSets::generate_from_arguments(arguments);
+    t_step = std::chrono::steady_clock::now();
+    std::cout << "[rank " << rank << "] TimeSeriesSets::generate_from_arguments done in "
+              << std::fixed << std::setprecision(2)
+              << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
+
     get_train_validation_data(
         arguments, time_series_sets, training_inputs, training_outputs, validation_inputs, validation_outputs
     );
+    t_step = std::chrono::steady_clock::now();
+    std::cout << "[rank " << rank << "] get_train_validation_data done in "
+              << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
 
     weight_update_method = new WeightUpdate();
     weight_update_method->generate_from_arguments(arguments);
+    t_step = std::chrono::steady_clock::now();
+    std::cout << "[rank " << rank << "] WeightUpdate::generate_from_arguments done in "
+              << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
 
     WeightRules* weight_rules = new WeightRules();
     weight_rules->initialize_from_args(arguments);
+    t_step = std::chrono::steady_clock::now();
+    std::cout << "[rank " << rank << "] WeightRules::initialize_from_args done in "
+              << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
 
     RNN_Genome* seed_genome = get_seed_genome(arguments, time_series_sets, weight_rules);
+    t_step = std::chrono::steady_clock::now();
+    std::cout << "[rank " << rank << "] get_seed_genome done in "
+              << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
 
     Log::clear_rank_restriction();
 
     if (rank == 0) {
         write_time_series_to_file(arguments, time_series_sets);
+        t_step = std::chrono::steady_clock::now();
+        std::cout << "[rank 0] write_time_series_to_file done in "
+                  << std::chrono::duration<double>(t_step - t_start).count() << "s" << std::endl;
         examm = generate_examm_from_arguments(arguments, time_series_sets, weight_rules, seed_genome);
+        t_step = std::chrono::steady_clock::now();
+        std::cout << "[rank 0] generate_examm_from_arguments done in "
+                  << std::chrono::duration<double>(t_step - t_start).count() << "s, entering master()" << std::endl;
         master(max_rank);
+        t_step = std::chrono::steady_clock::now();
+        std::cout << "[rank 0] master() finished in "
+                  << std::chrono::duration<double>(t_step - t_start).count() << "s total" << std::endl;
     } else {
+        std::cout << "[rank " << rank << "] entering worker()" << std::endl;
         worker(rank);
+        t_step = std::chrono::steady_clock::now();
+        std::cout << "[rank " << rank << "] worker() finished in "
+                  << std::chrono::duration<double>(t_step - t_start).count() << "s total" << std::endl;
     }
     Log::set_id("main_" + to_string(rank));
     finished = true;
