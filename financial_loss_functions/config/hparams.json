@@ -235,10 +235,11 @@
                 "num_global": 1,
                 "hidden_size": 16,
                 "lstm_layers": 2,
-                "t_nheads": 2,
-                "r_nheads": 4,
+                "t_nheads": 4,
+                "r_nheads": 8,
                 "cont_hidden": 16,
                 "cont_layers": 1,
+                "cont_kernel": 3,
                 "dropout": 0.2,
                 "max_seq_len": 120
             },

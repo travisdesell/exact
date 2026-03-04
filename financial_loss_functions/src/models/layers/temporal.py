@@ -48,38 +48,38 @@ class ContextualGate(nn.Module):
         _, h_n = self.context_gru(global_data)
         return self.gate(h_n[-1]).unsqueeze(1) # (B, 1, H)
     
-# class ContextualGate(nn.Module):
-#     def __init__(self, context_in: int, hidden_size: int, kernel_size: int):
-#         super().__init__()
+class ContextualCNNGate(nn.Module):
+    def __init__(self, context_in: int, hidden_size: int, kernel_size: int):
+        super().__init__()
         
-#         # Match out_channels to hidden_size directly to avoid the Linear layer bottleneck
-#         self.conv = nn.Sequential(
-#             nn.Conv1d(
-#                 in_channels=context_in, 
-#                 out_channels=hidden_size, # Output 16 features
-#                 kernel_size=kernel_size, 
-#                 padding=kernel_size // 2
-#             ),
-#             nn.BatchNorm1d(hidden_size), # Better than LayerNorm for CNNs on MPS
-#             nn.ReLU(),
-#             nn.AdaptiveAvgPool1d(1), 
-#             nn.Flatten()
-#         )
+        # Match out_channels to hidden_size directly to avoid the Linear layer bottleneck
+        self.conv = nn.Sequential(
+            nn.Conv1d(
+                in_channels=context_in, 
+                out_channels=hidden_size, # Output 16 features
+                kernel_size=kernel_size, 
+                padding=kernel_size // 2
+            ),
+            nn.BatchNorm1d(hidden_size), # Better than LayerNorm for CNNs on MPS
+            nn.ReLU(),
+            nn.AdaptiveAvgPool1d(1), 
+            nn.Flatten()
+        )
         
-#         # Use a single linear projection to get the gating scale
-#         self.gate_proj = nn.Sequential(
-#             nn.Linear(hidden_size, hidden_size),
-#             nn.Sigmoid()
-#         )
+        # Use a single linear projection to get the gating scale
+        self.gate_proj = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.Sigmoid()
+        )
 
-#     def forward(self, global_data):
-#         # global_data: (B, T, C) -> (B, C, T)
-#         x = global_data.transpose(1, 2).contiguous()
+    def forward(self, global_data):
+        # global_data: (B, T, C) -> (B, C, T)
+        x = global_data.transpose(1, 2).contiguous()
         
-#         context_features = self.conv(x) # (B, H)
-#         gate = self.gate_proj(context_features) # (B, H)
+        context_features = self.conv(x) # (B, H)
+        gate = self.gate_proj(context_features) # (B, H)
         
-#         return gate.unsqueeze(1) # (B, 1, H)
+        return gate.unsqueeze(1) # (B, 1, H)
 
 class TemporalEncoder(nn.Module):
     """Encodes the 120-day history of a single stock into a feature vector."""

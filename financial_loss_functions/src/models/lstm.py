@@ -4,7 +4,11 @@ import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
 from src.models.layers.relational import FeatureAttention
-from src.models.layers.temporal import TemporalAttention, ContextualGate
+from src.models.layers.temporal import (
+    TemporalAttention,
+    ContextualGate,
+    ContextualCNNGate
+)
 
 #### All models MUST get a registration decorator with a category.
 #### Here category will mostly be the file name.
@@ -335,19 +339,18 @@ class BiAttentionLSTM(nn.Module):
             r_nheads: int,
             cont_hidden: int,
             cont_layers: int,
+            cont_kernel: int,
             dropout: float,
             max_seq_len: int,
             **kwargs
         ):
         super().__init__()
 
-        self.N = num_stocks
-        self.F = feats_per_stock
         self.hidden_size = hidden_size
+        self.C = num_global
         
         self.num_tick_feats = num_stocks * feats_per_stock
         
-        self.C = num_global
 
         self.lstm = nn.LSTM(
             input_size=self.num_tick_feats,
@@ -365,9 +368,10 @@ class BiAttentionLSTM(nn.Module):
         self.context_gate = ContextualGate(
             self.C, cont_hidden, cont_layers, self.hidden_size
         )
+        # self.context_gate = ContextualCNNGate(self.C, cont_hidden, cont_kernel)
     
         self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(self.hidden_size, self.N)
+        self.fc = nn.Linear(self.hidden_size, num_stocks)
     
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -393,7 +397,7 @@ class BiAttentionLSTM(nn.Module):
         # 2. Extract Stock-Level Alpha (Time)
         stock_features, _ = self.lstm(stock_data) # (B*N, T, H)
         stock_features = self.ln(stock_features)
-        stock_features = torch.relu(stock_features)
+        stock_features = nn.functional.gelu(stock_features)
         stock_features = self.dropout(stock_features)
 
         
@@ -409,7 +413,7 @@ class BiAttentionLSTM(nn.Module):
         final_rep = attn_out * gate # (B, N, 16)
 
         # 7. Final Allocation
-        final_rep = attn_out.mean(dim=1) # (B, hidden_size)
+        final_rep = final_rep.mean(dim=1) # (B, hidden_size)
         final_rep = self.dropout(final_rep)
         
         # fc maps (16 -> 1) for each of the 50 stocks

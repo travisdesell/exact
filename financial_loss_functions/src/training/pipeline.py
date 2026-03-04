@@ -328,11 +328,12 @@ def run_training_one_model(
     plots_dir, results_dir, best_device = _common_setup(
         paths_config, hparams_config['seed']
     )
+    #### Must be refactored, only for testing
     # @author: Atharva Vaidya - Apply the DeformTime-specific device workaround before trainer construction.
     if model_name == 'DeformTime':
         # Move DeformTime off MPS so unsupported backward operators do not stop training.
         best_device = deformtime_device(best_device)
-    elif model_name == 'AttentionGRU':
+    elif model_name in ['AttentionGRU', 'BiAttentionLSTM']:
         best_device = torch.device('cpu')
     
     # -------------------- Model and loss search -------------------- #    
