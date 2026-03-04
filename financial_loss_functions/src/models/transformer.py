@@ -12,68 +12,88 @@ from src.models.layers.TFT_vsn import (
 @NNModelLibrary.register(category='transformer')
 class TemporalTransformer(nn.Module):
     """
-    SOTA-style Transformer for Portfolio Optimization.
-    Replaces LSTM with Learned Positional Encodings and Transformer Blocks.
+    Hybrid Model: LSTM for local temporal features + Transformer for global attention.
     """
     def __init__(
         self,
-        input_size: int,    # Number of features (251)
-        hidden_size: int,   # d_model
-        num_layers: int,    # Number of Transformer blocks
-        num_stocks: int,    # Output size
+        input_size: int,       # 251 features
+        hidden_size: int,      # Embedding dimension
+        num_layers: int,       # LSTM layers
+        num_stocks: int,       # 50 stocks
         attention_heads: int,
         dropout: float,
         expansion_factor: int,
-        max_seq_len: int # Length of your lookback window
+        max_seq_len: int
     ):
         super().__init__()
         
-        # 1. Feature Projection: Projects 251 features to hidden_size
-        self.feature_projection = nn.Linear(input_size, hidden_size)
+        # 1. Feature Projection (Initial step to clean up features)
+        self.feature_proj = nn.Linear(input_size, hidden_size)
         
-        # 2. Learned Positional Encoding
-        # Financial data is sequential; the model needs to know 'when' a bar happened
+        # 2. LSTM Layer (Local Temporal Smoothing)
+        self.lstm = nn.LSTM(
+            input_size=hidden_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+
+        self.lstm_ln = nn.LayerNorm(hidden_size)
+        
+        # 3. Position Encoding (Crucial for the Transformer part)
         self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
-        
-        # 3. Transformer Encoder Blocks
+        nn.init.trunc_normal_(self.pos_embedding, std=0.02)
+
+        # 4. Transformer Block (Global Context)
+        # Replacing simple Attention with a full Encoder Layer (includes FFN + Norms)
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=hidden_size,
             nhead=attention_heads,
             dim_feedforward=hidden_size * expansion_factor,
             dropout=dropout,
             batch_first=True,
-            activation='gelu' # GELU is standard for SOTA Transformers
+            activation='gelu'
         )
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        
-        # 4. Global LayerNorm
-        self.ln_final = nn.LayerNorm(hidden_size)
-        
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=1)
+
         # 5. Output Head
+        # self.ln_final = nn.LayerNorm(hidden_size)
+        self.alpha = nn.Parameter(torch.ones(hidden_size))
+
+        self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
-        
+
     def forward(self, x: Tensor) -> Tensor:
-        # x shape: (Batch, Time, Features)
+        # x: (B, T, 251)
         
-        # Project features to embedding space
-        x = self.feature_projection(x) # (B, T, H)
+        # Initial Projection
+        x = self.feature_proj(x)
         
-        # Add Positional Encoding
+        # Step 1: LSTM local processing
+        # This helps the Transformer 'see' the sequence as a flow
+        x, _ = self.lstm(x) # (B, T, H)
+        x = self.lstm_ln(x)
+        x = torch.relu(x)
+        # x = nn.functional.gelu(x)
+        x = self.dropout(x)
+        
+        # Step 2: Add Positional Information
         x = x + self.pos_embedding[:, :x.size(1), :]
         
-        # Pass through Transformer Blocks
-        # Self-attention allows every day in the window to look at every other day
-        out = self.transformer_encoder(x) # (B, T, H)
+        # Step 3: Transformer Global Attention
+        # Every day now looks at every other day through the lens of the LSTM output
+        x = self.transformer(x) # (B, T, H)
         
-        # Mean pooling to average context of the whole window
-        # context = out[:, -1, :] # # Pooling: The last time step's representation makes model sensitive to last day
-        context = out.mean(dim=1)
-        context = self.ln_final(context)
+        # Step 4: Pooling
+        # Mean pooling the context of the whole 120-day window
+        context = x.mean(dim=1)
+        # context = self.ln_final(context)
+        # context = context * self.alpha # Scale it without centering or standardizing
+        context = self.dropout(context)
         
-        # Generate Portfolio Logits
-        logits = self.fc(context) # (B, N)
-        
-        # Softmax to ensure weights sum to 1
+        # Step 5: Portfolio Allocation
+        logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
 
 

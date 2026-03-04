@@ -132,6 +132,10 @@ class AttentionLSTM(nn.Module):
         self.t_attn = TemporalAttention(hidden_size, attention_heads, dropout)
     
         self.dropout = nn.Dropout(dropout)
+        
+        # A learnable vector initialized to 1.0
+        self.alpha = nn.Parameter(torch.ones(hidden_size))
+        
         self.fc = nn.Linear(hidden_size, num_stocks)
         
         if equal_prior:
@@ -164,6 +168,8 @@ class AttentionLSTM(nn.Module):
         
         # Pooling
         context = attn_out.mean(dim=1)
+        # context = self.final_ln(context)
+        context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)
@@ -202,7 +208,10 @@ class InvertedAttentionLSTM(nn.Module):
             batch_first=True
         )
         self.ln_attn = nn.LayerNorm(max_seq_len)
-    
+
+
+        self.alpha = nn.Parameter(torch.ones(hidden_size))
+
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
 
@@ -239,91 +248,12 @@ class InvertedAttentionLSTM(nn.Module):
         # Step 4: Pooling across the temporal "embeddings"
         # We mean-pool the time dimension (dim=2) to get one vector per hidden feature
         context = out_inverted.mean(dim=-1) # (B, hidden_size)
+
+        context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
         # Step 5: Final Portfolio Weights
         logits = self.fc(context) 
-        return torch.softmax(logits, dim=-1)
-
-@NNModelLibrary.register(category='lstm')
-class LSTMTransformer(nn.Module):
-    """
-    Hybrid Model: LSTM for local temporal features + Transformer for global attention.
-    """
-    def __init__(
-        self,
-        input_size: int,       # 251 features
-        hidden_size: int,      # Embedding dimension
-        num_layers: int,       # LSTM layers
-        num_stocks: int,       # 50 stocks
-        attention_heads: int,
-        dropout: float,
-        expansion_factor: int,
-        max_seq_len: int
-    ):
-        super().__init__()
-        
-        # 1. Feature Projection (Initial step to clean up features)
-        self.feature_proj = nn.Linear(input_size, hidden_size)
-        
-        # 2. LSTM Layer (Local Temporal Smoothing)
-        self.lstm = nn.LSTM(
-            input_size=hidden_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
-        )
-        
-        # 3. Position Encoding (Crucial for the Transformer part)
-        self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
-        nn.init.trunc_normal_(self.pos_embedding, std=0.02)
-
-        # 4. Transformer Block (Global Context)
-        # Replacing simple Attention with a full Encoder Layer (includes FFN + Norms)
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_size,
-            nhead=attention_heads,
-            dim_feedforward=hidden_size * expansion_factor,
-            dropout=dropout,
-            batch_first=True,
-            activation='gelu'
-        )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=1)
-
-        # 5. Output Head
-        self.ln_final = nn.LayerNorm(hidden_size)
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_size, num_stocks)
-
-    def forward(self, x: Tensor) -> Tensor:
-        # x: (B, T, 251)
-        
-        # Initial Projection
-        x = self.feature_proj(x)
-        
-        # Step 1: LSTM local processing
-        # This helps the Transformer 'see' the sequence as a flow
-        x, _ = self.lstm(x) # (B, T, H)
-        # x = torch.relu(x)
-        x = nn.functional.gelu(x)
-        x = self.dropout(x)
-        
-        # Step 2: Add Positional Information
-        x = x + self.pos_embedding[:, :x.size(1), :]
-        
-        # Step 3: Transformer Global Attention
-        # Every day now looks at every other day through the lens of the LSTM output
-        x = self.transformer(x) # (B, T, H)
-        
-        # Step 4: Pooling
-        # Mean pooling the context of the whole 120-day window
-        context = x.mean(dim=1)
-        context = self.ln_final(context)
-        context = self.dropout(context)
-        
-        # Step 5: Portfolio Allocation
-        logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
 
 @NNModelLibrary.register(category='lstm')    
@@ -360,15 +290,17 @@ class BiAttentionLSTM(nn.Module):
             dropout=dropout if lstm_layers > 1 else 0
         )
 
-        self.ln = nn.LayerNorm(self.hidden_size) # Normalizes LSTM output
+        self.lstm_ln = nn.LayerNorm(self.hidden_size) # Normalizes LSTM output
         
         self.t_attn = TemporalAttention(self.hidden_size, t_nheads, dropout)
         
         self.r_attn = FeatureAttention(max_seq_len, self.hidden_size, r_nheads, dropout)
-        self.context_gate = ContextualGate(
-            self.C, cont_hidden, cont_layers, self.hidden_size
-        )
-        # self.context_gate = ContextualCNNGate(self.C, cont_hidden, cont_kernel)
+
+        self.attn_ln = nn.LayerNorm(self.hidden_size)
+        # self.context_gate = ContextualGate(
+        #     self.C, cont_hidden, cont_layers, self.hidden_size
+        # )
+        self.context_gate = ContextualCNNGate(self.C, cont_hidden, cont_kernel)
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(self.hidden_size, num_stocks)
@@ -396,7 +328,7 @@ class BiAttentionLSTM(nn.Module):
 
         # 2. Extract Stock-Level Alpha (Time)
         stock_features, _ = self.lstm(stock_data) # (B*N, T, H)
-        stock_features = self.ln(stock_features)
+        stock_features = self.lstm_ln(stock_features)
         stock_features = nn.functional.gelu(stock_features)
         stock_features = self.dropout(stock_features)
 
@@ -405,7 +337,7 @@ class BiAttentionLSTM(nn.Module):
         r_out = self.r_attn(stock_features)
 
         attn_out = stock_features + t_out + r_out
-        attn_out = self.ln(attn_out)
+        attn_out = self.attn_ln(attn_out)
         # r_out = r_out.mean(dim=-1)
 
         # 6. Apply Market Regime Gate (Macro)
