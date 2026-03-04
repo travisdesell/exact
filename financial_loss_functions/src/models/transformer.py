@@ -89,7 +89,7 @@ class TemporalTransformer(nn.Module):
         # Mean pooling the context of the whole 120-day window
         context = x.mean(dim=1)
         # context = self.ln_final(context)
-        # context = context * self.alpha # Scale it without centering or standardizing
+        context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
         # Step 5: Portfolio Allocation

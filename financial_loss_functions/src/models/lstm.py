@@ -256,7 +256,7 @@ class InvertedAttentionLSTM(nn.Module):
         logits = self.fc(context) 
         return torch.softmax(logits, dim=-1)
 
-@NNModelLibrary.register(category='lstm')    
+# @NNModelLibrary.register(category='lstm')    
 class BiAttentionLSTM(nn.Module):
     def __init__(
             self,
