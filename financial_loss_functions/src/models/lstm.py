@@ -297,10 +297,10 @@ class BiAttentionLSTM(nn.Module):
         self.r_attn = FeatureAttention(max_seq_len, self.hidden_size, r_nheads, dropout)
 
         self.attn_ln = nn.LayerNorm(self.hidden_size)
-        # self.context_gate = ContextualGate(
-        #     self.C, cont_hidden, cont_layers, self.hidden_size
-        # )
-        self.context_gate = ContextualCNNGate(self.C, cont_hidden, cont_kernel)
+        self.context_gate = ContextualGate(
+            self.C, cont_hidden, cont_layers, self.hidden_size
+        )
+        # self.context_gate = ContextualCNNGate(self.C, cont_hidden, cont_kernel)
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(self.hidden_size, num_stocks)

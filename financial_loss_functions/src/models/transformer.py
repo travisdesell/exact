@@ -74,8 +74,8 @@ class TemporalTransformer(nn.Module):
         # This helps the Transformer 'see' the sequence as a flow
         x, _ = self.lstm(x) # (B, T, H)
         x = self.lstm_ln(x)
-        x = torch.relu(x)
-        # x = nn.functional.gelu(x)
+        # x = torch.relu(x)
+        x = nn.functional.gelu(x)
         x = self.dropout(x)
         
         # Step 2: Add Positional Information
