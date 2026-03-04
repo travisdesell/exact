@@ -3,11 +3,11 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
+from src.models.layers.encoders import LSTMEncoder, GlobalAttentionProcessor
 from src.models.layers.TFT_vsn import (
     VariableSelectionNetwork,
     GatedResidualNetwork
 )
-
 
 @NNModelLibrary.register(category='transformer')
 class TemporalTransformer(nn.Module):
@@ -18,46 +18,25 @@ class TemporalTransformer(nn.Module):
         self,
         input_size: int,       # 251 features
         hidden_size: int,      # Embedding dimension
-        num_layers: int,       # LSTM layers
+        lstm_layers: int,       # LSTM layers
+        trans_layers: int,      # Transformer layers
         num_stocks: int,       # 50 stocks
-        attention_heads: int,
+        nheads: int,
         dropout: float,
         expansion_factor: int,
         max_seq_len: int
     ):
         super().__init__()
         
-        # 1. Feature Projection (Initial step to clean up features)
+        # 1. Feature Projection (Initial step to clean up features), kind of denoising
         self.feature_proj = nn.Linear(input_size, hidden_size)
         
-        # 2. LSTM Layer (Local Temporal Smoothing)
-        self.lstm = nn.LSTM(
-            input_size=hidden_size,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0
-        )
-
-        self.lstm_ln = nn.LayerNorm(hidden_size)
+        self.lstm_encoder = LSTMEncoder(hidden_size, lstm_layers, dropout)
         
-        # 3. Position Encoding (Crucial for the Transformer part)
-        self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
-        nn.init.trunc_normal_(self.pos_embedding, std=0.02)
-
-        # 4. Transformer Block (Global Context)
-        # Replacing simple Attention with a full Encoder Layer (includes FFN + Norms)
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_size,
-            nhead=attention_heads,
-            dim_feedforward=hidden_size * expansion_factor,
-            dropout=dropout,
-            batch_first=True,
-            activation='gelu'
+        self.glob_attn = GlobalAttentionProcessor(
+            hidden_size, trans_layers, nheads, expansion_factor, max_seq_len, dropout
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=1)
-
-        # 5. Output Head
+        # Output Head
         # self.ln_final = nn.LayerNorm(hidden_size)
         self.alpha = nn.Parameter(torch.ones(hidden_size))
 
@@ -72,23 +51,18 @@ class TemporalTransformer(nn.Module):
         
         # Step 1: LSTM local processing
         # This helps the Transformer 'see' the sequence as a flow
-        x, _ = self.lstm(x) # (B, T, H)
-        x = self.lstm_ln(x)
-        # x = torch.relu(x)
-        x = nn.functional.gelu(x)
-        x = self.dropout(x)
+        x = self.lstm_encoder(x)
         
-        # Step 2: Add Positional Information
-        x = x + self.pos_embedding[:, :x.size(1), :]
-        
-        # Step 3: Transformer Global Attention
+        # Step 2: Transformer Global Attention
         # Every day now looks at every other day through the lens of the LSTM output
-        x = self.transformer(x) # (B, T, H)
+        x = self.glob_attn(x)
         
-        # Step 4: Pooling
+        # Step 3: Pooling
         # Mean pooling the context of the whole 120-day window
         context = x.mean(dim=1)
         # context = self.ln_final(context)
+
+        # STep 4: Scaling
         context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
