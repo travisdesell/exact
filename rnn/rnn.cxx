@@ -496,6 +496,70 @@ double RNN::calculate_error_softmax(const vector<vector<double> >& expected_outp
     return cross_entropy_sum;
 }
 
+double RNN::calculate_error_softmax_balanced(const vector<vector<double> >& expected_outputs) {
+    double cross_entropy_sum = 0.0;
+    double error;
+    double softmax = 0.0;
+
+    const int32_t num_outputs = (int32_t) output_nodes.size();
+    const int32_t T = (int32_t) expected_outputs[0].size();
+
+    for (int32_t i = 0; i < num_outputs; i++) {
+        output_nodes[i]->error_values.resize(expected_outputs[i].size());
+    }
+
+    // compute per-class frequencies over the whole sequence
+    vector<double> class_counts(num_outputs, 0.0);
+    for (int32_t i = 0; i < num_outputs; i++) {
+        for (int32_t j = 0; j < T; j++) {
+            class_counts[i] += expected_outputs[i][j];  // assumes one-hot labels or class probabilities
+        }
+    }
+
+    double total_count = 0.0;
+    for (int32_t i = 0; i < num_outputs; i++) {
+        total_count += class_counts[i];
+    }
+
+    // balanced weights: w_i ∝ 1 / freq_i, normalized so average weight ≈ 1
+    vector<double> class_weights(num_outputs, 1.0);
+    if (total_count > 0.0) {
+        const double avg_per_class = total_count / (double) num_outputs;
+        for (int32_t i = 0; i < num_outputs; i++) {
+            if (class_counts[i] > 0.0) {
+                class_weights[i] = avg_per_class / class_counts[i];
+            } else {
+                class_weights[i] = 1.0;
+            }
+        }
+    }
+
+    // compute weighted softmax cross-entropy and error signals
+    for (int32_t j = 0; j < T; j++) {
+        double softmax_sum = 0.0;
+
+        for (int32_t i = 0; i < num_outputs; i++) {
+            softmax_sum += exp(output_nodes[i]->output_values[j]);
+        }
+
+        for (int32_t i = 0; i < num_outputs; i++) {
+            softmax = exp(output_nodes[i]->output_values[j]) / softmax_sum;
+
+            const double y = expected_outputs[i][j];
+            const double w = class_weights[i];
+
+            error = w * (softmax - y);
+            output_nodes[i]->error_values[j] = error;
+
+            if (y > 0.0) {
+                cross_entropy_sum += -w * y * log(softmax);
+            }
+        }
+    }
+
+    return cross_entropy_sum;
+}
+
 double RNN::calculate_error_mse(const vector<vector<double> >& expected_outputs) {
     double mse_sum = 0.0;
     double mse;
@@ -553,6 +617,14 @@ double RNN::prediction_softmax(
 ) {
     forward_pass(series_data, using_dropout, training, dropout_probability);
     return calculate_error_softmax(expected_outputs);
+}
+
+double RNN::prediction_softmax_balanced(
+    const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+    bool training, double dropout_probability
+) {
+    forward_pass(series_data, using_dropout, training, dropout_probability);
+    return calculate_error_softmax_balanced(expected_outputs);
 }
 
 double RNN::prediction_mse(

@@ -100,6 +100,73 @@ int main(int argc, char** argv) {
     double ce = genome->get_softmax(params, inputs, outputs);
     ASSERT(std::isfinite(ce) && ce >= 0.0, "get_softmax finite and non-negative");
 
+    // --- cross-entropy (classic) correctness check ---
+    // Compare RNN's prediction_softmax against a manual cross-entropy computation
+    // using logits from get_predictions and the mathematical softmax definition.
+    {
+        RNN* rnn_ce = genome->get_rnn();
+        rnn_ce->set_weights(params);
+
+        double ce_rnn = rnn_ce->prediction_softmax(inputs[0], outputs[0], false, false, 0.0);
+
+        // Manually compute CE from logits = get_predictions()
+        vector<double> flat_logits = rnn_ce->get_predictions(inputs[0], outputs[0], false, 0.0);
+        const int n_outputs = (int) out_names.size();          // 2
+        const int T = (int) flat_logits.size() / n_outputs;    // timesteps
+
+        double ce_manual = 0.0;
+        for (int t = 0; t < T; t++) {
+            // Collect logits for this timestep
+            double max_logit = -1e100;
+            double logits[2];
+            for (int k = 0; k < n_outputs; k++) {
+                double z = flat_logits[t * n_outputs + k];
+                logits[k] = z;
+                if (z > max_logit) max_logit = z;
+            }
+
+            // Compute softmax with simple stabilization
+            double sum_exp = 0.0;
+            double softmax[2];
+            for (int k = 0; k < n_outputs; k++) {
+                softmax[k] = std::exp(logits[k] - max_logit);
+                sum_exp += softmax[k];
+            }
+            for (int k = 0; k < n_outputs; k++) {
+                softmax[k] /= sum_exp;
+            }
+
+            // One-hot labels in outputs[0][k][t]
+            for (int k = 0; k < n_outputs; k++) {
+                double y = outputs[0][k][t];
+                if (y > 0.0) {
+                    ce_manual += -y * std::log(softmax[k]);
+                }
+            }
+        }
+
+        ASSERT(std::isfinite(ce_rnn), "prediction_softmax CE is finite");
+        ASSERT(std::isfinite(ce_manual), "manual CE is finite");
+        ASSERT(std::fabs(ce_rnn - ce_manual) < 1e-9, "prediction_softmax matches manual cross-entropy computation");
+
+        delete rnn_ce;
+    }
+
+    // --- balanced cross-entropy (per-class weighting) ---
+    // For a *truly* class-balanced synthetic dataset, the balanced cross-entropy
+    // should reduce exactly to the unweighted cross-entropy.
+    vector<vector<vector<double> > > bal_inputs, bal_outputs;
+    make_simple_data(4, 1, 2, bal_inputs, bal_outputs);  // 4 timesteps -> each class appears exactly twice
+    double ce_balanced_std = genome->get_softmax(params, bal_inputs, bal_outputs);
+    RNN* rnn_bal = genome->get_rnn();
+    double ce_bal = rnn_bal->prediction_softmax_balanced(bal_inputs[0], bal_outputs[0], false, false, 0.0);
+    ASSERT(std::isfinite(ce_bal) && ce_bal >= 0.0, "prediction_softmax_balanced finite and non-negative");
+    ASSERT(
+        std::fabs(ce_bal - ce_balanced_std) < 1e-9,
+        "balanced cross-entropy equals standard cross-entropy for equal class frequencies"
+    );
+    delete rnn_bal;
+
     // --- get_analytic_gradient (classification path) produces finite gradients ---
     vector<RNN*> rnns;
     rnns.push_back(genome->get_rnn());

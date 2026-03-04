@@ -50,10 +50,15 @@ class RNN {
     void backward_pass(double error, bool using_dropout, bool training, double dropout_probability);
 
     double calculate_error_softmax(const vector<vector<double> >& expected_outputs);
+    double calculate_error_softmax_balanced(const vector<vector<double> >& expected_outputs);
     double calculate_error_mse(const vector<vector<double> >& expected_outputs);
     double calculate_error_mae(const vector<vector<double> >& expected_outputs);
 
     double prediction_softmax(
+        const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
+        bool training, double dropout_probability
+    );
+    double prediction_softmax_balanced(
         const vector<vector<double> >& series_data, const vector<vector<double> >& expected_outputs, bool using_dropout,
         bool training, double dropout_probability
     );
