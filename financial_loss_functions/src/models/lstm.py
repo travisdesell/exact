@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
-from src.models.layers.temporal import TemporalAttention
+from src.models.layers.relational import FeatureAttention
+from src.models.layers.temporal import TemporalAttention, ContextualGate
 
 #### All models MUST get a registration decorator with a category.
 #### Here category will mostly be the file name.
@@ -320,4 +321,100 @@ class LSTMTransformer(nn.Module):
         # Step 5: Portfolio Allocation
         logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
+
+@NNModelLibrary.register(category='lstm')    
+class BiAttentionLSTM(nn.Module):
+    def __init__(
+            self,
+            num_stocks: int,
+            feats_per_stock: int,
+            num_global: int, 
+            hidden_size: int, 
+            lstm_layers: int,
+            t_nheads: int,
+            r_nheads: int,
+            cont_hidden: int,
+            cont_layers: int,
+            dropout: float,
+            max_seq_len: int,
+            **kwargs
+        ):
+        super().__init__()
+
+        self.N = num_stocks
+        self.F = feats_per_stock
+        self.hidden_size = hidden_size
+        
+        self.num_tick_feats = num_stocks * feats_per_stock
+        
+        self.C = num_global
+
+        self.lstm = nn.LSTM(
+            input_size=self.num_tick_feats,
+            hidden_size=self.hidden_size,
+            num_layers=lstm_layers,
+            batch_first=True,
+            dropout=dropout if lstm_layers > 1 else 0
+        )
+
+        self.ln = nn.LayerNorm(self.hidden_size) # Normalizes LSTM output
+        
+        self.t_attn = TemporalAttention(self.hidden_size, t_nheads, dropout)
+        
+        self.r_attn = FeatureAttention(max_seq_len, self.hidden_size, r_nheads, dropout)
+        self.context_gate = ContextualGate(
+            self.C, cont_hidden, cont_layers, self.hidden_size
+        )
     
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(self.hidden_size, self.N)
+    
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for the neural network.
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
+        B, T, _ = x.shape
+
+        # # 1. Isolate and Fold
+        # stock_data = x[:, :, :self.N*self.F].view(B, T, self.N, self.F).transpose(1, 2).reshape(B*self.N, T, self.F)
+        # global_data = x[:, :, self.N*self.F:]
+
+        # 1. Faster Folding
+        # Ensure memory is contiguous after transpose for MPS speed
+        stock_data = x[:, :, :self.num_tick_feats].contiguous() # (B, T, N*F)
+        global_data = x[:, :, self.num_tick_feats:].contiguous() # (B, T, C)
+
+        # 2. Extract Stock-Level Alpha (Time)
+        stock_features, _ = self.lstm(stock_data) # (B*N, T, H)
+        stock_features = self.ln(stock_features)
+        stock_features = torch.relu(stock_features)
+        stock_features = self.dropout(stock_features)
+
+        
+        t_out = self.t_attn(stock_features)
+        r_out = self.r_attn(stock_features)
+
+        attn_out = stock_features + t_out + r_out
+        attn_out = self.ln(attn_out)
+        # r_out = r_out.mean(dim=-1)
+
+        # 6. Apply Market Regime Gate (Macro)
+        gate = self.context_gate(global_data) # (B, 1, 16)
+        final_rep = attn_out * gate # (B, N, 16)
+
+        # 7. Final Allocation
+        final_rep = attn_out.mean(dim=1) # (B, hidden_size)
+        final_rep = self.dropout(final_rep)
+        
+        # fc maps (16 -> 1) for each of the 50 stocks
+        logits = self.fc(final_rep)
+        
+        return torch.softmax(logits, dim=-1)
+
+        
