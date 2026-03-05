@@ -9,6 +9,18 @@ from src.models.layers.TFT_vsn import (
     GatedResidualNetwork
 )
 
+class LearnableTemporalWeight(nn.Module):
+    def __init__(self, max_seq_len):
+        super().__init__()
+        # 120 learnable weights, one for each day
+        self.day_weights = nn.Parameter(torch.ones(max_seq_len))
+
+    def forward(self, x):
+        # x: (B, T, H)
+        # Apply weights to the T dimension
+        w = torch.softmax(self.day_weights[:x.size(1)], dim=0)
+        return torch.sum(x * w.view(1, -1, 1), dim=1)
+
 @NNModelLibrary.register(category='transformer')
 class TemporalTransformer(nn.Module):
     """
@@ -38,7 +50,9 @@ class TemporalTransformer(nn.Module):
             hidden_size, trans_layers, nheads, expansion_factor, max_seq_len, dropout
         )
 
-        # self.pooler = AttentionPooling(hidden_size)
+        # self.temporal_pooler = LearnableTemporalWeight(max_seq_len)
+        # self.attn_pooler = AttentionPooling(hidden_size)
+
         # Output Head
         # self.ln_final = nn.LayerNorm(hidden_size)
         self.alpha = nn.Parameter(torch.ones(hidden_size))
@@ -64,8 +78,7 @@ class TemporalTransformer(nn.Module):
         # Step 3: Pooling
         # Mean pooling the context of the whole 120-day window
         context = x.mean(dim=1)
-        # context = self._recency_pooling(x)
-        # context = self.pooler(x)
+
         # context = self.ln_final(context)
 
         # STep 4: Scaling
@@ -75,7 +88,7 @@ class TemporalTransformer(nn.Module):
         # Step 5: Portfolio Allocation
         logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
-    
+
     def _recency_pooling(self, x: Tensor) -> Tensor:
         # x shape: (B, T, H)
         T = x.size(1)
