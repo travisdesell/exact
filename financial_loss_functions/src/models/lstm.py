@@ -134,7 +134,7 @@ class AttentionLSTM(nn.Module):
         self.dropout = nn.Dropout(dropout)
         
         # A learnable vector initialized to 1.0
-        self.alpha = nn.Parameter(torch.ones(hidden_size))
+        # self.alpha = nn.Parameter(torch.ones(hidden_size))
         
         self.fc = nn.Linear(hidden_size, num_stocks)
         
@@ -169,7 +169,7 @@ class AttentionLSTM(nn.Module):
         # Pooling
         context = attn_out.mean(dim=1)
         # context = self.final_ln(context)
-        context = context * self.alpha # Scale it without centering or standardizing
+        # context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
         logits = self.fc(context)  # (B, N)

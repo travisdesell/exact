@@ -244,7 +244,7 @@
         },
         "custom_loss_10" : {
             "cvar_lambda": 0.1,
-            "risk_p_lambda": 0.2
+            "risk_p_lambda": 0.1
         },
         "custom_loss_11" : {
             "cvar_lambda": 0.01,

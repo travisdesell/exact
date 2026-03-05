@@ -22,7 +22,7 @@ class TemporalAttention(nn.Module):
 
         # Residual Connection + Norm (Standard Transformer Block trick)
         # We add the input (x) to the output (attn_out) to help gradients flow
-        attn_out = x + self.dropout(attn_out) 
+        attn_out = x + attn_out 
         attn_out = self.ln_attn(attn_out)
         return attn_out 
 
