@@ -42,7 +42,6 @@ class TemporalTransformer(nn.Module):
         
         # 1. Feature Projection (Initial step to clean up features), kind of denoising
         self.feature_proj = nn.Linear(input_size, hidden_size)
-        # self.feature_stem = LightweightConvStem(input_size, hidden_size)
         
         self.lstm_encoder = LSTMEncoder(hidden_size, lstm_layers, dropout)
         

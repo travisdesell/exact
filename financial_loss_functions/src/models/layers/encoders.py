@@ -1,7 +1,23 @@
 import torch
 # import numpy as np
+import math
 import torch.nn as nn
 from torch import Tensor
+
+class LearnableSpectralFilter(nn.Module):
+    def __init__(self, seq_len, hidden_size):
+        super().__init__()
+        self.seq_len = seq_len
+        # Learnable filter in frequency domain (real-valued)
+        self.filter = nn.Parameter(torch.ones(seq_len // 2 + 1, hidden_size))
+        self.alpha = nn.Parameter(torch.tensor(0.1))  # scaling
+
+    def forward(self, x):
+        # x: (B, T, H)
+        x_fft = torch.fft.rfft(x, dim=1)               # (B, T/2+1, H)
+        x_fft = x_fft * (self.filter.unsqueeze(0))     # apply filter
+        x_filtered = torch.fft.irfft(x_fft, n=self.seq_len, dim=1)
+        return x + self.alpha * x_filtered              # residual
 
 class LSTMEncoder(nn.Module):
     def __init__(self, hidden_size: int, num_layers: int, dropout: float):
@@ -25,6 +41,38 @@ class LSTMEncoder(nn.Module):
         # x = torch.relu(x)
         x = nn.functional.gelu(x)
         return self.dropout(x)
+
+class SinusoidalPositionalEncoding(nn.Module):
+    """
+    Fixed sinusoidal positional encoding.
+    Generates encodings of shape (1, max_seq_len, hidden_size).
+    """
+    def __init__(self, hidden_size: int, max_seq_len: int):
+        super().__init__()
+        pe = torch.zeros(max_seq_len, hidden_size)
+        position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, hidden_size, 2).float() * (-math.log(10000.0) / hidden_size))
+        
+        # Apply sin to even indices, cos to odd indices
+        pe[:, 0::2] = torch.sin(position * div_term)
+        if hidden_size % 2 == 1:
+            # if hidden_size is odd, the last dimension gets sin (0::2 covers up to last-1)
+            pe[:, 1::2] = torch.cos(position * div_term)[:, :(hidden_size-1)//2]  # adjust for odd
+        else:
+            pe[:, 1::2] = torch.cos(position * div_term)
+        
+        pe = pe.unsqueeze(0)  # (1, max_seq_len, hidden_size)
+        self.register_buffer('pe', pe)  # not a parameter, not updated during training
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Add positional encoding to input tensor.
+        Args:
+            x: (batch_size, seq_len, hidden_size)
+        Returns:
+            x + positional encoding (truncated to seq_len)
+        """
+        return x + self.pe[:, :x.size(1), :]
 
 class GlobalAttentionProcessor(nn.Module):
     def __init__(
@@ -55,6 +103,31 @@ class GlobalAttentionProcessor(nn.Module):
         x = self.transformer(x) # (B, T, H)
 
         return x
+        
+class DenoisingConv1d(nn.Module):
+    """
+    Lightweight depthwise 1D convolution for temporal smoothing/denoising.
+    Preserves input shape (B, T, H) and uses residual connection + layer norm.
+    """
+    def __init__(self, hidden_size: int, kernel_size: int = 3, dropout: float = 0.0):
+        super().__init__()
+        self.conv = nn.Conv1d(
+            in_channels=hidden_size,
+            out_channels=hidden_size,
+            kernel_size=kernel_size,
+            padding=kernel_size // 2,
+            groups=hidden_size  # depthwise: each channel processed independently
+        )
+        self.activation = nn.GELU()
+        self.norm = nn.LayerNorm(hidden_size)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # x: (B, T, H)
+        x_conv = self.conv(x.transpose(1, 2))  # (B, H, T)
+        x_conv = x_conv.transpose(1, 2)        # (B, T, H)
+        x = x + self.dropout(self.activation(x_conv))
+        return self.norm(x)
     
 class ConvStem(nn.Module):
     def __init__(self, in_channels: int, out_channels: int):
