@@ -4,20 +4,50 @@ import math
 import torch.nn as nn
 from torch import Tensor
 
+# class LearnableSpectralFilter(nn.Module):
+#     def __init__(self, seq_len, hidden_size):
+#         super().__init__()
+#         self.seq_len = seq_len
+#         # Learnable filter in frequency domain (real-valued)
+#         self.filter = nn.Parameter(torch.ones(seq_len // 2 + 1, hidden_size))
+#         self.alpha = nn.Parameter(torch.tensor(0.1))  # scaling
+
+#     def forward(self, x):
+#         # x: (B, T, H)
+#         x_fft = torch.fft.rfft(x, dim=1)               # (B, T/2+1, H)
+#         x_fft = x_fft * (self.filter.unsqueeze(0))     # apply filter
+#         x_filtered = torch.fft.irfft(x_fft, n=self.seq_len, dim=1)
+#         return x + self.alpha * x_filtered              # residual
+
 class LearnableSpectralFilter(nn.Module):
     def __init__(self, seq_len, hidden_size):
         super().__init__()
         self.seq_len = seq_len
-        # Learnable filter in frequency domain (real-valued)
-        self.filter = nn.Parameter(torch.ones(seq_len // 2 + 1, hidden_size))
-        self.alpha = nn.Parameter(torch.tensor(0.1))  # scaling
+        self.n_freq = seq_len // 2 + 1
+        
+        # Initialize as complex parameters: (Real + j*Imag)
+        # We initialize Real to 1 and Imag to 0 so it starts as an identity transform
+        self.filter = nn.Parameter(torch.complex(
+            torch.ones(self.n_freq, hidden_size),
+            torch.zeros(self.n_freq, hidden_size)
+        ))
+        
+        self.alpha = nn.Parameter(torch.tensor(0.1)) 
 
     def forward(self, x):
         # x: (B, T, H)
-        x_fft = torch.fft.rfft(x, dim=1)               # (B, T/2+1, H)
-        x_fft = x_fft * (self.filter.unsqueeze(0))     # apply filter
+        # 1. Move to Frequency Domain
+        x_fft = torch.fft.rfft(x, dim=1)               # (B, n_freq, H)
+        
+        # 2. Apply complex filter (handles Magnitude AND Phase)
+        # Broadcasting: (1, n_freq, H) * (B, n_freq, H)
+        x_fft = x_fft * self.filter.unsqueeze(0)
+        
+        # 3. Move back to Time Domain
         x_filtered = torch.fft.irfft(x_fft, n=self.seq_len, dim=1)
-        return x + self.alpha * x_filtered              # residual
+        
+        # 4. Residual Connection (keep the original signal, add the 'cleaned' version)
+        return x + self.alpha * x_filtered
 
 class LSTMEncoder(nn.Module):
     def __init__(self, hidden_size: int, num_layers: int, dropout: float):
@@ -96,13 +126,15 @@ class GlobalAttentionProcessor(nn.Module):
         )
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
+        self.ln = nn.LayerNorm(hidden_size)
+
     def forward(self, x: Tensor) -> Tensor:
         # Add Positional Information
         x = x + self.pos_embedding[:, :x.size(1), :]
         
         x = self.transformer(x) # (B, T, H)
 
-        return x
+        return self.ln(x)
         
 class DenoisingConv1d(nn.Module):
     """

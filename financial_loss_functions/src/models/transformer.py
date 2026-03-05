@@ -54,7 +54,7 @@ class TemporalTransformer(nn.Module):
 
         # Output Head
         # self.ln_final = nn.LayerNorm(hidden_size)
-        self.alpha = nn.Parameter(torch.ones(hidden_size))
+        # self.alpha = nn.Parameter(torch.ones(hidden_size))
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
@@ -81,7 +81,7 @@ class TemporalTransformer(nn.Module):
         # context = self.ln_final(context)
 
         # STep 4: Scaling
-        context = context * self.alpha # Scale it without centering or standardizing
+        # context = context * self.alpha # Scale it without centering or standardizing
         context = self.dropout(context)
         
         # Step 5: Portfolio Allocation
