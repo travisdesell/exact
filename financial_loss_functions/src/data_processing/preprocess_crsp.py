@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 from scipy.linalg import svd
 from scipy.linalg import hankel
 from sklearn.preprocessing import PowerTransformer, RobustScaler
 from src.utils.formatting import extract_req_cols, split_col
+
 
 def _handle_missing_data(df: pd.DataFrame, col_suffix: str, limit: int = 1):
     req_cols = extract_req_cols(df.columns, col_suffix)
@@ -188,6 +190,87 @@ class SSA:
         
         return pd.DataFrame(denoised_dict, index=dataframe.index)
 
+class KalmanDenoise:
+    """
+    Denoise each column of a DataFrame using a local level Kalman filter.
+    
+    In 'fit', a separate model is estimated for each column via maximum
+    likelihood (MLE). The estimated parameter vectors are stored.
+    In 'transform', those parameters are used to filter new data causally,
+    producing denoised series.
+
+    Args:
+        method (str): Optimisation method passed to `statsmodels` when fitting.
+            default='powell'
+        maxiter (int): Maximum number of iterations for the MLE optimizer.
+            default=50
+    """
+    def __init__(self, method: str = 'powell', maxiter: int = 100):
+        self.method = method
+        self.maxiter = maxiter
+        self.params_dict = {}   # stores fitted parameters per column
+
+    def kalman_fit(self, dataframe: pd.DataFrame) -> None:
+        """
+        Fit a local level model to each column of the training DataFrame.
+        Parameters are estimated via MLE and stored internally.
+
+        Args:
+            dataframe: training data (rows = time, columns = features)
+        """
+        for col_name, col in dataframe.items():
+            series = col.values.astype(np.float64)
+            model = sm.tsa.UnobservedComponents(series, 'local level')
+            res = model.fit(method=self.method, maxiter=self.maxiter, disp=False)
+            self.params_dict[col_name] = res.params   # store parameter vector
+
+    def kalman_transform(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply the fitted Kalman filter to new data (validation/test).
+        For each column, create a new model for the new series and filter
+        using the parameters estimated from the corresponding training column.
+        The filtered level estimates (denoised series) are returned.
+
+        Args:
+            dataframe: new data (same columns as training)
+
+        Returns:
+            denoised_df: DataFrame with same index/columns, containing the
+                         filtered (causal) estimate of the true signal.
+        """
+        if not self.params_dict:
+            raise ValueError('Run `kalman_fit` on training data before transforming!')
+
+        denoised_dict = {}
+        for col_name, col in dataframe.items():
+            if col_name not in self.params_dict:
+                raise KeyError(f'Column {col_name} not seen in training.')
+
+            series = col.values.astype(np.float64)
+            # Create a new model for the new series
+            model = sm.tsa.UnobservedComponents(series, 'local level')
+            # Filter using the pre‑estimated parameters from training
+            filtered_result = model.filter(self.params_dict[col_name])
+            # Extract the filtered level (first state component)
+            denoised = filtered_result.filtered_state[0]
+            denoised_dict[col_name] = denoised
+
+        return pd.DataFrame(denoised_dict, index=dataframe.index)
+
+def calculate_dema(df, span=20):
+    """
+    Computes DEMA for all columns in a DataFrame.
+    """
+    # 1. Calculate the first EMA
+    ema1 = df.ewm(span=span, adjust=False).mean()
+    
+    # 2. Calculate the EMA of the first EMA
+    ema2 = ema1.ewm(span=span, adjust=False).mean()
+    
+    # 3. Apply the DEMA formula
+    dema = (2 * ema1) - ema2
+    return dema
+
 class Preprocessor:
     col_sep = '_'
     
@@ -209,7 +292,8 @@ class Preprocessor:
         self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
         self._box_cox = PowerTransformer(method='box-cox', standardize=False)
 
-        self.ssa = SSA(window_len=60)
+        # self.ssa = SSA(window_len=90)
+        self.kalman_filt = KalmanDenoise()
 
         self._robust_scaler = RobustScaler()
 
@@ -384,10 +468,10 @@ class Preprocessor:
 
         train = train[self.ordered_cols]
 
-        # Singular Spectral Analysis for denosining
-        self.ssa.ssa_fit(train)
-        train = self.ssa.ssa_transform(train)
-        
+        # kalman for denosining
+        self.kalman_filt.kalman_fit(train)
+        train = self.kalman_filt.kalman_transform(train)
+
         # train = self._transform(train, 'fit')
         train = self._normalize(train, 'fit')
 
@@ -432,8 +516,8 @@ class Preprocessor:
         split_data = split_data[self.ordered_cols]
         # split_data = self._transform(split_data, 'split')
 
-        # Singular Spectral Analysis for denosining
-        split_data = self.ssa.ssa_transform(split_data)
+        # Kalman filter for denosining
+        split_data = self.kalman_filt.kalman_transform(split_data)
 
         split_data = self._normalize(split_data, 'split')
 
