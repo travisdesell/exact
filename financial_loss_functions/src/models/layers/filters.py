@@ -1,6 +1,26 @@
 import torch 
 from torch import nn
 
+class RobustNormalization(nn.Module):
+    def __init__(self, feature_dim, median, iqr, eps: float = 1e-8):
+        super().__init__()
+        self.register_buffer('median', torch.tensor(median, dtype=torch.float32))
+        self.register_buffer('iqr', torch.tensor(iqr, dtype=torch.float32))
+
+        self.eps = eps
+        # Optional affine: scale and shift (learnable)
+        self.affine = False  # set True if you want learnable scale/shift
+        if self.affine:
+            self.weight = nn.Parameter(torch.ones(feature_dim))
+            self.bias = nn.Parameter(torch.zeros(feature_dim))
+
+    def forward(self, x):
+        # x shape: (B, T, F) or (B, F)
+        x = (x - self.median) / (self.iqr + self.eps)
+        if self.affine:
+            x = x * self.weight + self.bias
+        return x
+
 class FFTSpectralFilter(nn.Module):
     def __init__(self, seq_len, hidden_size):
         super().__init__()
