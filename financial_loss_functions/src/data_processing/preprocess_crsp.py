@@ -468,9 +468,9 @@ class Preprocessor:
 
         train = train[self.ordered_cols]
 
-        # kalman for denosining
-        self.kalman_filt.kalman_fit(train)
-        train = self.kalman_filt.kalman_transform(train)
+        # # kalman for denosining
+        # self.kalman_filt.kalman_fit(train)
+        # train = self.kalman_filt.kalman_transform(train)
 
         # train = self._transform(train, 'fit')
         train = self._normalize(train, 'fit')
@@ -517,7 +517,7 @@ class Preprocessor:
         # split_data = self._transform(split_data, 'split')
 
         # Kalman filter for denosining
-        split_data = self.kalman_filt.kalman_transform(split_data)
+        # split_data = self.kalman_filt.kalman_transform(split_data)
 
         split_data = self._normalize(split_data, 'split')
 
