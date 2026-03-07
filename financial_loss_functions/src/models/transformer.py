@@ -36,7 +36,8 @@ class TemporalTransformer(nn.Module):
         nheads: int,
         dropout: float,
         expansion_factor: int,
-        max_seq_len: int
+        max_seq_len: int,
+        equal_prior: bool
     ):
         super().__init__()
         
@@ -58,6 +59,15 @@ class TemporalTransformer(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
         # x: (B, T, 251)
@@ -110,7 +120,8 @@ class TFT(nn.Module):
             attention_heads: int,
             dropout: float,
             expansion_factor: int,
-            max_seq_len: int
+            max_seq_len: int,
+            equal_prior: bool
         ):
         super().__init__()
         
@@ -135,6 +146,15 @@ class TFT(nn.Module):
         # 4. Final Gating & Output
         self.post_attention_grn = GatedResidualNetwork(hidden_size, hidden_size, hidden_size, dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
         # x: (B, T, 251)

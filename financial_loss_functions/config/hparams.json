@@ -66,7 +66,8 @@
                 "attention_heads": 2,
                 "dropout": 0.4,
                 "expansion_factor": 2,
-                "max_seq_len": 120
+                "max_seq_len": 120,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -95,7 +96,8 @@
                 "nheads": 2,
                 "dropout": 0.5,
                 "expansion_factor": 4, 
-                "max_seq_len": 120
+                "max_seq_len": 120,
+                "equal_prior": true
             },
             "optimizer": {
                 "lr": 1e-5,
@@ -122,7 +124,8 @@
                 "num_layers": 4,
                 "attention_heads": 8,
                 "dropout": 0.5,
-                "max_seq_len": 120
+                "max_seq_len": 120,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -187,7 +190,8 @@
                 "cont_layers": 1,
                 "cont_kernel": 3,
                 "dropout": 0.2,
-                "max_seq_len": 120
+                "max_seq_len": 120,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,

@@ -187,7 +187,8 @@ class InvertedAttentionLSTM(nn.Module):
         num_stocks: int,
         attention_heads: int,
         dropout: float,
-        max_seq_len: int, # Needed for the inverted Attention/Norm layers
+        max_seq_len: int, # Needed for the inverted Attention/Norm layers,
+        equal_prior: bool
     ):
         super().__init__()
         # 1. Temporal Extraction (Standard)
@@ -223,6 +224,15 @@ class InvertedAttentionLSTM(nn.Module):
         #     nn.Dropout(dropout),
         #     nn.Linear(hidden_size * expansion_factor, num_stocks)
         # )
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
         # Step 1: Standard LSTM processing
@@ -272,6 +282,7 @@ class BiAttentionLSTM(nn.Module):
             cont_kernel: int,
             dropout: float,
             max_seq_len: int,
+            equal_prior: bool,
             **kwargs
         ):
         super().__init__()
@@ -304,6 +315,15 @@ class BiAttentionLSTM(nn.Module):
     
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(self.hidden_size, num_stocks)
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
     
     def forward(self, x: Tensor) -> Tensor:
         """
