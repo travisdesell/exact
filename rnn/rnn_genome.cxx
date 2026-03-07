@@ -1480,6 +1480,14 @@ double RNN_Genome::get_mse(
     const vector<double>& parameters, const vector<vector<vector<double> > >& inputs,
     const vector<vector<vector<double> > >& outputs
 ) {
+    if (inputs.size() == 0) {
+        Log::warning(
+            "get_mse: no input series (e.g. empty validation set). Check validation files and --time_offset. Returning "
+            "EXAMM_MAX_DOUBLE.\n"
+        );
+        return EXAMM_MAX_DOUBLE;
+    }
+
     RNN* rnn = get_rnn();
     rnn->set_weights(parameters);
 
