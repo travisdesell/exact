@@ -84,6 +84,9 @@ class TimeSeriesSet {
 
     void get_series(string field_name, vector<double>& series);
 
+    /** Return the value of a field at a given row (time step). */
+    // double get_value(string field_name, int32_t row) const;
+
     double get_min(string field);
     double get_average(string field);
     double get_max(string field);
@@ -111,11 +114,17 @@ class TimeSeriesSet {
 
     void select_parameters(const vector<string>& parameter_names);
     void select_parameters(const vector<string>& input_parameter_names, const vector<string>& output_parameter_names);
+
+    // /** Add a synthetic column (e.g. one-hot class) with given values. Used for in-program one-hot expansion. */
+    // void add_synthetic_column(const string& name, const vector<double>& values);
 };
 
 class TimeSeriesSets {
    private:
     string normalize_type;
+
+    // /** When true, each CSV row is one independent sample (no time dimension). Export produces one sequence per row, length 1. */
+    // bool row_per_sample;
 
     vector<string> filenames;
 
@@ -176,6 +185,16 @@ class TimeSeriesSets {
         int32_t time_offset, vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs
     );
 
+    // /**
+    //  * Load one file where each row is one time series set (one series).
+    //  * Columns: first num_inputs are input params, next num_outputs are output params.
+    //  * Output layout matches export_time_series: [series][param_index][timestep]; here timestep length is 1 per row.
+    //  */
+    // static void load_single_file_row_per_series(
+    //     const string& filename, int32_t num_inputs, int32_t num_outputs,
+    //     vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs, bool skip_header = true
+    // );
+
     void export_series_by_name(string field_name, vector<vector<double> >& exported_series);
 
     double denormalize(string field_name, double value);
@@ -197,7 +216,15 @@ class TimeSeriesSets {
     void set_training_indexes(const vector<int>& _training_indexes);
     void set_test_indexes(const vector<int>& _test_indexes);
 
+    // bool get_row_per_sample() const;
+
     TimeSeriesSet* get_set(int32_t i);
+
+    /**
+     * When prediction_type is categorical and there is exactly one output column, expand it to one-hot
+     * (class0, class1, ...) in memory. Pass num_classes (e.g. 2 for binary) or use 0 to infer from data.
+     */
+    // void expand_single_output_to_onehot(int32_t num_classes);
 };
 
 #endif

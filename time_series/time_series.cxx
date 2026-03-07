@@ -20,6 +20,7 @@ using std::stringstream;
 
 #include <stdexcept>
 using std::invalid_argument;
+// using std::out_of_range;
 
 #include <string>
 using std::string;
@@ -131,6 +132,18 @@ void TimeSeries::normalize_min_max(double min, double max) {
         min, max, this->min, this->max
     );
 
+    double range = max - min;
+    if (range <= 0.0 || !std::isfinite(range)) {
+        Log::warning(
+            "normalize_min_max: constant or invalid range for '%s' (min=%lf, max=%lf). Using 0.5 to avoid NaN.\n",
+            name.c_str(), min, max
+        );
+        for (int32_t i = 0; i < (int32_t) values.size(); i++) {
+            values[i] = 0.5;
+        }
+        return;
+    }
+
     for (int32_t i = 0; i < (int32_t) values.size(); i++) {
         if (values[i] < min) {
             Log::warning(
@@ -146,7 +159,7 @@ void TimeSeries::normalize_min_max(double min, double max) {
             );
         }
 
-        values[i] = (values[i] - min) / (max - min);
+        values[i] = (values[i] - min) / range;
     }
 }
 
@@ -238,6 +251,24 @@ void TimeSeriesSet::add_time_series(string name) {
     }
 }
 
+// void TimeSeriesSet::add_synthetic_column(const string& name, const vector<double>& values) {
+//     if (time_series.count(name) != 0) {
+//         Log::fatal("ERROR! add_synthetic_column: column '%s' already exists.\n", name.c_str());
+//         exit(1);
+//     }
+//     time_series[name] = new TimeSeries(name);
+//     for (size_t i = 0; i < values.size(); i++) {
+//         time_series[name]->add_value(values[i]);
+//     }
+//     time_series[name]->calculate_statistics();
+//     fields.push_back(name);
+// }
+
+/**
+ *  Read CSV: header row = parameter names; each data row = one time step.
+ *  Columns (parameters) can mix static features and time-series signals; each gets one value per row.
+ *  Use time_offset=0 to predict a target column from other columns in the same row.
+ */
 TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
     filename = _filename;
     fields = _fields;
@@ -329,9 +360,16 @@ TimeSeriesSet::TimeSeriesSet(string _filename, const vector<string>& _fields) {
                 time_series[file_fields[i]]->add_value(stod(parts[i]));
             } catch (const invalid_argument& ia) {
                 Log::error(
-                    "file: '%s' -- invalid argument: '%s' on row %d and column %d: '%s', value: '%s'\n",
+                    "file: '%s' -- invalid argument: '%s' on row %d and column %d: '%s', value: '%s' (using 0)\n",
                     filename.c_str(), ia.what(), row, i, file_fields[i].c_str(), parts[i].c_str()
                 );
+                // time_series[file_fields[i]]->add_value(0.0);
+            // } catch (const out_of_range& oor) {
+            //     Log::error(
+            //         "file: '%s' -- stod out of range: '%s' on row %d and column %d: '%s' (using 0)\n",
+            //         filename.c_str(), oor.what(), row, i, file_fields[i].c_str(), parts[i].c_str()
+            //     );
+            //     time_series[file_fields[i]]->add_value(0.0);
             }
         }
 
@@ -397,6 +435,10 @@ vector<string> TimeSeriesSet::get_fields() const {
 void TimeSeriesSet::get_series(string field_name, vector<double>& series) {
     time_series[field_name]->copy_values(series);
 }
+
+// double TimeSeriesSet::get_value(string field_name, int32_t row) const {
+//     return time_series.at(field_name)->get_value(row);
+// }
 
 double TimeSeriesSet::get_min(string field) {
     return time_series[field]->get_min();
@@ -596,6 +638,14 @@ void TimeSeriesSets::help_message() {
     Log::info("\tSpecifying parameters:\n");
     Log::info("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
     Log::info("\t\t\t--output_parameter_names <name>*: parameters to be used as outputs\n");
+    // Log::info(
+    //     "\t\t\t--expand_output_onehot: (optional) if exactly one output, expand to one-hot (class0, class1, ...) for "
+    //     "classification\n"
+    // );
+    // Log::info(
+    //     "\t\t\t--num_classes <int>: (optional) number of classes for one-hot expansion; if 0 or omitted, inferred from "
+    //     "data\n"
+    // );
     Log::info("\t\t\t--shift_parameter_names <name>*: parameters to shift to same timestep as output\n");
     Log::info("\t\tOR:\n");
     Log::info(
@@ -609,7 +659,20 @@ void TimeSeriesSets::help_message() {
         "\t\t\t\t'b' denoting the parameter as having user specified bounds, if this is specified the following two "
         "values should be the min and max bounds for the parameter.\n"
     );
-    Log::info("\t\t\t\tThe settings string requires at one of 'i' or 'o'.\n");
+    Log::info("\t\t\t\tThe settings string requires at least one of 'i' or 'o'.\n");
+
+    Log::info("\tTime offset (--time_offset <int>):\n");
+    Log::info(
+        "\t\t0 = predict a value within the same row (e.g. static + time-series columns as inputs, one target column).\n"
+    );
+    Log::info(
+        "\t\t>0 = predict that many rows ahead; inputs and outputs are shifted accordingly.\n"
+    );
+    Log::info(
+        "\t--row_per_sample: (optional) each CSV row is one independent sample (no time dimension). Use for "
+        "table-style data where each row has static features and a label; export produces one sequence of length 1 "
+        "per row. Use with --time_offset 0.\n"
+    );
 
     Log::info("\tNormalization:\n");
     Log::info(
@@ -620,7 +683,7 @@ void TimeSeriesSets::help_message() {
     );
 }
 
-TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {
+TimeSeriesSets::TimeSeriesSets() : normalize_type("none") {//, row_per_sample(false) {
 }
 
 TimeSeriesSets::~TimeSeriesSets() {
@@ -742,6 +805,73 @@ void TimeSeriesSets::load_time_series() {
     Log::debug("number of time series files: %d, total rows: %d\n", filenames.size(), rows);
 }
 
+// void TimeSeriesSets::expand_single_output_to_onehot(int32_t num_classes) {
+//     if (output_parameter_names.size() != 1) {
+//         Log::fatal(
+//             "expand_single_output_to_onehot requires exactly one output parameter, got %d.\n",
+//             (int) output_parameter_names.size()
+//         );
+//         exit(1);
+//     }
+//     const string label_name = output_parameter_names[0];
+
+//     if (num_classes <= 0) {
+//         int32_t max_class = 0;
+//         for (int32_t i = 0; i < (int32_t) time_series.size(); i++) {
+//             vector<double> labels;
+//             time_series[i]->get_series(label_name, labels);
+//             for (size_t r = 0; r < labels.size(); r++) {
+//                 int32_t c = (int32_t) labels[r];
+//                 if (c < 0) {
+//                     c = 0;
+//                 }
+//                 if (c > max_class) {
+//                     max_class = c;
+//                 }
+//             }
+//         }
+//         num_classes = (max_class + 1) >= 2 ? (max_class + 1) : 2;
+//         Log::info("Inferred num_classes = %d from data for one-hot expansion of '%s'\n", num_classes, label_name.c_str());
+//     }
+
+//     vector<string> new_output_names;
+//     for (int32_t k = 0; k < num_classes; k++) {
+//         new_output_names.push_back("class" + std::to_string(k));
+//     }
+
+//     for (int32_t i = 0; i < (int32_t) time_series.size(); i++) {
+//         vector<double> labels;
+//         time_series[i]->get_series(label_name, labels);
+//         int32_t n_rows = (int32_t) labels.size();
+//         for (int32_t k = 0; k < num_classes; k++) {
+//             vector<double> onehot((size_t) n_rows, 0.0);
+//             for (int32_t r = 0; r < n_rows; r++) {
+//                 int32_t c = (int32_t) labels[r];
+//                 if (c < 0) {
+//                     c = 0;
+//                 }
+//                 if (c >= num_classes) {
+//                     c = num_classes - 1;
+//                 }
+//                 onehot[r] = (c == k) ? 1.0 : 0.0;
+//             }
+//             time_series[i]->add_synthetic_column(new_output_names[k], onehot);
+//         }
+//     }
+
+//     output_parameter_names = new_output_names;
+//     for (size_t j = 0; j < all_parameter_names.size(); j++) {
+//         if (all_parameter_names[j] == label_name) {
+//             all_parameter_names.erase(all_parameter_names.begin() + (int32_t) j);
+//             break;
+//         }
+//     }
+//     for (int32_t k = 0; k < num_classes; k++) {
+//         all_parameter_names.push_back(new_output_names[k]);
+//     }
+//     Log::info("Expanded output '%s' to one-hot (%d classes): class0 .. class%d\n", label_name.c_str(), num_classes, num_classes - 1);
+// }
+
 TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& arguments) {
     Log::info("Generating time series data for EXAMM\n");
     TimeSeriesSets* tss = new TimeSeriesSets();
@@ -831,7 +961,20 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
         exit(1);
     }
 
+    // tss->row_per_sample = argument_exists(arguments, "--row_per_sample");
+    // if (tss->row_per_sample) {
+    //     Log::info("Using row-per-sample format: each CSV row is one independent sample (sequence length 1).\n");
+    // }
+
     tss->load_time_series();
+
+    // // Optional: expand single output column to one-hot for classification (when --expand_output_onehot and categorical)
+    // if (argument_exists(arguments, "--expand_output_onehot")
+    //     && tss->output_parameter_names.size() == 1) {
+    //     int32_t num_classes = 0;
+    //     get_argument(arguments, "--num_classes", false, num_classes);
+    //     tss->expand_single_output_to_onehot(num_classes);
+    // }
 
     tss->normalize_type = "";
     if (get_argument(arguments, "--normalize", false, tss->normalize_type)) {
@@ -1168,6 +1311,36 @@ void TimeSeriesSets::export_time_series(
     const vector<int>& series_indexes, int32_t time_offset, vector<vector<vector<double> > >& inputs,
     vector<vector<vector<double> > >& outputs
 ) {
+    // inputs.clear();
+    // outputs.clear();
+
+    // if (row_per_sample) {
+    //     // Each CSV row is one independent sample; export one sequence (length 1) per row.
+    //     // time_offset is ignored: input and output for each sample come from the same row.
+    //     for (int32_t i = 0; i < (int32_t) series_indexes.size(); i++) {
+    //         int32_t series_index = series_indexes[i];
+    //         TimeSeriesSet* set = time_series[series_index];
+    //         int32_t number_rows = set->get_number_rows();
+    //         for (int32_t r = 0; r < number_rows; r++) {
+    //             vector<vector<double> > in_row(
+    //                 (int32_t) input_parameter_names.size(), vector<double>(1, 0.0)
+    //             );
+    //             vector<vector<double> > out_row(
+    //                 (int32_t) output_parameter_names.size(), vector<double>(1, 0.0)
+    //             );
+    //             for (int32_t p = 0; p < (int32_t) input_parameter_names.size(); p++) {
+    //                 in_row[p][0] = set->get_value(input_parameter_names[p], r);
+    //             }
+    //             for (int32_t p = 0; p < (int32_t) output_parameter_names.size(); p++) {
+    //                 out_row[p][0] = set->get_value(output_parameter_names[p], r);
+    //             }
+    //             inputs.push_back(in_row);
+    //             outputs.push_back(out_row);
+    //         }
+    //     }
+    //     return;
+    // }
+
     inputs.resize(series_indexes.size());
     outputs.resize(series_indexes.size());
 
@@ -1182,6 +1355,80 @@ void TimeSeriesSets::export_time_series(
         );
     }
 }
+
+// /**
+//  * Load one file where each row is one time series set (row-per-series).
+//  * File format: each line = one series; columns = input0, input1, ..., output0, output1, ... (num_inputs + num_outputs).
+//  * Fills inputs and outputs with layout [series][param_index][timestep]; each series has one timestep per row.
+//  */
+// void TimeSeriesSets::load_single_file_row_per_series(
+//     const string& filename, int32_t num_inputs, int32_t num_outputs,
+//     vector<vector<vector<double> > >& inputs, vector<vector<vector<double> > >& outputs, bool skip_header
+// ) {
+//     inputs.clear();
+//     outputs.clear();
+
+//     ifstream infile(filename);
+//     if (!infile.good()) {
+//         Log::fatal("ERROR: could not open file '%s' for row-per-series load.\n", filename.c_str());
+//         exit(1);
+//     }
+
+//     string line;
+//     if (skip_header && std::getline(infile, line)) {
+//         // skip header row
+//     }
+
+//     int32_t expected_cols = num_inputs + num_outputs;
+//     int32_t row_index = 0;
+
+//     while (std::getline(infile, line)) {
+//         if (line.empty())
+//             continue;
+
+//         vector<double> values;
+//         stringstream ss(line);
+//         string cell;
+//         while (std::getline(ss, cell, ',')) {
+//             try {
+//                 values.push_back(std::stod(cell));
+//             } catch (const std::exception&) {
+//                 Log::fatal(
+//                     "ERROR: row %d in '%s': could not parse value '%s'.\n", row_index, filename.c_str(), cell.c_str()
+//                 );
+//                 exit(1);
+//             }
+//         }
+
+//         if ((int32_t) values.size() != expected_cols) {
+//             Log::fatal(
+//                 "ERROR: row %d in '%s' has %zu columns; expected %d (num_inputs=%d + num_outputs=%d).\n",
+//                 row_index, filename.c_str(), values.size(), expected_cols, num_inputs, num_outputs
+//             );
+//             exit(1);
+//         }
+
+//         // One series: [param_index][timestep]; here one timestep.
+//         vector<vector<double> > in_row(num_inputs);
+//         vector<vector<double> > out_row(num_outputs);
+//         for (int32_t p = 0; p < num_inputs; p++) {
+//             in_row[p].resize(1);
+//             in_row[p][0] = values[p];
+//         }
+//         for (int32_t p = 0; p < num_outputs; p++) {
+//             out_row[p].resize(1);
+//             out_row[p][0] = values[num_inputs + p];
+//         }
+//         inputs.push_back(in_row);
+//         outputs.push_back(out_row);
+//         row_index++;
+//     }
+
+//     Log::info(
+//         "load_single_file_row_per_series: read %d series from '%s' (each series length 1, %d inputs, %d outputs).\n",
+//         row_index, filename.c_str(), num_inputs, num_outputs
+//     );
+// }
 
 /**
  * This exports the time series marked as training series by the training_indexes vector.
@@ -1321,6 +1568,10 @@ void TimeSeriesSets::set_training_indexes(const vector<int>& _training_indexes) 
 void TimeSeriesSets::set_test_indexes(const vector<int>& _test_indexes) {
     test_indexes = _test_indexes;
 }
+
+// bool TimeSeriesSets::get_row_per_sample() const {
+//     return row_per_sample;
+// }
 
 TimeSeriesSet* TimeSeriesSets::get_set(int32_t i) {
     return time_series.at(i);
