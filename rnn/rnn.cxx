@@ -569,7 +569,8 @@ double RNN::calculate_error_mse(const vector<vector<double> >& expected_outputs)
         output_nodes[i]->error_values.resize(expected_outputs[i].size());
 
         mse = 0.0;
-        for (int32_t j = 0; j < (int32_t) expected_outputs[i].size(); j++) {
+        int32_t n = (int32_t) expected_outputs[i].size();
+        for (int32_t j = 0; j < n; j++) {
             error = output_nodes[i]->output_values[j] - expected_outputs[i][j];
 
             // std::cout<<"why this  ???? mse ::::: "<<error<<" "<<output_nodes[i]->output_values[j]<<"
@@ -578,7 +579,9 @@ double RNN::calculate_error_mse(const vector<vector<double> >& expected_outputs)
             output_nodes[i]->error_values[j] = error;
             mse += error * error;
         }
-        mse_sum += mse / expected_outputs[i].size();
+        if (n > 0) {
+            mse_sum += mse / n;
+        }
     }
 
     return mse_sum;
