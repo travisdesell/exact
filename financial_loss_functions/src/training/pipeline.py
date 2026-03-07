@@ -28,6 +28,7 @@ from src.training.train import (
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
+from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
@@ -143,7 +144,7 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
     for metric, df in kwargs.items():
         # Cleaning up the metric name
         title = metric.replace('_', ' ').upper()
-        print(f'\n{title} summary for each window:\n', df)
+        print(f'\n{title.upper()}:\n', df)
 
 def run_training_pipeline(
         paths_config: dict,
@@ -187,7 +188,7 @@ def run_training_pipeline(
     # -------------------- Evaluator Setup -------------------- #
 
     # Initializing once to compare all models together
-    evaluator = Evaluator(y_val)
+    evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Tradional Models -------------------- #
     trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
@@ -277,25 +278,23 @@ def run_training_pipeline(
     #     plots_dir / (f'Daily Returns' + '.png')
     # )
 
-    total_returns = evaluator.calc_total_performance('returns')
-    total_sharpes = evaluator.calc_total_performance('sharpe')
+    avg_perf_metrics = evaluator.calc_avg_performance()
 
-    plot_models_comparison(
-        total_sharpes,
-        'Out-of-Sample Sharpe Ratio Comparison',
-        plots_dir / f'Sharpe Comprison.png'
-    )
+    # plot_models_comparison(
+    #     total_sharpes,
+    #     'Out-of-Sample Sharpe Ratio Comparison',
+    #     plots_dir / f'Sharpe Comprison.png'
+    # )
 
-    total_returns = total_returns.describe().T
-    total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
-    total_sharpes = total_sharpes.describe().T
-    total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
+    # total_returns = total_returns.describe().T
+    avg_perf_metrics.to_csv(results_dir / 'avg_performance.csv', sep=',')
+    # total_sharpes = total_sharpes.describe().T
+    # total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 
     _print_evaludation_info(
             in_win_date_cols,
             out_win_date_cols,
-            total_returns=total_returns,
-            total_sharpes=total_sharpes
+            avg_perf_metrics=avg_perf_metrics
         )
 
     time_taken = round((time.time() - start_time) / 60, 3)
@@ -360,7 +359,7 @@ def run_training_one_model(
 
         # -------------------- Evaluator Setup -------------------- #
         # Initializing once to compare all models together
-        evaluator = Evaluator(y_val)
+        evaluator = Evaluator(y_val,  MetricLibrary.items())
 
         # -------------------- Training Tradional Models -------------------- #
         # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
@@ -448,29 +447,30 @@ def run_training_one_model(
         #     (f'Daily Returns_{model_name}-{loss_name}' + '.png')
         # )
 
-        total_returns = evaluator.calc_total_performance('returns')
-        total_sharpes = evaluator.calc_total_performance('sharpe')
+        # total_returns = evaluator.calc_metric_performance('returns')
+        # total_sharpes = evaluator.calc_metric_performance('sharpe')
+        avg_perf_metrics = evaluator.calc_avg_performance()
 
-        plot_models_comparison(
-            total_sharpes,
-            'Out-of-Sample Sharpe Ratio Comparison',
-            plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
-        )
 
-        total_returns = total_returns.describe().T
-        total_returns.to_csv(
-            results_dir / f'total_returns_{model_name}-{loss_name}.csv', sep=','
+        # plot_models_comparison(
+        #     total_sharpes,
+        #     'Out-of-Sample Sharpe Ratio Comparison',
+        #     plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
+        # )
+
+        # total_returns = total_returns.describe().T
+        avg_perf_metrics.to_csv(
+            results_dir / f'avg_performance_{model_name}-{loss_name}.csv', sep=','
         )
-        total_sharpes = total_sharpes.describe().T
-        total_sharpes.to_csv(
-            results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
-        ) 
+        # total_sharpes = total_sharpes.describe().T
+        # total_sharpes.to_csv(
+        #     results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
+        # ) 
 
         _print_evaludation_info(
             in_win_date_cols,
             out_win_date_cols,
-            total_returns=total_returns,
-            total_sharpes=total_sharpes
+            avg_perf_metrics=avg_perf_metrics
         )
 
         time_taken = round((time.time() - start_time) / 60, 3)

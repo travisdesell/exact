@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
-import src.evaluation.metrics as metrics
+from typing import Callable
 
 class Evaluator:
     """
     Class to evaulate and compare all generated weights from all models/methods,
     for all windows againsts each other as well as benchmarks.
     """
-    def __init__(self, eval_returns: np.ndarray):
+    def __init__(self, eval_returns: np.ndarray, metrics_lib: dict):
         """
         Initialize Evaluator instance to evaulate and compare all generated weights.
 
@@ -16,6 +16,7 @@ class Evaluator:
         """
         # Returns by window
         self.eval_returns = eval_returns
+        self.metrics_lib = metrics_lib
 
         # Different Weights
         self.eq_weights = None
@@ -88,33 +89,42 @@ class Evaluator:
 
         self.all_daily_returns['Equal Weight'] = np.array(eq_wt_daily_returns)
 
-    def calc_total_performance(self, metric: str) -> pd.DataFrame:
+    def calc_metric_performance(self, metric_func: Callable) -> pd.DataFrame:
         """
         Calculate per-window performance of all portfolios (incl. Equal Weight)
         based on given metric. 
 
-        @param metric str
-            String name of the metric to be calculated. `returns` or `sharpe`
+        Args:
+            metric_func (Callable): Metric function to used to calculate a portfolio metric.
 
-        @return Dict[str, list]
-            Dictionary containing calculated performance metric for each validation window
+        Returns:
+            Dict[str, list]: Dictionary containing calculated performance metric for each validation window
         """
         self._daily_rets_calcd_check()
         
-        total_perfomances = {}
+        metric_perfomances = {}
         for model, all_rets in self.all_daily_returns.items():
             model_rets = []
             for i in range(all_rets.shape[0]):
-                if metric == 'returns':
-                    window_metric = metrics.cumulative_return(all_rets[i])
-                elif metric == 'sharpe':
-                    window_metric = metrics.basic_sharpe(all_rets[i])
-                
+                window_metric = metric_func(all_rets[i])
                 model_rets.append(round(window_metric, 4))
             
-            total_perfomances[model] = model_rets
+            metric_perfomances[model] = model_rets
         
-        return pd.DataFrame(total_perfomances)
+        return pd.DataFrame(metric_perfomances)
+    
+    def calc_avg_performance(self):
+        
+        all_metrics_perf = []
+        for met_name, met_func in self.metrics_lib.items():
+            met_perf = self.calc_metric_performance(met_func).mean()
+            met_perf.name = met_name
+            all_metrics_perf.append(met_perf)
+        
+        avg_perf = pd.concat(all_metrics_perf, axis=1)
+
+        return avg_perf
+
 
     def get_all_daily_returns(self):
         return self.all_daily_returns
