@@ -79,7 +79,7 @@ if __name__ == '__main__':
         parser.add_argument(
             '-gm',
             '--grid_mode', 
-            choices=['all', 'one_model', 'one_loss'], 
+            choices=['all', 'one_model', 'one_loss', 'one'], 
             default='all',
             help='Choose the grid search mode (default: all)'
         )
@@ -96,13 +96,13 @@ if __name__ == '__main__':
         parser.add_argument(
             '-m',
             '--model',
-            help="Model name required if grid_mode is 'one_model'"
+            help="Model name required if grid_mode is 'one_model' or 'one'"
         )
         
         parser.add_argument(
             '-l',
             '--loss', 
-            help="Loss name required if grid_mode is 'one_loss'"
+            help="Loss name required if grid_mode is 'one_loss' or 'one'"
         )
 
         args = parser.parse_args()
@@ -117,6 +117,10 @@ if __name__ == '__main__':
         elif args.grid_mode == 'one_loss':
             if not args.loss:
                 parser.error("--loss is required when --grid_mode is 'one_loss'")
+        
+        elif args.grid_mode == 'one':
+            if not args.loss or not args.model:
+                parser.error("--loss and --model is required when --grid_mode is 'one'")
 
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
         hparams_config = load_config(os.path.join('config', 'hparams.json'))

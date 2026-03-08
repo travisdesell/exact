@@ -32,7 +32,6 @@ from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Add other NN models
 # Add Best model ranker
 # Unit test NCO
 
@@ -151,7 +150,7 @@ def run_training_pipeline(
         hparams_config: dict,
         features_config: dict, 
         grid_mode: str = 'all', 
-        loss_mode: str = 'all',
+        loss_mode: str = 'custom',
         model_name: str | None = None,
         loss_name: str | None = None
     ):
@@ -191,18 +190,18 @@ def run_training_pipeline(
     evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Tradional Models -------------------- #
-    trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
+    # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
 
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    del trad_grid
+    # del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
     
@@ -225,9 +224,12 @@ def run_training_pipeline(
         )
     elif grid_mode == 'one_loss' and loss_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_loss(loss_name, train_ds, val_ds)
+
+    elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+        nn_alloc_weights = candidates_grid.train_eval_one(model_name, loss_name, train_ds, val_ds)
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
-
+    
     # Plot training and validation loss curves
     nn_train_loss_curves = candidates_grid.get_train_val_losses()
     for model_loss, model_loss_curves in nn_train_loss_curves.items():
@@ -294,191 +296,8 @@ def run_training_pipeline(
     _print_evaludation_info(
             in_win_date_cols,
             out_win_date_cols,
-            avg_perf_metrics=avg_perf_metrics
+            avgerage_performance_metrics=avg_perf_metrics
         )
 
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
-
-def run_training_one_model(
-        paths_config: dict,
-        hparams_config: dict,
-        features_config: dict,
-        model_cat: str, 
-        model_name: str,
-        loss_name: str,
-        loss_cat: str
-    ):
-    """
-    Entry point to train one model with one loss function. 
-    Both have to be specified in arguments.
-    
-    @param paths_config Dict Dictionary containing paths
-    @param features_config Dictionary containing hyperparameter information
-    @param model str Name of the model to be run
-    @param loss str Name of the loss function to be used
-    """
-    print('\n', '=' * 40, ' Training One Model with One Loss ', '=' * 40)
-    start_time = time.time()
-
-    if loss_cat not in ['objectives', 'custom']:
-        raise ValueError('Loss category must be `objectives` or `custom`.')
-    
-    plots_dir, results_dir, best_device = _common_setup(
-        paths_config, hparams_config['seed']
-    )
-    #### Must be refactored, only for testing
-    # @author: Atharva Vaidya - Apply the DeformTime-specific device workaround before trainer construction.
-    if model_name == 'DeformTime':
-        # Move DeformTime off MPS so unsupported backward operators do not stop training.
-        best_device = deformtime_device(best_device)
-    elif model_name in ['AttentionGRU', 'BiAttentionLSTM']:
-        best_device = torch.device('cpu')
-    
-    # -------------------- Model and loss search -------------------- #    
-    model_cls = NNModelLibrary.get(model_cat, model_name)
-    loss_func = LossLibrary.get(loss_cat, loss_name)
-
-    if model_cls and loss_func:
-        # -------------------- Loading Processed Data -------------------- #
-        train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
-        
-        # -------------------- Preprocessing (Reshaping) -------------------- #
-        X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
-            train_data,
-            returns_train,
-            val_data,
-            returns_val,
-            hparams_config['rolling_windows'],
-            features_config['common_features']
-        )
-
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
-
-        # -------------------- Evaluator Setup -------------------- #
-        # Initializing once to compare all models together
-        evaluator = Evaluator(y_val,  MetricLibrary.items())
-
-        # -------------------- Training Tradional Models -------------------- #
-        # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-        # trad_alloc_weights = trad_grid.train_all(
-        #     in_wind_idxs,
-        #     out_wind_idxs,
-        #     returns_train,
-        #     returns_val
-        # )
-
-        # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-        
-        # del trad_grid
-
-        # -------------------- Training Neural Network -------------------- #
-        print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-        try:
-            trainer = Trainer(
-                model=model_cls,
-                optimizer=optim.AdamW,
-                loss=loss_func,
-                model_hparams=hparams_config['nn_models'][model_name]['model'],
-                optimizer_hparams=hparams_config['nn_models'][model_name]['optimizer'],
-                train_hparams=hparams_config['nn_models'][model_name]['train'],
-                in_size=X_train.shape[2],
-                num_stocks=y_train.shape[2],
-                max_seq_len = X_train.shape[1],
-                scheduler_hparams=hparams_config['nn_models'][model_name]['scheduler'],
-                loss_hparams=hparams_config['losses'].get(loss_name),
-                device=best_device
-            )
-
-            trainer.train(train_ds, val_ds)
-            trainer.evaluate(val_ds)
-
-            loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
-            
-            # Plot loss curves
-            train_val_losses_plot(
-                trainer.train_losses,
-                trainer.val_losses,
-                trainer.eval_losses,
-                loss_plot_name,
-                plots_dir / (loss_plot_name + '.png')
-            )
-
-            alloc_weights = trainer.get_eval_alloc_weights()
-
-            # Call on every models output allocation weights to calculate pf returns
-            evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
-        except KeyError as ke:
-            print('KeyError: Key not found.', ke)
-        except Exception as error:
-            print(f'DEBUG: Error while training {model_name}. Skipping.', error)
-        
-        # -------------------- Evaluation on Out-of-Sample data -------------------- #
-
-        # Overall Evaluation/Comparison
-        evaluator.calc_eq_wt_daily_rets()
-        
-        # Extract dates index columns for the rrespective output windows
-        in_win_date_cols, out_win_date_cols = extract_oos_dates(
-            val_data,
-            in_wind_idxs,
-            out_wind_idxs
-        )
-        
-        # Loading S&P 500 for benchmarking
-        sp500_rets = _load_sp500_rets(paths_config)
-
-        # Extract s&p500 returns column sliced for the respective output windows
-        sp500_rets_winds = extract_sp500_winds(
-            sp500_rets,
-            features_config['sp500_returns'],
-            out_wind_idxs
-        )
-
-        # Adding s&p500 returns to the evaluator as a benchmark
-        evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
-
-        # plot_windowed_comparison(
-        #     evaluator.get_all_daily_returns(),
-        #     out_win_date_cols,
-        #     plots_dir /
-        #     (f'Daily Returns_{model_name}-{loss_name}' + '.png')
-        # )
-
-        # total_returns = evaluator.calc_metric_performance('returns')
-        # total_sharpes = evaluator.calc_metric_performance('sharpe')
-        avg_perf_metrics = evaluator.calc_avg_performance()
-
-
-        # plot_models_comparison(
-        #     total_sharpes,
-        #     'Out-of-Sample Sharpe Ratio Comparison',
-        #     plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
-        # )
-
-        # total_returns = total_returns.describe().T
-        avg_perf_metrics.to_csv(
-            results_dir / f'avg_performance_{model_name}-{loss_name}.csv', sep=','
-        )
-        # total_sharpes = total_sharpes.describe().T
-        # total_sharpes.to_csv(
-        #     results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
-        # ) 
-
-        _print_evaludation_info(
-            in_win_date_cols,
-            out_win_date_cols,
-            avg_perf_metrics=avg_perf_metrics
-        )
-
-        time_taken = round((time.time() - start_time) / 60, 3)
-        print(f'Time taken for pipeline = {time_taken} mins')
-    
-    elif model_cls is None:
-        raise ValueError(f'Model {model_name} of {model_cat} not found.')
-
-    else:
-        raise ValueError(f'Loss Function {loss_name} not found.')

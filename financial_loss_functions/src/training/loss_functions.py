@@ -1113,7 +1113,7 @@ def smooth_calmar_objective(
     return -loss_per_batch.mean()
 
 # -------------------- Custom Loss Functions -------------------- #
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_1(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * smooth CVar
@@ -1125,7 +1125,7 @@ def custom_loss_1(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     # print('CVaR:', cvar * lambda1)
     return sharpe + (lambda1 * cvar) 
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_2(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = RMS sharpe + lambda1 * smooth CVar
@@ -1137,7 +1137,7 @@ def custom_loss_2(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     # print('CVaR:', cvar * lambda1)
     return sharpe + (lambda1 * cvar) 
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_3(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     """
     loss = raw sortino + lambda1 * smooth CVaR
@@ -1147,14 +1147,14 @@ def custom_loss_3(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
 
     return sortino + (lambda1 * cvar)
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_4(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
     sortino = differentiable_sortino_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
     return sortino + lambda1 * cvar
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_5(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, lambda1: float, **kwargs
 ) -> Tensor:

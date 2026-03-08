@@ -113,7 +113,7 @@ class Evaluator:
         
         return pd.DataFrame(metric_perfomances)
     
-    def calc_avg_performance(self):
+    def calc_avg_performance(self) -> pd.DataFrame:
         
         all_metrics_perf = []
         for met_name, met_func in self.metrics_lib.items():

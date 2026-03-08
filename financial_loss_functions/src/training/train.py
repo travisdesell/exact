@@ -402,6 +402,19 @@ class CandidatesGrid:
         # Move Reshaper instance from pipeline.py to here
         pass
 
+    def _train_eval_tune(
+            self,
+            model_name,
+            model_class,
+            loss_name,
+            loss_func,
+            train_ds: 'WindowDataset',
+            val_ds: 'WindowDataset',
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size 
+        ):
+        pass
+
     def _train_eval_helper(
             self,
             model_name: str,
@@ -436,7 +449,7 @@ class CandidatesGrid:
             ][model_name]['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
-            max_seq_size = X_train_shape[1],
+            max_seq_len = X_train_shape[1],
             scheduler_hparams=self.hparams_config[
                 self.models_hparams
             ][model_name]['scheduler'],
@@ -460,7 +473,7 @@ class CandidatesGrid:
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')
             self._memory_diagnostics()
-        
+
         return alloc_weights
     
     def _memory_diagnostics(self):
@@ -813,6 +826,47 @@ class CandidatesGrid:
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
         return self.train_val_losses
 
+    def train_eval_one(
+            self,
+            model_name: str, 
+            loss_name: str,
+            train_ds: 'WindowDataset',
+            val_ds: 'WindowDataset'
+        ):
+
+        self._trained_check()
+
+        model_class = self._search_model(model_name)
+        if model_class is None:
+            raise KeyError(f'Model {model_name} not found.')
+        
+        loss_func = self._search_loss_func(loss_name)
+        if loss_func is None:
+            raise KeyError(f'Loss Function {loss_name} not found.')
+        
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+        self.all_alloc_weights.setdefault(loss_name, {})
+        
+        print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
+
+        try:
+            alloc_weights = self._train_eval_helper(
+                model_name,
+                model_class, 
+                loss_name,
+                loss_func,
+                train_ds,
+                val_ds,
+                X_train_shape,
+                y_train_shape
+            )
+            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+
+        except Exception as e:
+            print(f'DEBUG: Error while training {model_name}. Skipping.', e)
+        
+        return self.all_alloc_weights
 
 class TradModelsTrainer:
     models_hparams = 'trad_models'
