@@ -41,7 +41,7 @@
                 "equal_prior": false
             },
             "optimizer": {
-                "lr": 1e-4,
+                "lr": 1e-5,
                 "weight_decay": 1e-2
             },
             "train": {
@@ -56,7 +56,7 @@
             "scheduler": {
                 "factor": 0.5,
                 "patience": 10,
-                "min_lr": 1e-6
+                "min_lr": 1e-8
             }
         },
         "TFT": {
