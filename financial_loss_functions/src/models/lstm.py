@@ -25,7 +25,8 @@ class BaseLSTM(nn.Module):
             num_layers: int,
             num_stocks: int,
             dropout: float,
-            equal_prior: bool = False
+            equal_prior: bool = False,
+            **kwargs
         ):
         """
         Initialize BaseLSTM model which inherits from `torch.nn.Module`
@@ -100,7 +101,8 @@ class AttentionLSTM(nn.Module):
         num_stocks: int,
         attention_heads: int,
         dropout: float = 0.2,
-        equal_prior: bool = False
+        equal_prior: bool = False,
+        **kwargs
     ):
         """
         Initialize Attention LSTM object which inherits from `torch.nn.Module`.

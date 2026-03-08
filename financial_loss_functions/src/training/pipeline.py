@@ -387,6 +387,7 @@ def run_training_one_model(
                 train_hparams=hparams_config['nn_models'][model_name]['train'],
                 in_size=X_train.shape[2],
                 num_stocks=y_train.shape[2],
+                max_seq_len = X_train.shape[1],
                 scheduler_hparams=hparams_config['nn_models'][model_name]['scheduler'],
                 loss_hparams=hparams_config['losses'].get(loss_name),
                 device=best_device

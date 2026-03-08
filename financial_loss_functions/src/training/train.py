@@ -33,6 +33,7 @@ class Trainer:
         train_hparams: dict[str, Any],      # Generic training params (epochs, batch_size, etc.)
         in_size: int,
         num_stocks: int,
+        max_seq_len: int,
         device: torch.device | str,
         scheduler_hparams: dict[str, Any] | None = None,
         loss_hparams: dict[str, Any] | None = None
@@ -79,6 +80,7 @@ class Trainer:
         self.model = model(
             input_size=in_size,
             num_stocks=num_stocks,
+            max_seq_len = max_seq_len,
             **model_hparams  # Unpack all model-specific hyperparams
         ).to(self.device)
         
@@ -434,6 +436,7 @@ class CandidatesGrid:
             ][model_name]['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
+            max_seq_size = X_train_shape[1],
             scheduler_hparams=self.hparams_config[
                 self.models_hparams
             ][model_name]['scheduler'],

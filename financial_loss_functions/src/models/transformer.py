@@ -37,7 +37,8 @@ class TemporalTransformer(nn.Module):
         dropout: float,
         expansion_factor: int,
         max_seq_len: int,
-        equal_prior: bool
+        equal_prior: bool,
+        **kwargs
     ):
         super().__init__()
         
@@ -63,6 +64,7 @@ class TemporalTransformer(nn.Module):
         if equal_prior:
             # 1. Initialize weights to near-zero 
             # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
             nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
             
             # 2. Initialize bias to zero
@@ -121,7 +123,8 @@ class TFT(nn.Module):
             dropout: float,
             expansion_factor: int,
             max_seq_len: int,
-            equal_prior: bool
+            equal_prior: bool,
+            **kwargs
         ):
         super().__init__()
         
@@ -150,7 +153,7 @@ class TFT(nn.Module):
         if equal_prior:
             # 1. Initialize weights to near-zero 
             # This makes the output independent of the hidden state at start
-            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
             
             # 2. Initialize bias to zero
             # Softmax(0) = 1/N

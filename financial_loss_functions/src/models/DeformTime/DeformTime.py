@@ -23,7 +23,7 @@ class DeformTime(nn.Module):
             self,
             input_size: int,
             num_stocks: int,
-            seq_len: int,
+            max_seq_len: int,
             e_layers: int,
             d_layers: int,
             d_model: int,
@@ -60,7 +60,7 @@ class DeformTime(nn.Module):
         dpr = [x.item() for x in torch.linspace(drop_path_rate, drop_path_rate, e_layers)]
         self.encoder = Encoder(
             [
-                CrossDeformAttn(seq_len=seq_len, 
+                CrossDeformAttn(seq_len=max_seq_len, 
                                 d_model=self.d_model, 
                                 n_heads=attention_heads, 
                                 dropout=dropout, 
