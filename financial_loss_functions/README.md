@@ -58,7 +58,7 @@ cp .env.example .env
 The system is divided into three pipelines to ensure scalability and easier debugging. Each stage must be run sequentially:
 1. Data Collection (`scripts.run_data_collection`): Fetches raw macro-economic data from FRED API
 2. Data Processing (`scripts.run_processing`): Preprocesses raw data and places the files in data/processed/
-3. Training (`scripts.run_training`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
+3. Training (`scripts.run_training_grid`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
 
 ## Quick Start
 ### 1. Run macro-economic data collection
@@ -74,7 +74,7 @@ python -m scripts.run_processing
 ### 3. Run candidates training grid
 Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
-python -m scripts.run_training
+python -m scripts.run_training_grid
 ```
 
 ### 4. Run feature selection analysis
