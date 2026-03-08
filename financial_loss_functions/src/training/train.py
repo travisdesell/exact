@@ -16,6 +16,8 @@ from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
 from typing import Callable, Type, Any, TYPE_CHECKING, Optional
 
+optuna.logging.set_verbosity(optuna.logging.INFO)
+
 # For type hints. To avoid circular dependencies
 if TYPE_CHECKING:
     from src.data_processing.dataset import WindowDataset
@@ -407,7 +409,7 @@ class CandidatesGrid:
         pass
 
 
-    def _train_eval_tune(
+    def _train_eval_helper(
         self,
         model_name: str,
         model_class: Type,
@@ -451,8 +453,10 @@ class CandidatesGrid:
 
             # 3. Initialize and train
             trial_losses = []
-            for seed in seed_list:
+            for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
+                print(f'\nTuning {model_name}-{loss_name} on seed: {seed}')
+                print(f"Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})")
                 set_seed(seed)
 
                 trainer = Trainer(
@@ -646,7 +650,7 @@ class CandidatesGrid:
                         )
                         try: 
                             
-                            alloc_weights = self._train_eval_tune(
+                            alloc_weights = self._train_eval_helper(
                                 model_name,
                                 model_class, 
                                 loss_name,
@@ -693,7 +697,7 @@ class CandidatesGrid:
                         
                         try: 
                             
-                            alloc_weights = self._train_eval_tune(
+                            alloc_weights = self._train_eval_helper(
                                 model_name,
                                 model_class, 
                                 loss_name,
@@ -756,7 +760,7 @@ class CandidatesGrid:
                     '-'*10
                 )
                 try:        
-                    alloc_weights = self._train_eval_tune(
+                    alloc_weights = self._train_eval_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -798,7 +802,7 @@ class CandidatesGrid:
                     '-'*10
                 )
                 try:        
-                    alloc_weights = self._train_eval_tune(
+                    alloc_weights = self._train_eval_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -868,7 +872,7 @@ class CandidatesGrid:
                 )
                 try: 
                     
-                    alloc_weights = self._train_eval_tune(
+                    alloc_weights = self._train_eval_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -919,7 +923,7 @@ class CandidatesGrid:
 
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-            alloc_weights = self._train_eval_tune(
+            alloc_weights = self._train_eval_helper(
                 model_name,
                 model_class, 
                 loss_name,
@@ -933,7 +937,7 @@ class CandidatesGrid:
             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
         except Exception as e:
-            print(f'DEBUG: Error while training {model_name}. Skipping.', e)
+            print(f'DEBUG: Error while training {model_name}. Not training.', e)
         
         return self.all_alloc_weights
 
