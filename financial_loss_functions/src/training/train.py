@@ -3,6 +3,7 @@ import os
 import time
 import copy
 import torch
+import optuna
 import psutil
 import inspect
 import numpy as np
@@ -373,6 +374,7 @@ class CandidatesGrid:
             hparams_config: dict[str, dict[str, Any]],
             torch_device: torch.device | str,
             loss_mode: str = 'custom',
+            tune: bool = False,
             enable_diagnostics: bool = False
         ):
         """
@@ -390,6 +392,8 @@ class CandidatesGrid:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
         else:
             self.loss_mode = loss_mode
+        
+        self.tune = tune
         self.enable_diagnostics = enable_diagnostics
 
         self.torch_device = torch_device
@@ -402,73 +406,133 @@ class CandidatesGrid:
         # Move Reshaper instance from pipeline.py to here
         pass
 
+
     def _train_eval_tune(
-            self,
-            model_name,
-            model_class,
-            loss_name,
-            loss_func,
-            train_ds: 'WindowDataset',
-            val_ds: 'WindowDataset',
-            X_train_shape: torch.Size,
-            y_train_shape: torch.Size 
-        ):
-        pass
-
-    def _train_eval_helper(
-            self,
-            model_name: str,
-            model_class: Type,
-            loss_name: str,
-            loss_func: Callable,
-            train_ds: 'WindowDataset',
-            val_ds: 'WindowDataset',
-            X_train_shape: torch.Size,
-            y_train_shape: torch.Size
-        ) -> np.ndarray:
-        #### Hyperparamater searching can be done here ####
-
-        set_seed(self.hparams_config['seed']) # Per model seed for fair comparison
+        self,
+        model_name: str,
+        model_class: Type,
+        loss_name: str,
+        loss_func: Callable, 
+        train_ds: 'WindowDataset',
+        val_ds: 'WindowDataset',
+        X_train_shape: torch.Size,
+        y_train_shape: torch.Size,
+        seed_list: list[int]
+    ) -> np.ndarray:
         
+        # Extract base configs
+        model_cfg = self.hparams_config[self.models_hparams][model_name]
+        tuning_space = model_cfg.get('tuning', {})
+
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
             self._memory_diagnostics()
 
-        trainer = Trainer(
+        def _objective(trial):
+            # 1. Start with base hparams from JSON
+            m_hparams = copy.deepcopy(model_cfg['model'])
+            o_hparams = copy.deepcopy(model_cfg['optimizer'])
+            
+            # 2. Dynamically update hparams from the JSON tuning space
+            for param_name, space in tuning_space.items():
+                stype = space['type']
+                if stype == 'float':
+                    val = trial.suggest_float(param_name, space['low'], space['high'], log=space.get('log', False))
+                elif stype == 'int':
+                    val = trial.suggest_int(param_name, space['low'], space['high'])
+                elif stype == 'categorical':
+                    val = trial.suggest_categorical(param_name, space['choices'])
+                
+                # Map the suggested value back to the correct dictionary
+                if param_name in m_hparams:
+                    m_hparams[param_name] = val
+                elif param_name in o_hparams:
+                    o_hparams[param_name] = val
+
+            # 3. Initialize and train
+            trial_losses = []
+            for seed in seed_list:
+                # IMPORTANT: Reset the world to this specific seed
+                set_seed(seed)
+
+                trainer = Trainer(
+                    model=model_class,
+                    optimizer=torch.optim.AdamW,
+                    loss=loss_func,
+                    model_hparams=m_hparams,
+                    optimizer_hparams=o_hparams,
+                    train_hparams=model_cfg['train'],
+                    in_size=X_train_shape[2],
+                    num_stocks=y_train_shape[2],
+                    max_seq_len=X_train_shape[1],
+                    scheduler_hparams=model_cfg.get('scheduler'),
+                    loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
+                    device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
+                )
+                
+                trainer.train(train_ds, val_ds)
+                trial_losses.append(trainer.best_val_loss)
+
+                # Optimization: If the first seed is already disastrous, 
+                # you could stop the loop early to save time.
+                
+                del trainer
+            
+            # 3. Return the average loss across all seeds
+            return np.mean(trial_losses)
+
+        # --- Run the Study ---
+        if self.tune and tuning_space:
+            print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
+            study = optuna.create_study(direction='minimize')
+            study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
+            
+            # Override base hparams with the best found by Optuna
+            best_params = study.best_params
+            for k, v in best_params.items():
+                if k in model_cfg['model']: model_cfg['model'][k] = v
+                if k in model_cfg['optimizer']: model_cfg['optimizer'][k] = v
+            
+            del study
+        
+        elif self.tune and not tuning_space:
+            raise ValueError(
+                f'Hyperparamater tuning ranges not found for {model_name}-{loss_name}.'
+            )
+        
+        else:
+            set_seed(seed_list[0])
+        
+        # --- Final Training with Best Params ---
+        # Now run the original logic one last time to get final weights and curves
+        final_trainer = Trainer(
             model=model_class,
             optimizer=torch.optim.AdamW,
             loss=loss_func,
-            model_hparams=self.hparams_config[
-                self.models_hparams
-            ][model_name]['model'],
-            optimizer_hparams=self.hparams_config[
-                self.models_hparams
-            ][model_name]['optimizer'],
-            train_hparams=self.hparams_config[
-                self.models_hparams
-            ][model_name]['train'],
+            model_hparams=model_cfg['model'],
+            optimizer_hparams=model_cfg['optimizer'],
+            train_hparams=model_cfg['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
-            max_seq_len = X_train_shape[1],
-            scheduler_hparams=self.hparams_config[
-                self.models_hparams
-            ][model_name]['scheduler'],
+            max_seq_len=X_train_shape[1],
+            scheduler_hparams=model_cfg.get('scheduler'),
             loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
             device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
         )
-        trainer.train(train_ds, val_ds)
-        trainer.evaluate(val_ds)
+        
+        final_trainer.train(train_ds, val_ds)
+        final_trainer.evaluate(val_ds)
 
-        # To send all loss curves back to pipeline
+        # Logging and Diagnostics
         self.train_val_losses[f'{model_name}-{loss_name}'] = {
-            'train': trainer.train_losses,
-            'val': trainer.val_losses,
-            'eval':trainer.eval_losses
+            'train': final_trainer.train_losses,
+            'val': final_trainer.val_losses,
+            'eval': final_trainer.eval_losses
         }
 
-        alloc_weights = trainer.get_eval_alloc_weights()
-        # trainer.device_cleanup()
-        del trainer
+        alloc_weights = final_trainer.get_eval_alloc_weights()
+
+        del final_trainer
 
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')
@@ -582,7 +646,7 @@ class CandidatesGrid:
                         )
                         try: 
                             
-                            alloc_weights = self._train_eval_helper(
+                            alloc_weights = self._train_eval_tune(
                                 model_name,
                                 model_class, 
                                 loss_name,
@@ -590,7 +654,8 @@ class CandidatesGrid:
                                 train_ds,
                                 val_ds,
                                 X_train_shape,
-                                y_train_shape
+                                y_train_shape,
+                                self.hparams_config['seed_list']
                             )
                             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -628,7 +693,7 @@ class CandidatesGrid:
                         
                         try: 
                             
-                            alloc_weights = self._train_eval_helper(
+                            alloc_weights = self._train_eval_tune(
                                 model_name,
                                 model_class, 
                                 loss_name,
@@ -636,7 +701,8 @@ class CandidatesGrid:
                                 train_ds,
                                 val_ds,
                                 X_train_shape,
-                                y_train_shape
+                                y_train_shape,
+                                self.hparams_config['seed_list']
                             )
                             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -690,7 +756,7 @@ class CandidatesGrid:
                     '-'*10
                 )
                 try:        
-                    alloc_weights = self._train_eval_helper(
+                    alloc_weights = self._train_eval_tune(
                         model_name,
                         model_class, 
                         loss_name,
@@ -698,7 +764,8 @@ class CandidatesGrid:
                         train_ds,
                         val_ds,
                         X_train_shape,
-                        y_train_shape
+                        y_train_shape,
+                        self.hparams_config['seed_list']
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -731,7 +798,7 @@ class CandidatesGrid:
                     '-'*10
                 )
                 try:        
-                    alloc_weights = self._train_eval_helper(
+                    alloc_weights = self._train_eval_tune(
                         model_name,
                         model_class, 
                         loss_name,
@@ -739,7 +806,8 @@ class CandidatesGrid:
                         train_ds,
                         val_ds,
                         X_train_shape,
-                        y_train_shape
+                        y_train_shape,
+                        self.hparams_config['seed_list']
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -800,7 +868,7 @@ class CandidatesGrid:
                 )
                 try: 
                     
-                    alloc_weights = self._train_eval_helper(
+                    alloc_weights = self._train_eval_tune(
                         model_name,
                         model_class, 
                         loss_name,
@@ -808,7 +876,8 @@ class CandidatesGrid:
                         train_ds,
                         val_ds,
                         X_train_shape,
-                        y_train_shape
+                        y_train_shape,
+                        self.hparams_config['seed_list']
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -847,11 +916,10 @@ class CandidatesGrid:
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
         self.all_alloc_weights.setdefault(loss_name, {})
-        
-        print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
 
         try:
-            alloc_weights = self._train_eval_helper(
+            print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
+            alloc_weights = self._train_eval_tune(
                 model_name,
                 model_class, 
                 loss_name,
@@ -859,7 +927,8 @@ class CandidatesGrid:
                 train_ds,
                 val_ds,
                 X_train_shape,
-                y_train_shape
+                y_train_shape,
+                self.hparams_config['seed_list']
             )
             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 

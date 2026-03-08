@@ -105,6 +105,8 @@ if __name__ == '__main__':
             help="Loss name required if grid_mode is 'one_loss' or 'one'"
         )
 
+        parser.add_argument('-t', '--tune', action='store_true', help='Hyperparameter tune')
+
         args = parser.parse_args()
 
         # # Rule 1: If grid_mode is 'one_model', model MUST be provided
@@ -133,7 +135,8 @@ if __name__ == '__main__':
             grid_mode = args.grid_mode, 
             loss_mode = args.loss_mode, 
             model_name = args.model,
-            loss_name = args.loss
+            loss_name = args.loss,
+            tune = args.tune
         )
 
     except SystemExit:

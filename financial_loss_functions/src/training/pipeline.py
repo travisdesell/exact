@@ -35,8 +35,8 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 # Add Best model ranker
 # Unit test NCO
 
-def _common_setup(paths_config, seed_value: int):
-    set_seed(seed_value) # Global seed for reproducibility
+def _common_setup(paths_config):
+    # set_seed(seed_value) # Global seed for reproducibility
     # Create plots directory if it doesnt exist
     plots_dir = (Path(paths_config['artifacts']['plots']))
     create_directory(plots_dir)
@@ -152,7 +152,8 @@ def run_training_pipeline(
         grid_mode: str = 'all', 
         loss_mode: str = 'custom',
         model_name: str | None = None,
-        loss_name: str | None = None
+        loss_name: str | None = None,
+        tune: bool = True
     ):
     """
     All models training pipeline entry point
@@ -167,12 +168,12 @@ def run_training_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, results_dir, best_device = _common_setup(
-        paths_config, hparams_config['seed']
-    )
+    plots_dir, results_dir, best_device = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
+    train_data, returns_train, val_data, returns_val = _load_processed_data(
+        paths_config
+    )
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
     X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
@@ -214,7 +215,8 @@ def run_training_pipeline(
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
         torch_device=best_device,
-        loss_mode = loss_mode
+        loss_mode = loss_mode,
+        tune=tune
     )
     if grid_mode == 'all':
         nn_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
