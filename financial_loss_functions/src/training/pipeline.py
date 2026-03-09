@@ -238,7 +238,7 @@ def run_training_pipeline(
         optimized_hparams = candidates_grid.get_optimized_hparams()
         save_to_json(
             optimized_hparams,
-            Path(paths_config['artifacts']) / 'optimized_hparams.json'
+            Path(paths_config['artifacts']['artifacts_dir']) / 'optimized_hparams.json'
         )
 
     # Plot training and validation loss curves
