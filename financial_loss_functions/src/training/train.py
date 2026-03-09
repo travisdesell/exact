@@ -15,6 +15,7 @@ from torch.utils.data import DataLoader
 from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
 from typing import Callable, Type, Any, TYPE_CHECKING, Optional
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
@@ -982,10 +983,14 @@ class TradModelsTrainer:
     models_hparams = 'trad_models'
     
     def __init__(
-            self, model_lib: dict[str, Type], hparams_config: dict[str, dict[str, Any]]
+            self,
+            model_lib: dict[str, Type],
+            hparams_config: dict[str, dict[str, Any]],
+            max_workers: int
         ):
         self.model_lib = model_lib
         self.hparams_config = hparams_config
+        self.max_workers = max_workers if max_workers > 0 else max(1, os.cpu_count() - 1)
         
         self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
 
@@ -1013,11 +1018,10 @@ class TradModelsTrainer:
         }
 
         # Loop over every model
+        slice_results = {}
         for model_name, model_class in self.model_lib.items():
             
             # print('\n', '-'*10, f' Training {model_name} ', '-'*10)
-            
-            self.all_alloc_weights.setdefault(model_name, [])
 
             # To inspect args of the calculate_weights method and provide it with the relevant args
             sig = inspect.signature(model_class.calculate_weights)
@@ -1033,23 +1037,26 @@ class TradModelsTrainer:
                 alloc_weights = self._train_one_model(model_name, model_class, filtered_kwargs)
 
                 if isinstance(alloc_weights, pd.Series):
-                    self.all_alloc_weights[model_name].append(alloc_weights.to_numpy())
+                    slice_results[model_name] = alloc_weights.to_numpy()
                 else:
-                    self.all_alloc_weights[model_name].append(alloc_weights)
+                    slice_results[model_name] = alloc_weights
 
             except Exception as error:
                 print(
                     f'DEBUG: Error while training {model_name}. Skipping.',
                     error
                 )
+                # slice_results[model_name] = None
                 continue
+        
+        return slice_results
     
     def _stack_weights(self):
         self.all_alloc_weights = {
             name: np.vstack(weights) 
             for name, weights in self.all_alloc_weights.items()
         }
-    
+
     def train_all(
             self,
             in_sample_indexes: list[tuple],
@@ -1057,42 +1064,53 @@ class TradModelsTrainer:
             returns_train: pd.DataFrame,
             returns_val: pd.DataFrame,
             returns_test: pd.DataFrame | None = None
-        ) -> dict[str, list[pd.Series | np.ndarray]]:
+        ) -> dict[str, np.ndarray]:
         
         num_slices = len(in_sample_indexes)
-        if returns_test is None: # To use Validation Set (Combines Train + in-sample Val)
-            # Calculate indexes for in-sample and out-of-sample to match the neural networks
-
-            # Loop over dataset slices
-            for i in tqdm(
-                range(num_slices),
-                desc=f'Training tradional models on {num_slices} slices',
-                unit='slice'
-            ): # len(in-sample) = len(out-of-sample)
-                returns_is, _ = build_dataset(
-                    in_sample_indexes[i],
-                    out_sample_indexes[i],
-                    returns_train,
-                    returns_val
-                )
-                
-                self._process_train_1_ds(returns_is)     
         
-        else: # To use Test Set (Combines Train + Val + in-sample Test)
+        # 1. Slice-First
+        # Prepare small data packets in the main thread to minimize IPC overhead
+        prepared_slices = []
+        for i in range(num_slices):
+            returns_is, _ = build_dataset(
+                in_sample_indexes[i],
+                out_sample_indexes[i],
+                returns_train,
+                returns_val,
+                returns_test
+            )
+            prepared_slices.append((i, returns_is))
 
-            for i in tqdm(
-                range(num_slices),
-                desc=f'Training tradional models on {num_slices} slices',
-                unit='slice'
+        # 2. Parallel Execution
+        # Pre-allocate to guarantee chronological order
+        ordered_results = [None] * num_slices
+        
+
+        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+            # We pass the bound method. Python pickles 'self' automatically.
+            futures = {
+                executor.submit(self._process_train_1_ds, data): idx 
+                for idx, data in prepared_slices
+            }
+
+            for future in tqdm(
+                as_completed(futures),
+                total=num_slices,
+                desc=f'Training tradional models on {num_slices} slices', unit='slice'
             ):
-                returns_is, _ = build_dataset(
-                    in_sample_indexes[i],
-                    out_sample_indexes[i],
-                    returns_train,
-                    returns_val,
-                    returns_test
-                )
+                idx = futures[future]
+                try:
+                    # Place result in the correct chronological slot
+                    ordered_results[idx] = future.result()
+                except Exception as e:
+                    print(f"Slice {idx} failed with error: {e}")
 
-                self._process_train_1_ds(returns_is)
+        # 3. Synchronous State Update
+        # Update self.all_alloc_weights in order
+        for slice_dict in ordered_results:
+            if slice_dict is None: continue
+            for model_name, weights in slice_dict.items():
+                self.all_alloc_weights.setdefault(model_name, []).append(weights)
+
         self._stack_weights()
         return self.all_alloc_weights
