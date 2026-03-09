@@ -1,10 +1,7 @@
 import time
-import torch
-import numpy as np
 import pandas as pd
-from torch import optim
 from pathlib import Path
-from src.utils.io import create_directory
+from src.utils.io import create_directory, save_to_csv, save_to_json
 from src.evaluation.evaluator import Evaluator
 from src.data_processing.loading import load_csv_files
 from src.utils.device import get_best_device, set_seed, deformtime_device
@@ -22,8 +19,7 @@ from src.visualization.plots import (
 )
 from src.training.train import (
     CandidatesGrid,
-    TradModelsTrainer,
-    Trainer
+    TradModelsTrainer
 )
 
 # Model and Loss Libraries
@@ -153,7 +149,7 @@ def run_training_pipeline(
         loss_mode: str = 'custom',
         model_name: str | None = None,
         loss_name: str | None = None,
-        tune: bool = True
+        tune: bool = False
     ):
     """
     All models training pipeline entry point
@@ -232,6 +228,13 @@ def run_training_pipeline(
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
+    if tune:
+        optimized_hparams = candidates_grid.get_optimized_hparams()
+        save_to_json(
+            optimized_hparams,
+            Path(paths_config['artifacts']) / 'optimized_hparams.json'
+        )
+
     # Plot training and validation loss curves
     nn_train_loss_curves = candidates_grid.get_train_val_losses()
     for model_loss, model_loss_curves in nn_train_loss_curves.items():
@@ -291,7 +294,7 @@ def run_training_pipeline(
     # )
 
     # total_returns = total_returns.describe().T
-    avg_perf_metrics.to_csv(results_dir / 'avg_performance.csv', sep=',')
+    save_to_csv(avg_perf_metrics, results_dir / 'avg_performance.csv')
     # total_sharpes = total_sharpes.describe().T
     # total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
 

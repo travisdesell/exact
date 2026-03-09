@@ -69,8 +69,20 @@ def data_dir_check(path: str) -> bool:
     
     return run_permission
 
-def save_to_csv(data: pd.DataFrame, output_path:str) -> None:
+def save_to_csv(data: pd.DataFrame, output_path: str | Path) -> None:
     data.to_csv(output_path, sep=',')
+
+def save_to_json(data: dict, output_file: str) -> None:
+    """
+    Saves dictionary to a json file.
+
+    Args:
+        data_dict (Dict): Dictionary containing data to be saved
+        output_file (str | Path): Path to output file
+    """
+    with open(output_file, 'w') as json_file:
+        json.dump(data, json_file, indent=4)
+        json_file.close()
 
 def reset_data_stage(dir_path: str) -> None:
     """

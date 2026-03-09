@@ -402,12 +402,13 @@ class CandidatesGrid:
         
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
+
+        self.optimized_hparams = {}
     
     def required_reshapes(self, train_data, returns_train, val_data, returns_val):
         # Implement different reshaping for different models if needed.
         # Move Reshaper instance from pipeline.py to here
         pass
-
 
     def _train_eval_helper(
         self,
@@ -424,7 +425,12 @@ class CandidatesGrid:
         
         # Extract base configs
         model_cfg = self.hparams_config[self.models_hparams][model_name]
-        tuning_space = model_cfg.get('tuning', {})
+        model_tuning_space = model_cfg.get('tuning', {})
+        
+        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name)
+        loss_lambdas = loss_cfg.get('lambdas') if loss_cfg else {}
+        loss_tuning_space = loss_cfg.get('tuning', {}) if loss_cfg else {}
+        
 
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
@@ -434,9 +440,10 @@ class CandidatesGrid:
             # 1. Start with base hparams from JSON
             m_hparams = copy.deepcopy(model_cfg['model'])
             o_hparams = copy.deepcopy(model_cfg['optimizer'])
+            l_hparams = copy.deepcopy(loss_lambdas)
             
             # 2. Dynamically update hparams from the JSON tuning space
-            for param_name, space in tuning_space.items():
+            for param_name, space in model_tuning_space.items():
                 stype = space['type']
                 if stype == 'float':
                     val = trial.suggest_float(param_name, space['low'], space['high'], log=space.get('log', False))
@@ -450,13 +457,26 @@ class CandidatesGrid:
                     m_hparams[param_name] = val
                 elif param_name in o_hparams:
                     o_hparams[param_name] = val
-
-            # 3. Initialize and train
+            
+            if l_hparams:
+                for lambda_name, space in loss_tuning_space.items():
+                    stype = space['type']
+                    if stype == 'float':
+                        val = trial.suggest_float(lambda_name, space['low'], space['high'], log=space.get('log', False))
+                    elif stype == 'int':
+                        val = trial.suggest_int(lambda_name, space['low'], space['high'])
+                    elif stype == 'categorical':
+                        val = trial.suggest_categorical(lambda_name, space['choices'])
+                    
+                    if lambda_name in l_hparams:
+                        l_hparams[lambda_name] = val
+                
+            # Cross-seed training
             trial_losses = []
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(f'\nTuning {model_name}-{loss_name} on seed: {seed}')
-                print(f"Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})")
+                print(f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})')
                 set_seed(seed)
 
                 trainer = Trainer(
@@ -470,7 +490,7 @@ class CandidatesGrid:
                     num_stocks=y_train_shape[2],
                     max_seq_len=X_train_shape[1],
                     scheduler_hparams=model_cfg.get('scheduler'),
-                    loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
+                    loss_hparams=l_hparams,
                     device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
                 )
                 
@@ -486,41 +506,55 @@ class CandidatesGrid:
             return np.mean(trial_losses)
 
         # --- Run the Study ---
-        if self.tune and tuning_space:
+        if self.tune and model_tuning_space:
             print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
             study = optuna.create_study(direction='minimize')
             study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
-            
-            # Override base hparams with the best found by Optuna
-            best_params = study.best_params
-            for k, v in best_params.items():
-                if k in model_cfg['model']: model_cfg['model'][k] = v
-                if k in model_cfg['optimizer']: model_cfg['optimizer'][k] = v
+            best_found_params = study.best_params
             
             del study
         
-        elif self.tune and not tuning_space:
+        elif self.tune and not model_tuning_space:
             raise ValueError(
-                f'Hyperparamater tuning ranges not found for {model_name}-{loss_name}.'
+                f'Tuning enabled but no ranges found for {model_name} or {loss_name}.'
             )
         
         else:
+            # If not tuning, we just use the original values
+            best_found_params = {}
             set_seed(seed_list[0])
         
-        # --- Final Training with Best Params ---
-        # Now run the original logic one last time to get final weights and curves
+        # --- 2. Construct the NEW Best Params Dictionary ---
+        # Build new structure to save each combo
+        best_config = {
+            'model': copy.deepcopy(model_cfg['model']),
+            'optimizer': copy.deepcopy(model_cfg['optimizer']),
+            'train': copy.deepcopy(model_cfg['train']),
+            'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
+            'loss': copy.deepcopy(loss_lambdas)
+        }
+
+        # Map the best Optuna parameters into our new dictionary
+        for k, v in best_found_params.items():
+            if k in best_config['model']: best_config['model'][k] = v
+            elif k in best_config['optimizer']: best_config['optimizer'][k] = v
+            elif k in best_config['loss']: best_config['loss'][k] = v
+        
+        self.optimized_hparams[f'{model_name}-{loss_name}'] = best_config
+        
+        # --- 3. Final Training with the Captured Params ---
         final_trainer = Trainer(
             model=model_class,
             optimizer=torch.optim.AdamW,
             loss=loss_func,
-            model_hparams=model_cfg['model'],
-            optimizer_hparams=model_cfg['optimizer'],
-            train_hparams=model_cfg['train'],
+            model_hparams=best_config['model'],
+            optimizer_hparams=best_config['optimizer'],
+            train_hparams=best_config['train'],
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
             max_seq_len=X_train_shape[1],
-            scheduler_hparams=model_cfg.get('scheduler'),
-            loss_hparams=self.hparams_config[self.losses_hparams].get(loss_name),
+            scheduler_hparams=best_config['scheduler'],
+            loss_hparams=best_config['loss'],
             device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
         )
         
@@ -895,9 +929,6 @@ class CandidatesGrid:
                     progress_count += 1
 
         return self.all_alloc_weights
-    
-    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
-        return self.train_val_losses
 
     def train_eval_one(
             self,
@@ -940,6 +971,12 @@ class CandidatesGrid:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
         
         return self.all_alloc_weights
+
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        return self.train_val_losses
+    
+    def get_optimized_hparams(self) -> dict:
+        return self.optimized_hparams
 
 class TradModelsTrainer:
     models_hparams = 'trad_models'
