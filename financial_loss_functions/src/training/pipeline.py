@@ -9,7 +9,6 @@ from src.utils.device import get_best_device, set_seed, deformtime_device
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
-    WindowDataset,
     extract_oos_dates,
     extract_sp500_winds
 )
@@ -207,11 +206,6 @@ def run_training_pipeline(
     del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
-    
-    # Converting to pytorch tensors
-    train_ds = WindowDataset(X_train, y_train)
-    val_ds   = WindowDataset(X_val, y_val)
-
     candidates_grid = CandidatesGrid(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
@@ -221,16 +215,22 @@ def run_training_pipeline(
         tune=tune
     )
     if grid_mode == 'all':
-        nn_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_grid(
+            X_train, X_val, y_val
+        )
     elif grid_mode == 'one_model' and model_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_model(
-            model_name, train_ds, val_ds
+            model_name, X_train, y_train, X_val, y_val
         )
     elif grid_mode == 'one_loss' and loss_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one_loss(loss_name, train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_one_loss(
+            loss_name, X_train, y_train, X_val, y_val
+        )
 
     elif grid_mode == 'one' and model_name is not None and loss_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one(model_name, loss_name, train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_one(
+            model_name, loss_name, X_train, y_train, X_val, y_val
+        )
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
     

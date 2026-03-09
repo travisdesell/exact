@@ -12,16 +12,13 @@ from tqdm import tqdm
 from torch import Tensor
 from src.utils.device import set_seed
 from torch.utils.data import DataLoader
-from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
-from typing import Callable, Type, Any, TYPE_CHECKING, Optional
+from typing import Callable, Type, Any, Optional
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from src.data_processing.dataset import build_dataset, WindowDataset
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
-# For type hints. To avoid circular dependencies
-if TYPE_CHECKING:
-    from src.data_processing.dataset import WindowDataset
 
 class Trainer:
     """
@@ -143,7 +140,7 @@ class Trainer:
         return port_returns
 
     def train(
-            self, train_ds: 'WindowDataset', val_ds: Optional['WindowDataset'] = None
+            self, train_ds: WindowDataset, val_ds: Optional[WindowDataset] = None
         ):
         """
         Train inistalized model using a train data split.
@@ -244,7 +241,7 @@ class Trainer:
         time_taken = round(end_time - start_time, 3)
         print(f'Average Train Loss: {self.avg_train_loss:.4f}, Time Taken: {time_taken}s')
 
-    def validate(self, val_ds: 'WindowDataset'):
+    def validate(self, val_ds: WindowDataset):
         """
         Validation method to run on each training epoch
         """
@@ -284,7 +281,7 @@ class Trainer:
         return avg_val_loss
 
 
-    def evaluate(self, split_ds: 'WindowDataset'):
+    def evaluate(self, split_ds: WindowDataset):
         """
         Evaluate the trained model using a validation data split.
         
@@ -651,10 +648,15 @@ class CandidatesGrid:
         return total_train_count
 
     def train_eval_grid(
-            self, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
+            self, X_train: np.ndarray, y_train: np.ndarray, 
+            X_val: np.ndarray, y_val: np.ndarray
         ) -> dict[str, dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
+
+        # Converting to pytorch tensors
+        train_ds = WindowDataset(X_train, y_train)
+        val_ds   = WindowDataset(X_val, y_val)
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
         
@@ -764,10 +766,15 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_model(
-            self, model_name: str, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
+            self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
+            X_val: np.ndarray, y_val: np.ndarray
         ) -> dict[str, dict[str, np.ndarray]]:
 
         self._trained_check()
+
+        # Converting to pytorch tensors
+        train_ds = WindowDataset(X_train, y_train)
+        val_ds   = WindowDataset(X_val, y_val)
         
         # Search for model
         model_class = self._search_model(model_name)
@@ -879,10 +886,15 @@ class CandidatesGrid:
         return None
 
     def train_eval_one_loss(
-            self, loss_name: str, train_ds: 'WindowDataset', val_ds: 'WindowDataset'
+            self, loss_name: str, X_train: np.ndarray, y_train: np.ndarray, 
+            X_val: np.ndarray, y_val: np.ndarray
         ) -> dict[str, dict[str, np.ndarray]]:
         
         self._trained_check()
+
+        # Converting to pytorch tensors
+        train_ds = WindowDataset(X_train, y_train)
+        val_ds   = WindowDataset(X_val, y_val)
     
         loss_func = self._search_loss_func(loss_name)
         
@@ -935,11 +947,15 @@ class CandidatesGrid:
             self,
             model_name: str, 
             loss_name: str,
-            train_ds: 'WindowDataset',
-            val_ds: 'WindowDataset'
+            X_train: np.ndarray, y_train: np.ndarray,
+            X_val: np.ndarray, y_val: np.ndarray
         ):
 
         self._trained_check()
+
+        # Converting to pytorch tensors
+        train_ds = WindowDataset(X_train, y_train)
+        val_ds   = WindowDataset(X_val, y_val)
 
         model_class = self._search_model(model_name)
         if model_class is None:
