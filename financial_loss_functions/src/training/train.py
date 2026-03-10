@@ -526,7 +526,10 @@ class CandidatesGrid:
             trial_scores = []
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
-                print(f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})')
+                print(
+                    '='*20, f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})',
+                    '='*20
+                )
                 set_seed(seed)
 
                 trainer = Trainer(
@@ -555,17 +558,20 @@ class CandidatesGrid:
                     alloc_weights,
                     y_val
                 )
+                print(
+                    f'Composite Score for trial: {trial.number}, seed: {seed} = {composite_score}'
+                )
                 trial_scores.append(composite_score)
 
-                # --- PRUNING LOGIC START ---
-                # Report the score of the CURRENT seed (i)
-                # Optuna tracks "step i" across all trials
-                trial.report(composite_score, step=i)
+                # # --- PRUNING LOGIC START ---
+                # # Report the score of the CURRENT seed (i)
+                # # Optuna tracks "step i" across all trials
+                # trial.report(composite_score, step=i)
 
-                # Check if this trial should be killed
-                if trial.should_prune():
-                    print(f'Trial {trial.number} pruned at seed {i+1}')
-                    raise optuna.exceptions.TrialPruned()
+                # # Check if this trial should be killed
+                # if trial.should_prune():
+                #     print(f'Trial {trial.number} pruned at seed {i+1}')
+                #     raise optuna.exceptions.TrialPruned()
                 # --- PRUNING LOGIC END ---
                 
                 del trainer
@@ -574,9 +580,9 @@ class CandidatesGrid:
             return np.mean(trial_scores)
         
         if model_tuning_space and y_val is not None:
-            pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1)
+            # pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1)
 
-            study = optuna.create_study(direction='maximize', pruner=pruner)
+            study = optuna.create_study(direction='maximize')
             study.optimize(
                 _objective,
                 n_trials=self.hparams_config.get('n_tuning_trials', 10)
