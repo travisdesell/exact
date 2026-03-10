@@ -19,7 +19,8 @@ from src.visualization.plots import (
 )
 from src.training.train import (
     CandidatesGrid,
-    TradModelsTrainer
+    TradModelsTrainer,
+    MetricModel
 )
 
 # Model and Loss Libraries
@@ -208,16 +209,11 @@ def run_training_pipeline(
     # -------------------- Training Neural Network Models -------------------- #
     # Building hyperparameter tuning metric
     # System designed to take only linear formulas using + or -
+    # Must follow the MetricModel structure
     if tune:
         tune_metric = {
-            'sharpe': {
-                'func': MetricLibrary.get('sharpe'),
-                'sign': '+'
-            },
-            'max_drawdown': {
-                'func': MetricLibrary.get('max_drawdown'),
-                'sign': '-'
-            }
+            'sharpe': MetricModel(func=MetricLibrary.get('sharpe'), sign='+'),
+            'max_drawdown': MetricModel(func=MetricLibrary.get('max_drawdown'), sign='-')
         }
     else:
         tune_metric = None

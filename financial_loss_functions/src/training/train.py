@@ -18,6 +18,8 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.data_processing.dataset import build_dataset, WindowDataset
 
 from src.evaluation.evaluator import Evaluator
+from pydantic import BaseModel, TypeAdapter
+from typing import Callable, Dict, Literal
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
@@ -363,7 +365,19 @@ class Trainer:
     #     elif self.device_name == 'cuda':
     #         torch.cuda.empty_cache()
     #         torch.cuda.ipc_collect()
-        
+
+class MetricModel(BaseModel):
+    """
+    Must use this data model to provide composite score metric for 
+    hyperparameter tuning to `CandidatesGrid`. 
+    
+    Tuning metric dict must be defined as:
+    tune_metric = {
+            `<metric name>`: MetricModel(func=`<callable function>`, sign=`<sign>`),
+        }
+    """
+    func: Callable
+    sign: Literal['+', '-']
 
 class CandidatesGrid:
     models_hparams = 'nn_models'
@@ -377,7 +391,7 @@ class CandidatesGrid:
             torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
-            tune_metric: dict | None = None,
+            tune_metric: dict[str, MetricModel] | None = None,
             enable_diagnostics: bool = False
         ):
         """
@@ -397,7 +411,11 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
-        self.tune_metric = tune_metric
+        if tune_metric is not None:
+            self.tune_metric = TypeAdapter(Dict[str, MetricModel]).validate_python(tune_metric)
+        else:
+            self.tune_metric = tune_metric
+        
         if self.tune and not self.tune_metric:
             raise ValueError(
                 'Provide Tuning metric if tune = True.',
