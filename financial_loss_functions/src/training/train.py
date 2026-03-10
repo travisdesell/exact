@@ -124,6 +124,7 @@ class Trainer:
 
         # For Early Stopping
         self.best_val_loss = float('inf')
+        self.best_train_loss = float('inf')
         self.best_model_state = None
         self.patience_counter = 0
     
@@ -212,27 +213,31 @@ class Trainer:
                 # It takes the current validation loss to decide if it should drop the LR
                 if self.lr_schedule:
                     self.scheduler.step(avg_val_loss)
-
-                if early_stopping:
-                    # Check for improvement
-                    if avg_val_loss < (self.best_val_loss - min_delta):
-                        self.best_val_loss = avg_val_loss
-                        self.patience_counter = 0
-                        # Deep copy the weights so we can return to this point later
-                        self.best_model_state = copy.deepcopy(self.model.state_dict())
-                    else:
-                        self.patience_counter += 1
+                
+                # 1. THE TRACKER (Runs every epoch, regardless of flags)
+                # This ensures self.best_val_loss and best_train_loss are always the "Peak"
+                if avg_val_loss < (self.best_val_loss - min_delta):
+                    # Save best val and train lossed when triggered
+                    self.best_val_loss = avg_val_loss
+                    self.best_train_loss = epoch_avg_loss
                     
-                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+                    self.best_model_state = copy.deepcopy(self.model.state_dict())
+                    self.patience_counter = 0 # Reset even if not using early_stopping
+                else:
+                    self.patience_counter += 1
 
-                    if self.patience_counter >= patience:
-                        print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
-                        # Load the "Best" weights back into the model
-                        self.model.load_state_dict(self.best_model_state)
-                        break
+                # 2. THE EARLY STOPPING (Only handles the 'break')
+                if early_stopping and self.patience_counter >= patience:
+                    print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
+                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+                    break
                         
                 else:
                     status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+
+                if self.best_val_loss == float('inf'):
+                    self.best_train_loss = self.avg_train_loss
+                    self.best_val_loss = avg_val_loss
             
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         
@@ -524,6 +529,9 @@ class CandidatesGrid:
                 
             # Cross-seed training
             trial_scores = []
+            train_losses = []
+            val_losses = []
+
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
@@ -585,7 +593,8 @@ class CandidatesGrid:
             study = optuna.create_study(direction='maximize')
             study.optimize(
                 _objective,
-                n_trials=self.hparams_config.get('n_tuning_trials', 10)
+                n_trials=self.hparams_config.get('n_tuning_trials', 10),
+                n_jobs=2
             )
 
             # GUARD: Check if we actually found a completed trial
