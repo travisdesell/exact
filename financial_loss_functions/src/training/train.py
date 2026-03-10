@@ -556,6 +556,17 @@ class CandidatesGrid:
                     y_val
                 )
                 trial_scores.append(composite_score)
+
+                # --- PRUNING LOGIC START ---
+                # Report the score of the CURRENT seed (i)
+                # Optuna tracks "step i" across all trials
+                trial.report(composite_score, step=i)
+
+                # Check if this trial should be killed
+                if trial.should_prune():
+                    print(f'Trial {trial.number} pruned at seed {i+1}')
+                    raise optuna.exceptions.TrialPruned()
+                # --- PRUNING LOGIC END ---
                 
                 del trainer
             
@@ -563,8 +574,20 @@ class CandidatesGrid:
             return np.mean(trial_scores)
         
         if model_tuning_space and y_val is not None:
-            study = optuna.create_study(direction='maximize')
-            study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
+            pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1)
+
+            study = optuna.create_study(direction='maximize', pruner=pruner)
+            study.optimize(
+                _objective,
+                n_trials=self.hparams_config.get('n_tuning_trials', 10)
+            )
+
+            # GUARD: Check if we actually found a completed trial
+            completed_trials = [
+                t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+            ]
+            if not completed_trials:
+                print('WARNING: All trials were pruned. Returning the best pruned trial or default.')
             
             return study
         else:
