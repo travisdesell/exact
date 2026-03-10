@@ -584,7 +584,20 @@ class CandidatesGrid:
         # --- Run the Study ---
         if self.tune:
             print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
-            study = self._run_tuning_study(model_cfg, loss_cfg)
+            study = self._run_tuning_study(
+                model_name,
+                model_class,
+                loss_name,
+                loss_func, 
+                train_ds,
+                val_ds,
+                X_train_shape,
+                y_train_shape,
+                seed_list,
+                y_val,
+                model_cfg,
+                loss_cfg
+            )
             best_found_params = study.best_params
             
             del study
