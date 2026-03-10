@@ -74,7 +74,11 @@ python -m scripts.run_processing
 ### 3. Run candidates training grid
 Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
-python -m scripts.run_training_grid
+# Without tuning
+python -m scripts.run_training
+
+# With tuning
+python -m scripts.run_training -t
 ```
 
 ### 4. Run feature selection analysis
