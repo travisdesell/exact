@@ -418,31 +418,26 @@ class CandidatesGrid:
         # Move Reshaper instance from pipeline.py to here
         pass
 
-    def _train_eval_helper(
-        self,
-        model_name: str,
-        model_class: Type,
-        loss_name: str,
-        loss_func: Callable, 
-        train_ds: 'WindowDataset',
-        val_ds: 'WindowDataset',
-        X_train_shape: torch.Size,
-        y_train_shape: torch.Size,
-        seed_list: list[int],
-        y_val: np.ndarray | None = None
-    ) -> np.ndarray:
-        # Extract base configs
-        model_cfg = self.hparams_config[self.models_hparams][model_name]
+    def _run_tuning_study(
+            self,
+            model_name: str,
+            model_class: Type,
+            loss_name: str,
+            loss_func: Callable, 
+            train_ds: 'WindowDataset',
+            val_ds: 'WindowDataset',
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size,
+            seed_list: list[int],
+            y_val: np.ndarray,
+            model_cfg: dict,
+            loss_cfg: dict
+        ):
+
         model_tuning_space = model_cfg.get('tuning', {})
         
-        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name)
         loss_lambdas = loss_cfg.get('lambdas') if loss_cfg else {}
         loss_tuning_space = loss_cfg.get('tuning', {}) if loss_cfg else {}
-        
-
-        if self.enable_diagnostics:
-            print(f'\n[Before training {model_name} with {loss_name}]')
-            self._memory_diagnostics()
 
         def _objective(trial):
             # 1. Start with base hparams from JSON
@@ -532,21 +527,49 @@ class CandidatesGrid:
             
             # 3. Return the average loss across all seeds
             return np.mean(trial_scores)
+        
+        if model_tuning_space and y_val is not None:
+            study = optuna.create_study(direction='maximize')
+            study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
+            
+            return study
+        else:
+            raise ValueError(
+            f'Tuning enabled but no ranges found for {model_name}-{loss_name} or no oos evaluation data found'
+        )
+
+    def _train_eval_helper(
+        self,
+        model_name: str,
+        model_class: Type,
+        loss_name: str,
+        loss_func: Callable, 
+        train_ds: 'WindowDataset',
+        val_ds: 'WindowDataset',
+        X_train_shape: torch.Size,
+        y_train_shape: torch.Size,
+        seed_list: list[int],
+        y_val: np.ndarray | None = None
+    ) -> np.ndarray:
+        # Extract base configs
+        model_cfg = self.hparams_config[self.models_hparams][model_name]
+        
+        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name)
+        
+
+        if self.enable_diagnostics:
+            print(f'\n[Before training {model_name} with {loss_name}]')
+            self._memory_diagnostics()
+
+        
 
         # --- Run the Study ---
         if self.tune:
-            if model_tuning_space and y_val is not None:
-                print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
-                study = optuna.create_study(direction='maximize')
-                study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
-                best_found_params = study.best_params
-                
-                del study
-            else:
-                raise ValueError(
-                f'Tuning enabled but no ranges found for {model_name}-{loss_name} or no oos evaluation data found'
-            )
+            print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
+            study = self._run_tuning_study(model_cfg, loss_cfg)
+            best_found_params = study.best_params
             
+            del study
         else:
             # If not tuning, we just use the original values
             best_found_params = {}
@@ -559,7 +582,7 @@ class CandidatesGrid:
             'optimizer': copy.deepcopy(model_cfg['optimizer']),
             'train': copy.deepcopy(model_cfg['train']),
             'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
-            'loss': copy.deepcopy(loss_lambdas)
+            'loss': copy.deepcopy(loss_cfg.get('lambdas'))
         }
 
         # Map the best Optuna parameters into our new dictionary
