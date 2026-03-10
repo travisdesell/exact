@@ -187,32 +187,49 @@ def run_training_pipeline(
     evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Tradional Models -------------------- #
-    max_workers = os.cpu_count() - 1
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config,
-        max_workers
-    )
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
+    # max_workers = os.cpu_count() - 1
+    # trad_grid = TradModelsTrainer(
+    #     TradModelLibrary.items(),
+    #     hparams_config,
+    #     max_workers
+    # )
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
 
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    del trad_grid
+    # del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
+    # Building hyperparameter tuning metric
+    # System designed to take only linear formulas using + or -
+    if tune:
+        tune_metric = {
+            'sharpe': {
+                'func': MetricLibrary.get('sharpe'),
+                'sign': '+'
+            },
+            'max_drawdown': {
+                'func': MetricLibrary.get('max_drawdown'),
+                'sign': '-'
+            }
+        }
+    else:
+        tune_metric = None
+    
     candidates_grid = CandidatesGrid(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
         torch_device=best_device,
         loss_mode = loss_mode,
-        tune=tune
+        tune = tune,
+        tune_metric = tune_metric
     )
     if grid_mode == 'all':
         nn_alloc_weights = candidates_grid.train_eval_grid(

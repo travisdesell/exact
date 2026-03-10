@@ -17,6 +17,8 @@ from typing import Callable, Type, Any, Optional
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.data_processing.dataset import build_dataset, WindowDataset
 
+from src.evaluation.evaluator import Evaluator
+
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
 
@@ -375,6 +377,7 @@ class CandidatesGrid:
             torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
+            tune_metric: dict | None = None,
             enable_diagnostics: bool = False
         ):
         """
@@ -394,6 +397,13 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
+        self.tune_metric = tune_metric
+        if self.tune and not self.tune_metric:
+            raise ValueError(
+                'Provide Tuning metric if tune = True.',
+                "In the format {'<metric>': 'func': Callable, 'sign': '<sign>'}"
+            )
+        
         self.enable_diagnostics = enable_diagnostics
 
         self.torch_device = torch_device
@@ -418,9 +428,9 @@ class CandidatesGrid:
         val_ds: 'WindowDataset',
         X_train_shape: torch.Size,
         y_train_shape: torch.Size,
-        seed_list: list[int]
+        seed_list: list[int],
+        y_val: np.ndarray | None = None
     ) -> np.ndarray:
-        
         # Extract base configs
         model_cfg = self.hparams_config[self.models_hparams][model_name]
         model_tuning_space = model_cfg.get('tuning', {})
@@ -436,6 +446,7 @@ class CandidatesGrid:
 
         def _objective(trial):
             # 1. Start with base hparams from JSON
+            
             m_hparams = copy.deepcopy(model_cfg['model'])
             o_hparams = copy.deepcopy(model_cfg['optimizer'])
             l_hparams = copy.deepcopy(loss_lambdas)
@@ -470,12 +481,14 @@ class CandidatesGrid:
                         l_hparams[lambda_name] = val
                 
             # Cross-seed training
-            trial_losses = []
+            trial_scores = []
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(f'\nTuning {model_name}-{loss_name} on seed: {seed}')
                 print(f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})')
                 set_seed(seed)
+
+                evaluator = Evaluator(y_val, None)
 
                 trainer = Trainer(
                     model=model_class,
@@ -493,30 +506,47 @@ class CandidatesGrid:
                 )
                 
                 trainer.train(train_ds, val_ds)
-                trial_losses.append(trainer.best_val_loss)
 
-                # Optimization: If the first seed is already disastrous, 
-                # you could stop the loop early to save time.
+                trainer.evaluate(val_ds)
+                alloc_weights = trainer.get_eval_alloc_weights()
+
+                evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+                
+                composite_score = 0
+                for _, met_dict in self.tune_metric.items():
+                    metric_mean = evaluator.calc_metric_performance(met_dict['func'], mean=True)
+                    if met_dict['sign'] == '+':
+                        composite_score += metric_mean.item() # .item() since the series will have only 1 value
+                    elif met_dict['sign'] == '-':
+                        composite_score -= metric_mean.item()
+                    else:
+                        raise ValueError(
+                            'Provide only linear operators like + or -. \
+                                System designed to take only linear formulas as of now'
+                            )
+                if composite_score == 0:
+                    print('DEBUG: Got a 0 score. Something must be wrong.')
+                trial_scores.append(composite_score)
                 
                 del trainer
             
             # 3. Return the average loss across all seeds
-            return np.mean(trial_losses)
+            return np.mean(trial_scores)
 
         # --- Run the Study ---
-        if self.tune and model_tuning_space:
-            print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
-            study = optuna.create_study(direction='minimize')
-            study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
-            best_found_params = study.best_params
-            
-            del study
-        
-        elif self.tune and not model_tuning_space:
-            raise ValueError(
-                f'Tuning enabled but no ranges found for {model_name} or {loss_name}.'
+        if self.tune:
+            if model_tuning_space and y_val is not None:
+                print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
+                study = optuna.create_study(direction='maximize')
+                study.optimize(_objective, n_trials=self.hparams_config.get('n_tuning_trials', 20))
+                best_found_params = study.best_params
+                
+                del study
+            else:
+                raise ValueError(
+                f'Tuning enabled but no ranges found for {model_name}-{loss_name} or no oos evaluation data found'
             )
-        
+            
         else:
             # If not tuning, we just use the original values
             best_found_params = {}
@@ -538,7 +568,8 @@ class CandidatesGrid:
             elif k in best_config['optimizer']: best_config['optimizer'][k] = v
             elif k in best_config['loss']: best_config['loss'][k] = v
         
-        self.optimized_hparams[f'{model_name}-{loss_name}'] = best_config
+        if self.tune:
+            self.optimized_hparams[f'{model_name}-{loss_name}'] = best_config
         
         # --- 3. Final Training with the Captured Params ---
         final_trainer = Trainer(
@@ -696,7 +727,8 @@ class CandidatesGrid:
                                 val_ds,
                                 X_train_shape,
                                 y_train_shape,
-                                self.hparams_config['seed_list']
+                                self.hparams_config['seed_list'],
+                                y_val
                             )
                             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -743,7 +775,8 @@ class CandidatesGrid:
                                 val_ds,
                                 X_train_shape,
                                 y_train_shape,
-                                self.hparams_config['seed_list']
+                                self.hparams_config['seed_list'],
+                                y_val
                             )
                             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -811,7 +844,8 @@ class CandidatesGrid:
                         val_ds,
                         X_train_shape,
                         y_train_shape,
-                        self.hparams_config['seed_list']
+                        self.hparams_config['seed_list'],
+                        y_val
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -853,7 +887,8 @@ class CandidatesGrid:
                         val_ds,
                         X_train_shape,
                         y_train_shape,
-                        self.hparams_config['seed_list']
+                        self.hparams_config['seed_list'],
+                        y_val
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -928,7 +963,8 @@ class CandidatesGrid:
                         val_ds,
                         X_train_shape,
                         y_train_shape,
-                        self.hparams_config['seed_list']
+                        self.hparams_config['seed_list'],
+                        y_val
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
@@ -980,7 +1016,8 @@ class CandidatesGrid:
                 val_ds,
                 X_train_shape,
                 y_train_shape,
-                self.hparams_config['seed_list']
+                self.hparams_config['seed_list'],
+                y_val
             )
             self.all_alloc_weights[loss_name][model_name] = alloc_weights
 

@@ -7,7 +7,7 @@ class Evaluator:
     Class to evaulate and compare all generated weights from all models/methods,
     for all windows againsts each other as well as benchmarks.
     """
-    def __init__(self, eval_returns: np.ndarray, metrics_lib: dict):
+    def __init__(self, eval_returns: np.ndarray, metrics_lib: dict|None=None):
         """
         Initialize Evaluator instance to evaulate and compare all generated weights.
 
@@ -16,6 +16,9 @@ class Evaluator:
         """
         # Returns by window
         self.eval_returns = eval_returns
+        if self.eval_returns is None:
+            raise ValueError('Evaluation returns is None.')
+        
         self.metrics_lib = metrics_lib
 
         # Different Weights
@@ -89,13 +92,16 @@ class Evaluator:
 
         self.all_daily_returns['Equal Weight'] = np.array(eq_wt_daily_returns)
 
-    def calc_metric_performance(self, metric_func: Callable) -> pd.DataFrame:
+    def calc_metric_performance(
+            self, metric_func: Callable, mean: bool= False
+        ) -> pd.Series | pd.DataFrame:
         """
         Calculate per-window performance of all portfolios (incl. Equal Weight)
         based on given metric. 
 
         Args:
             metric_func (Callable): Metric function to used to calculate a portfolio metric.
+            mean (bool): If True, mean of the metric over the entire provided split of returned.
 
         Returns:
             Dict[str, list]: Dictionary containing calculated performance metric for each validation window
@@ -110,20 +116,27 @@ class Evaluator:
                 model_rets.append(round(window_metric, 4))
             
             metric_perfomances[model] = model_rets
-        
-        return pd.DataFrame(metric_perfomances)
+        if mean:
+            return pd.DataFrame(metric_perfomances).mean()
+        else:
+            return pd.DataFrame(metric_perfomances)
     
-    def calc_avg_performance(self) -> pd.DataFrame:
+    def calc_avg_performance(self) -> pd.DataFrame | None:
         
-        all_metrics_perf = []
-        for met_name, met_func in self.metrics_lib.items():
-            met_perf = self.calc_metric_performance(met_func).mean()
-            met_perf.name = met_name
-            all_metrics_perf.append(met_perf)
-        
-        avg_perf = pd.concat(all_metrics_perf, axis=1)
+        if self.metrics_lib:
+            all_metrics_perf = []
+            for met_name, met_func in self.metrics_lib.items():
+                met_perf = self.calc_metric_performance(met_func, mean=True)
+                met_perf.name = met_name
+                all_metrics_perf.append(met_perf)
+            
+            avg_perf = pd.concat(all_metrics_perf, axis=1)
 
-        return avg_perf
+            return avg_perf
+
+        else:
+            print('No metrics library or dict provided. Cannot run average performance over metrics.')
+            return None
 
 
     def get_all_daily_returns(self):
