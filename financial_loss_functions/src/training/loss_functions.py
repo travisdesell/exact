@@ -1186,7 +1186,7 @@ def custom_loss_6(
     # print('RP:', risk_parity)
     return sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_7(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
     lambda1: float, lambda2: float, **kwargs
@@ -1225,7 +1225,7 @@ def custom_loss_8(
                 (risk_p_lambda * risk_parity)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_9(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     lambda1: float, lambda2: float, **kwargs

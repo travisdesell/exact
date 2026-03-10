@@ -435,6 +435,31 @@ class CandidatesGrid:
         # Implement different reshaping for different models if needed.
         # Move Reshaper instance from pipeline.py to here
         pass
+    
+    def _calc_composite_score(
+            self,model_name: str, loss_name: str,
+            alloc_weights: np.ndarray, y_val: np.ndarray
+        ) -> float:
+        evaluator = Evaluator(y_val, None)
+        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+
+        composite_score = 0
+        for _, met_dict in self.tune_metric.items():
+            metric_mean = evaluator.calc_metric_performance(met_dict['func'], mean=True)
+            if met_dict['sign'] == '+':
+                composite_score += metric_mean.item() # .item() since the series will have only 1 value
+            elif met_dict['sign'] == '-':
+                composite_score -= metric_mean.item()
+            else:
+                raise ValueError(
+                    'Provide only linear operators like + or -. \
+                        System designed to take only linear formulas as of now'
+                    )
+        
+        if composite_score == 0:
+            print('DEBUG: Got a 0 score. Something must be wrong.')
+        
+        return composite_score
 
     def _run_tuning_study(
             self,
@@ -468,7 +493,9 @@ class CandidatesGrid:
             for param_name, space in model_tuning_space.items():
                 stype = space['type']
                 if stype == 'float':
-                    val = trial.suggest_float(param_name, space['low'], space['high'], log=space.get('log', False))
+                    val = trial.suggest_float(
+                        param_name, space['low'], space['high'], log=space.get('log', False)
+                    )
                 elif stype == 'int':
                     val = trial.suggest_int(param_name, space['low'], space['high'])
                 elif stype == 'categorical':
@@ -484,7 +511,9 @@ class CandidatesGrid:
                 for lambda_name, space in loss_tuning_space.items():
                     stype = space['type']
                     if stype == 'float':
-                        val = trial.suggest_float(lambda_name, space['low'], space['high'], log=space.get('log', False))
+                        val = trial.suggest_float(
+                            lambda_name, space['low'], space['high'], log=space.get('log', False)
+                        )
                     elif stype == 'int':
                         val = trial.suggest_int(lambda_name, space['low'], space['high'])
                     elif stype == 'categorical':
@@ -497,11 +526,8 @@ class CandidatesGrid:
             trial_scores = []
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
-                print(f'\nTuning {model_name}-{loss_name} on seed: {seed}')
                 print(f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})')
                 set_seed(seed)
-
-                evaluator = Evaluator(y_val, None)
 
                 trainer = Trainer(
                     model=model_class,
@@ -522,23 +548,13 @@ class CandidatesGrid:
 
                 trainer.evaluate(val_ds)
                 alloc_weights = trainer.get_eval_alloc_weights()
-
-                evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
                 
-                composite_score = 0
-                for _, met_dict in self.tune_metric.items():
-                    metric_mean = evaluator.calc_metric_performance(met_dict['func'], mean=True)
-                    if met_dict['sign'] == '+':
-                        composite_score += metric_mean.item() # .item() since the series will have only 1 value
-                    elif met_dict['sign'] == '-':
-                        composite_score -= metric_mean.item()
-                    else:
-                        raise ValueError(
-                            'Provide only linear operators like + or -. \
-                                System designed to take only linear formulas as of now'
-                            )
-                if composite_score == 0:
-                    print('DEBUG: Got a 0 score. Something must be wrong.')
+                composite_score = self._calc_composite_score(
+                    model_name,
+                    loss_name,
+                    alloc_weights,
+                    y_val
+                )
                 trial_scores.append(composite_score)
                 
                 del trainer
