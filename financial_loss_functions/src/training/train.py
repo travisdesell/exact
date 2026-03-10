@@ -445,10 +445,10 @@ class CandidatesGrid:
 
         composite_score = 0
         for _, met_dict in self.tune_metric.items():
-            metric_mean = evaluator.calc_metric_performance(met_dict['func'], mean=True)
-            if met_dict['sign'] == '+':
+            metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
+            if met_dict.sign == '+':
                 composite_score += metric_mean.item() # .item() since the series will have only 1 value
-            elif met_dict['sign'] == '-':
+            elif met_dict.sign == '-':
                 composite_score -= metric_mean.item()
             else:
                 raise ValueError(
