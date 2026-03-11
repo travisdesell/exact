@@ -1,10 +1,9 @@
-import os
 import time
 import pandas as pd
 from pathlib import Path
-from src.utils.io import create_directory, save_to_csv, save_to_json
 from src.evaluation.evaluator import Evaluator
 from src.data_processing.loading import load_csv_files
+from src.utils.io import create_directory, save_to_csv, save_to_json
 from src.utils.device import get_best_device, set_seed, deformtime_device
 from src.data_processing.dataset import (
     Reshaper,
@@ -17,11 +16,8 @@ from src.visualization.plots import (
     plot_windowed_comparison,
     plot_models_comparison
 )
-from src.training.train import (
-    CandidatesGrid,
-    TradModelsTrainer,
-    MetricModel
-)
+from src.training.train_nn import CandidatesGrid, MetricModel
+from src.training.train_trad import TradModelsTrainer
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
