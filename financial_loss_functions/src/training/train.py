@@ -388,62 +388,26 @@ class MetricModel(BaseModel):
     func: Callable
     sign: Literal['+', '-']
 
-class CandidatesGrid:
-    models_hparams = 'nn_models'
-    losses_hparams = 'losses'
-    
+class Tuner:
     def __init__(
             self,
-            model_lib: dict[str, dict[str, Type]],
-            loss_lib: dict[str, dict[str, dict[str, Callable]]],
-            hparams_config: dict[str, dict[str, Any]],
-            torch_device: torch.device | str,
-            loss_mode: str = 'custom',
-            tune: bool = False,
-            tune_metric: dict[str, MetricModel] | None = None,
-            enable_diagnostics: bool = False
+            tune_metric: dict[str, MetricModel],
+            seed_list: list[int],
+            n_trails: int,
+            n_jobs: int,
+            torch_device: torch.device | str
         ):
-        """
-        This runs either all models and loss functions or 
-        one model with all loss functions or all models with on loss function.
-        It should not run one model for one loss function as this class is for a grid.
-
-        train_eval_* methods can be run only once with each instance
-        """
-        self.model_lib = model_lib
-        self.loss_lib = loss_lib
-        self.hparams_config = hparams_config
-
-        if loss_mode not in ['all', 'custom']:
-            raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
-        else:
-            self.loss_mode = loss_mode
-        
-        self.tune = tune
         if tune_metric is not None:
             self.tune_metric = TypeAdapter(Dict[str, MetricModel]).validate_python(tune_metric)
         else:
             self.tune_metric = tune_metric
         
-        if self.tune and not self.tune_metric:
-            raise ValueError(
-                'Provide Tuning metric if tune = True.',
-                "In the format {'<metric>': 'func': Callable, 'sign': '<sign>'}"
-            )
-        
-        self.enable_diagnostics = enable_diagnostics
-
+        self.seed_list = seed_list
+        self.n_trials = n_trails
+        self.n_jobs = n_jobs
         self.torch_device = torch_device
-        
-        self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
-        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
 
-        self.optimized_hparams = {}
-    
-    def required_reshapes(self, train_data, returns_train, val_data, returns_val):
-        # Implement different reshaping for different models if needed.
-        # Move Reshaper instance from pipeline.py to here
-        pass
+        self.n_seeds = len(self.seed_list)
     
     def _calc_pf_metrics_for_seed(
             self, model_name: str, loss_name: str, seed: int,
@@ -455,15 +419,15 @@ class CandidatesGrid:
         seed_metrics = {}
         for met_name, met_dict in self.tune_metric.items():
             metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
-            seed_metrics[met_name] = metric_mean
+            seed_metrics[met_name] = metric_mean.item() # .item() because we calculate only 1 value
         
         return seed_metrics
     
     def _compute_z_composites(
-            self, metrics_dict: dict[str, list[float]], n_seeds
+            self, metrics_dict: dict[str, list[float]]
         ) -> np.ndarray:
         """Helper to compute normalized composite for each seed."""
-        z_composites = np.zeros(n_seeds)
+        z_composites = np.zeros(self.n_seeds)
 
         for name, met_dict in self.tune_metric.items():
             values = np.array(metrics_dict[name])
@@ -478,11 +442,8 @@ class CandidatesGrid:
 
         return z_composites
     
-    def _calc_tuning_objective(
-            self, metrics_dict: dict[str, list[float]],
-            n_seeds: int
-        ) -> float:
-        if n_seeds < 2:
+    def _calc_tuning_objective(self, metrics_dict: dict[str, list[float]]) -> float:
+        if self.n_seeds < 2:
             # Not enough seeds for variance estimate; fall back to mean of normalized composites
             z_composites = self._compute_z_composites(metrics_dict)
             return np.mean(z_composites)
@@ -495,8 +456,8 @@ class CandidatesGrid:
         std_z = np.std(z_composites, ddof=1)
 
         # 95% one‑sided lower bound (t‑distribution)
-        t_val = stats.t.ppf(0.95, df=n_seeds - 1)
-        margin = t_val * std_z / np.sqrt(n_seeds)
+        t_val = stats.t.ppf(0.95, df=self.n_seeds - 1)
+        margin = t_val * std_z / np.sqrt(self.n_seeds)
 
         return mean_z - margin
 
@@ -510,11 +471,9 @@ class CandidatesGrid:
             val_ds: 'WindowDataset',
             X_train_shape: torch.Size,
             y_train_shape: torch.Size,
-            seed_list: list[int],
             y_val: np.ndarray,
             model_cfg: dict,
-            loss_cfg: dict,
-            n_trails: int
+            loss_cfg: dict
         ):
 
         model_tuning_space = model_cfg.get('tuning', {})
@@ -568,11 +527,12 @@ class CandidatesGrid:
             # seed_val_losses = []
 
             metrics_dict = {name: [] for name in self.tune_metric.keys()}
-            len_seeds = len(seed_list)
-            for i, seed in enumerate(seed_list):
+            
+            for i, seed in enumerate(self.seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
-                    '='*20, f'Trial {trial.number}, seed {i+1}/{len_seeds} (seed={seed})',
+                    '='*20,
+                    f'Trial {trial.number}, seed {i+1}/{self.n_seeds} (seed={seed})',
                     '='*20
                 )
                 set_seed(seed)
@@ -611,8 +571,9 @@ class CandidatesGrid:
                     y_val
                 )
                 
+                # Append metrics to a dict that contains all metrics for all seeds
                 for met_name in metrics_dict:
-                    metrics_dict[metrics_dict].append(seed_metrics[met_name])
+                    metrics_dict[met_name].append(seed_metrics[met_name])
 
                 # # --- PRUNING LOGIC START ---
                 # # Report the score of the CURRENT seed (i)
@@ -629,11 +590,6 @@ class CandidatesGrid:
             
             final_objective = self._calc_tuning_objective(metrics_dict)
 
-            # trial.set_user_attr('gen_ratio', gen_ratio)
-            # trial.set_user_attr('composite_mean', mean_comp_score)
-            # trial.set_user_attr('train_loss', avg_train_loss)
-            # trial.set_user_attr('val_loss', avg_val_loss)
-
             return final_objective
         
         if model_tuning_space and y_val is not None:
@@ -642,8 +598,8 @@ class CandidatesGrid:
             study = optuna.create_study(direction='maximize', pruner=pruner)
             study.optimize(
                 _objective,
-                n_trials=n_trails,
-                n_jobs=2
+                n_trials=self.n_trials,
+                n_jobs=self.n_jobs
             )
 
             # GUARD: Check if we actually found a completed trial
@@ -659,6 +615,80 @@ class CandidatesGrid:
             f'Tuning enabled but no ranges found for {model_name}-{loss_name} or no oos evaluation data found'
         )
 
+class CandidatesGrid:
+    models_hparams = 'nn_models'
+    losses_hparams = 'losses'
+    
+    def __init__(
+            self,
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
+            loss_mode: str = 'custom',
+            tune: bool = False,
+            tune_metric: dict[str, MetricModel] | None = None,
+            enable_diagnostics: bool = False
+        ):
+        """
+        This runs either all models and loss functions or 
+        one model with all loss functions or all models with on loss function.
+        It should not run one model for one loss function as this class is for a grid.
+
+        train_eval_* methods can be run only once with each instance
+        """
+        self.model_lib = model_lib
+        self.loss_lib = loss_lib
+        self.hparams_config = hparams_config
+        self.torch_device = torch_device
+
+        if loss_mode not in ['all', 'custom']:
+            raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
+        else:
+            self.loss_mode = loss_mode
+        
+        self.tune = tune
+        
+        # Tuner configuration
+        self.seed_list = self.hparams_config.get('seed_list')
+        if self.tune and tune_metric:
+            tuner_config = self.hparams_config.get('tuner', {})
+            print('Tuner Config:\n', tuner_config)
+            
+            n_trails = tuner_config.get('n_tuning_trials', 20)
+            n_jobs = tuner_config.get('n_jobs', 2)
+            print(
+                f'Tuning all models with {n_trails} trials, across seeds: {self.seed_list}.'
+            )
+            self.tuner = Tuner(
+                tune_metric,
+                self.seed_list,
+                n_trails,
+                n_jobs,
+                self.torch_device
+            )
+        
+        elif self.tune and not tune_metric:
+            raise ValueError(
+                'Provide Tuning metric if tune = True.',
+                "In the format {'<metric>': 'func': Callable, 'sign': '<sign>'}"
+            )
+
+        else:
+            self.tuner = None
+        
+        self.enable_diagnostics = enable_diagnostics
+
+        self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
+        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
+
+        self.optimized_hparams = {} # Will be filled if tuned
+    
+    def required_reshapes(self, train_data, returns_train, val_data, returns_val):
+        # Implement different reshaping for different models if needed.
+        # Move Reshaper instance from pipeline.py to here
+        pass
+    
     def _train_eval_helper(
         self,
         model_name: str,
@@ -675,43 +705,13 @@ class CandidatesGrid:
         model_cfg = self.hparams_config[self.models_hparams][model_name]
         
         loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name)
-        seed_list = self.hparams_config['seed_list']
         
-
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
             self._memory_diagnostics()
 
-        
-
-        # --- Run the Study ---
-        if self.tune:
-            print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
-            study = self._run_tuning_study(
-                model_name,
-                model_class,
-                loss_name,
-                loss_func, 
-                train_ds,
-                val_ds,
-                X_train_shape,
-                y_train_shape,
-                seed_list,
-                y_val,
-                model_cfg,
-                loss_cfg,
-                n_trails=self.hparams_config.get('n_tuning_trials', 20)
-            )
-            best_found_params = study.best_params
-            
-            del study
-        else:
-            # If not tuning, we just use the original values
-            best_found_params = {}
-            set_seed(seed_list[0])
-        
-        # --- 2. Construct the NEW Best Params Dictionary ---
-        # Build new structure to save each combo
+        # --- Construct the NEW Best Params Dictionary --- 
+        # Build new structure to save each combo. Uses defaults if not tuned
         best_config = {
             'model': copy.deepcopy(model_cfg['model']),
             'optimizer': copy.deepcopy(model_cfg['optimizer']),
@@ -720,11 +720,33 @@ class CandidatesGrid:
             'loss': copy.deepcopy(loss_cfg.get('lambdas'))
         }
 
-        # Map the best Optuna parameters into our new dictionary
-        for k, v in best_found_params.items():
-            if k in best_config['model']: best_config['model'][k] = v
-            elif k in best_config['optimizer']: best_config['optimizer'][k] = v
-            elif k in best_config['loss']: best_config['loss'][k] = v
+        # --- Run the Study ---
+        if self.tune:
+            print(f'Tuning Hyperparameters for {model_name}-{loss_name}...')
+            study = self.tuner._run_tuning_study(
+                model_name,
+                model_class,
+                loss_name,
+                loss_func, 
+                train_ds,
+                val_ds,
+                X_train_shape,
+                y_train_shape,
+                y_val,
+                model_cfg,
+                loss_cfg,
+            )
+            best_found_params = study.best_params
+            # Map the best Optuna parameters into our new dictionary
+            for k, v in best_found_params.items():
+                if k in best_config['model']: best_config['model'][k] = v
+                elif k in best_config['optimizer']: best_config['optimizer'][k] = v
+                elif k in best_config['loss']: best_config['loss'][k] = v
+            
+            del study
+        else:
+            # If not tuning, we just use the original values and use the first seed in the seed list
+            set_seed(self.seed_list[0])
         
         if self.tune:
             self.optimized_hparams[f'{model_name}-{loss_name}'] = best_config
