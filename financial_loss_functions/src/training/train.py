@@ -445,47 +445,60 @@ class CandidatesGrid:
         # Move Reshaper instance from pipeline.py to here
         pass
     
-    def _calc_composite_score(
-            self,model_name: str, loss_name: str,
+    def _calc_pf_metrics_for_seed(
+            self, model_name: str, loss_name: str, seed: int,
             alloc_weights: np.ndarray, y_val: np.ndarray
-        ) -> float:
+        ) -> dict[str, float]:
         evaluator = Evaluator(y_val, None)
-        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}-{seed}')
 
-        composite_score = 0
-        for _, met_dict in self.tune_metric.items():
+        seed_metrics = {}
+        for met_name, met_dict in self.tune_metric.items():
             metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
-            if met_dict.sign == '+':
-                composite_score += metric_mean.item() # .item() since the series will have only 1 value
-            elif met_dict.sign == '-':
-                composite_score -= metric_mean.item()
-            else:
-                raise ValueError(
-                    'Provide only linear operators like + or -. \
-                        System designed to take only linear formulas as of now'
-                    )
+            seed_metrics[met_name] = metric_mean
         
-        if composite_score == 0:
-            print('DEBUG: Got a 0 score. Something must be wrong.')
-        
-        return composite_score
-
-    def _calc_tuning_objective(self, composite_scores: list[float]) -> float:
-        """
-        calculate tuing objective from statistics of composite scores across seeds
-        """
-        n = len(composite_scores)
-        if n < 2:
-            # Not enough seeds for variance estimate; fall back to mean
-            return np.mean(composite_scores)
-        
-        mean_score = np.mean(composite_scores)
-        std_score = np.std(composite_scores, ddof=1)
-        # 95% one‑sided lower bound (t‑distribution)
-        t_val = stats.t.ppf(0.95, df=n-1)
-        margin = t_val * std_score / np.sqrt(n)
+        return seed_metrics
     
-        return mean_score - margin
+    def _compute_z_composites(
+            self, metrics_dict: dict[str, list[float]], n_seeds
+        ) -> np.ndarray:
+        """Helper to compute normalized composite for each seed."""
+        z_composites = np.zeros(n_seeds)
+
+        for name, met_dict in self.tune_metric.items():
+            values = np.array(metrics_dict[name])
+            mean_m = np.mean(values)
+            std_m = np.std(values, ddof=1) + 1e-9
+            z_vals = (values - mean_m) / std_m
+
+            if met_dict.sign == '+':
+                z_composites += z_vals
+            else:
+                z_composites -= z_vals
+
+        return z_composites
+    
+    def _calc_tuning_objective(
+            self, metrics_dict: dict[str, list[float]],
+            n_seeds: int
+        ) -> float:
+        if n_seeds < 2:
+            # Not enough seeds for variance estimate; fall back to mean of normalized composites
+            z_composites = self._compute_z_composites(metrics_dict)
+            return np.mean(z_composites)
+
+        # Compute normalized composites per seed
+        z_composites = self._compute_z_composites(metrics_dict)
+
+        # Calculate mean and standard deviation of the normalized composites
+        mean_z = np.mean(z_composites)
+        std_z = np.std(z_composites, ddof=1)
+
+        # 95% one‑sided lower bound (t‑distribution)
+        t_val = stats.t.ppf(0.95, df=n_seeds - 1)
+        margin = t_val * std_z / np.sqrt(n_seeds)
+
+        return mean_z - margin
 
     def _run_tuning_study(
             self,
@@ -550,14 +563,16 @@ class CandidatesGrid:
                         l_hparams[lambda_name] = val
                 
             # Cross-seed training
-            composite_scores = []
+            # composite_scores = []
             # seed_train_losses = []
             # seed_val_losses = []
 
+            metrics_dict = {name: [] for name in self.tune_metric.keys()}
+            len_seeds = len(seed_list)
             for i, seed in enumerate(seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
-                    '='*20, f'Trial {trial.number}, seed {i+1}/{len(seed_list)} (seed={seed})',
+                    '='*20, f'Trial {trial.number}, seed {i+1}/{len_seeds} (seed={seed})',
                     '='*20
                 )
                 set_seed(seed)
@@ -588,33 +603,31 @@ class CandidatesGrid:
                 alloc_weights = trainer.get_eval_alloc_weights()
                 
                 # Calculate composite scores from allocation weights
-                composite_score = self._calc_composite_score(
+                seed_metrics = self._calc_pf_metrics_for_seed(
                     model_name,
                     loss_name,
+                    seed,
                     alloc_weights,
                     y_val
                 )
-                print(
-                    f'Composite Score for trial: {trial.number}, seed: {seed} = {composite_score}'
-                )
-                composite_scores.append(composite_score)
+                
+                for met_name in metrics_dict:
+                    metrics_dict[metrics_dict].append(seed_metrics[met_name])
 
-                # --- PRUNING LOGIC START ---
-                # Report the score of the CURRENT seed (i)
-                # Optuna tracks "step i" across all trials
-                trial.report(composite_score, step=i)
+                # # --- PRUNING LOGIC START ---
+                # # Report the score of the CURRENT seed (i)
+                # # Optuna tracks "step i" across all trials
+                # trial.report(composite_score, step=i)
 
-                # Check if this trial should be killed
-                if trial.should_prune():
-                    print(f'Trial {trial.number} pruned at seed {i+1}')
-                    raise optuna.exceptions.TrialPruned()
-                # --- PRUNING LOGIC END ---
+                # # Check if this trial should be killed
+                # if trial.should_prune():
+                #     print(f'Trial {trial.number} pruned at seed {i+1}')
+                #     raise optuna.exceptions.TrialPruned()
+                # # --- PRUNING LOGIC END ---
                 
                 del trainer
             
-            final_objective = self._calc_tuning_objective(
-                composite_scores
-            )
+            final_objective = self._calc_tuning_objective(metrics_dict)
 
             # trial.set_user_attr('gen_ratio', gen_ratio)
             # trial.set_user_attr('composite_mean', mean_comp_score)
@@ -624,7 +637,7 @@ class CandidatesGrid:
             return final_objective
         
         if model_tuning_space and y_val is not None:
-            pruner = optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=1)
+            pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=2)
 
             study = optuna.create_study(direction='maximize', pruner=pruner)
             study.optimize(
