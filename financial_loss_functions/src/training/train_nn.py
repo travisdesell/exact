@@ -418,43 +418,47 @@ class Tuner:
         
         return seed_metrics
     
-    def _compute_z_composites(
-            self, metrics_dict: dict[str, list[float]]
-        ) -> np.ndarray:
-        """Helper to compute normalized composite for each seed."""
-        z_composites = np.zeros(self.n_seeds)
+    def _calc_composite_score(
+            self,model_name: str, loss_name: str,
+            alloc_weights: np.ndarray, y_val: np.ndarray
+        ) -> float:
+        evaluator = Evaluator(y_val, None)
+        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
 
-        for name, met_dict in self.tune_metric.items():
-            values = np.array(metrics_dict[name])
-            mean_m = np.mean(values)
-            std_m = np.std(values, ddof=1) + 1e-9
-            z_vals = (values - mean_m) / std_m
-
+        composite_score = 0
+        for _, met_dict in self.tune_metric.items():
+            metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
             if met_dict.sign == '+':
-                z_composites += z_vals
+                composite_score += metric_mean.item() # .item() since the series will have only 1 value
+            elif met_dict.sign == '-':
+                composite_score -= metric_mean.item()
             else:
-                z_composites -= z_vals
+                raise ValueError(
+                    'Provide only linear operators like + or -. \
+                        System designed to take only linear formulas as of now'
+                    )
+        
+        if composite_score == 0:
+            print('DEBUG: Got a 0 score. Something must be wrong.')
+        
+        return composite_score
 
-        return z_composites
-    
-    def _calc_tuning_objective(self, metrics_dict: dict[str, list[float]]) -> float:
-        if self.n_seeds < 2:
-            # Not enough seeds for variance estimate; fall back to mean of normalized composites
-            z_composites = self._compute_z_composites(metrics_dict)
-            return np.mean(z_composites)
-
-        # Compute normalized composites per seed
-        z_composites = self._compute_z_composites(metrics_dict)
-
-        # Calculate mean and standard deviation of the normalized composites
-        mean_z = np.mean(z_composites)
-        std_z = np.std(z_composites, ddof=1)
-
+    def _calc_tuning_objective(self, composite_scores: list[float]) -> float:
+        """
+        calculate tuing objective from statistics of composite scores across seeds
+        """
+        n = len(composite_scores)
+        if n < 2:
+            # Not enough seeds for variance estimate; fall back to mean
+            return np.mean(composite_scores)
+        
+        mean_score = np.mean(composite_scores)
+        std_score = np.std(composite_scores, ddof=1)
         # 95% one‑sided lower bound (t‑distribution)
-        t_val = stats.t.ppf(0.95, df=self.n_seeds - 1)
-        margin = t_val * std_z / np.sqrt(self.n_seeds)
-
-        return mean_z - margin
+        t_val = stats.t.ppf(0.95, df=n-1)
+        margin = t_val * std_score / np.sqrt(n)
+    
+        return mean_score - margin
 
     def _run_tuning_study(
             self,
@@ -517,12 +521,9 @@ class Tuner:
                         l_hparams[lambda_name] = val
                 
             # Cross-seed training
-            # composite_scores = []
+            composite_scores = []
             # seed_train_losses = []
             # seed_val_losses = []
-
-            metrics_dict = {name: [] for name in self.tune_metric.keys()}
-            
             for i, seed in enumerate(self.seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
@@ -558,32 +559,31 @@ class Tuner:
                 alloc_weights = trainer.get_eval_alloc_weights()
                 
                 # Calculate composite scores from allocation weights
-                seed_metrics = self._calc_pf_metrics_for_seed(
+                composite_score = self._calc_composite_score(
                     model_name,
                     loss_name,
-                    seed,
                     alloc_weights,
                     y_val
                 )
-                
-                # Append metrics to a dict that contains all metrics for all seeds
-                for met_name in metrics_dict:
-                    metrics_dict[met_name].append(seed_metrics[met_name])
+                print(
+                    f'Composite Score for trial: {trial.number}, seed: {seed} = {composite_score}'
+                )
+                composite_scores.append(composite_score)
 
-                # # --- PRUNING LOGIC START ---
-                # # Report the score of the CURRENT seed (i)
-                # # Optuna tracks "step i" across all trials
-                # trial.report(composite_score, step=i)
+                # --- PRUNING LOGIC START ---
+                # Report the score of the CURRENT seed (i)
+                # Optuna tracks "step i" across all trials
+                trial.report(composite_score, step=i)
 
-                # # Check if this trial should be killed
-                # if trial.should_prune():
-                #     print(f'Trial {trial.number} pruned at seed {i+1}')
-                #     raise optuna.exceptions.TrialPruned()
-                # # --- PRUNING LOGIC END ---
+                # Check if this trial should be killed
+                if trial.should_prune():
+                    print(f'Trial {trial.number} pruned at seed {i+1}')
+                    raise optuna.exceptions.TrialPruned()
+                # --- PRUNING LOGIC END ---
                 
                 del trainer
             
-            final_objective = self._calc_tuning_objective(metrics_dict)
+            final_objective = self._calc_tuning_objective(composite_scores)
 
             return final_objective
         
