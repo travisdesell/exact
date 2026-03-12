@@ -20,24 +20,9 @@ class Evaluator:
             raise ValueError('Evaluation returns is None.')
         
         self.metrics_lib = metrics_lib
-
-        # Different Weights
-        self.eq_weights = None
         
         # Returns for each window
         self.all_daily_returns = {} # Add all returns for every window
-
-    @staticmethod
-    def _equal_weight_pf(num_tickers: int) -> np.ndarray:
-        """
-        Calculates simple equal weights for a portfolio
-        weight for each stock = 1/num_tickers
-        
-        @param num_tickers int number of tickers in the dataset
-
-        @return np.array equal weight portfolio allocation weights
-        """
-        return np.full((num_tickers), 1/num_tickers)
 
     def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
         """
@@ -75,22 +60,6 @@ class Evaluator:
                 'No daily returns calculated.',
                 'Run calc_pf_daily_rets and calc_eq_wt_daily_rets first.'
             )
-
-    def calc_eq_wt_daily_rets(self): 
-        """
-        Calculates daily returns for the Equal Weighted portfolio for each given window.
-        """
-        # For equal weight portfolio
-        self.eq_weights = self._equal_weight_pf(self.eval_returns.shape[2])
-        
-        eq_wt_daily_returns = []
-        
-        for i in range(self.eval_returns.shape[0]):
-            returns = self.eval_returns[i]  # Shape: (50, 50)
-            daily_returns = np.dot(returns, self.eq_weights)
-            eq_wt_daily_returns.append(daily_returns)  # Shape: (50,)
-
-        self.all_daily_returns['Equal Weight'] = np.array(eq_wt_daily_returns)
 
     def calc_metric_performance(
             self, metric_func: Callable, mean: bool= False
@@ -141,3 +110,43 @@ class Evaluator:
 
     def get_all_daily_returns(self):
         return self.all_daily_returns
+    
+
+class EqualWeightCalculator:
+    def __init__(self, eval_returns: np.ndarray):
+        self.eval_returns = eval_returns
+        
+        # Different Weights
+        self.eq_weights = None
+
+        self.eq_weights_rets = None
+    
+    @staticmethod
+    def _equal_weight_pf(num_tickers: int) -> np.ndarray:
+        """
+        Calculates simple equal weights for a portfolio
+        weight for each stock = 1/num_tickers
+        
+        @param num_tickers int number of tickers in the dataset
+
+        @return np.array equal weight portfolio allocation weights
+        """
+        return np.full((num_tickers), 1/num_tickers)
+    
+    def calc_eq_wt_daily_rets(self) -> np.ndarray: 
+        """
+        Calculates daily returns for the Equal Weighted portfolio for each given window.
+        """
+        # For equal weight portfolio
+        self.eq_weights = self._equal_weight_pf(self.eval_returns.shape[2])
+        
+        eq_wt_daily_returns = []
+        
+        for i in range(self.eval_returns.shape[0]):
+            returns = self.eval_returns[i]  # Shape: (50, 50)
+            daily_returns = np.dot(returns, self.eq_weights)
+            eq_wt_daily_returns.append(daily_returns)  # Shape: (50,)
+
+        self.eq_weights_rets = np.array(eq_wt_daily_returns)
+
+        return self.eq_weights

@@ -1,9 +1,9 @@
 import time
 import pandas as pd
 from pathlib import Path
-from src.evaluation.evaluator import Evaluator
 from src.data_processing.loading import load_csv_files
 from src.utils.io import create_directory, save_to_csv, save_to_json
+from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
 from src.utils.device import get_best_device, set_seed, deformtime_device
 from src.data_processing.dataset import (
     Reshaper,
@@ -275,7 +275,6 @@ def run_training_pipeline(
     del candidates_grid
     
     # Overall Evaluation/Comparison starts here
-    evaluator.calc_eq_wt_daily_rets()
 
     # Extract dates index columns for the rrespective output windows
     in_win_date_cols, out_win_date_cols = extract_oos_dates(
@@ -293,9 +292,14 @@ def run_training_pipeline(
         features_config['sp500_returns'],
         out_wind_idxs
     )
+    
+    eq_wt_calc = EqualWeightCalculator(y_val)
 
-    # Adding s&p500 returns to the evaluator as a benchmark
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+
+    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
     evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
+    evaluator.add_benchmark_rets('Equal Weight', eq_wt_rets)
     
     # plot_windowed_comparison(
     #     evaluator.get_all_daily_returns(),
