@@ -213,7 +213,10 @@ class Trainer:
                 
                 # 1. THE TRACKER (Runs every epoch, regardless of flags)
                 # This ensures self.best_val_loss and best_train_loss are always the "Peak"
-                if avg_val_loss < (self.best_val_loss - min_delta):
+                # Only allow state-saving after warmup to avoid "Lucky Epoch 0"
+                is_improving = avg_val_loss < (self.best_val_loss - min_delta)
+                is_past_warmup = epoch >= min_epochs
+                if is_improving and is_past_warmup:
                     # Save best val and train lossed when triggered
                     self.best_val_loss = avg_val_loss
                     self.best_train_loss = epoch_avg_loss
