@@ -295,8 +295,8 @@
                 "risk_p_lambda": 0.1
             },
             "tuning": {
-                "cvar_lambda": {"type": "float", "low": 0.001, "high": 1, "log": true},
-                "risk_p_lambda": {"type": "float", "low": 0.001, "high": 1, "log": true}
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
             }
         },
         "custom_loss_11" : {

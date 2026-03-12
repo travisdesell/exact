@@ -447,22 +447,52 @@ class Tuner:
         
         return composite_score
 
-    def _calc_tuning_objective(self, composite_scores: list[float]) -> float:
+    def calc_hinge_penalty(
+            self, seed_train_losses: list[float], seed_val_losses: list[float],
+            eps: float = 1e-9
+        ) -> float:
+
+        avg_train_loss = np.mean(seed_train_losses)
+        avg_val_loss = np.mean(seed_val_losses)
+
+        # We calculate how much larger Val Loss is than Train Loss
+        # If Val < Train (Healthy/Dropout), raw_gap is negative.
+        raw_gap = (avg_val_loss - avg_train_loss) / (avg_train_loss + eps)
+
+        # max(0, raw_gap) ensures we ONLY penalize if Val > Train (Overfitting)
+        gap_penalty = max(0, raw_gap)
+
+        return gap_penalty
+
+    def _calc_tuning_objective(
+            self, composite_scores: list[float],
+            seed_train_losses: list[float],
+            seed_val_losses: list[float]
+        ) -> float:
         """
         calculate tuing objective from statistics of composite scores across seeds
+        and gap penalty from train - val losses.
         """
+
+        mean_score = np.mean(composite_scores)
         n = len(composite_scores)
         if n < 2:
             # Not enough seeds for variance estimate; fall back to mean
-            return np.mean(composite_scores)
+            base_score = mean_score
+        else:
+            # For statistical consistency across seeds
+            std_score = np.std(composite_scores, ddof=1)
+            # 95% one‑sided lower bound (t‑distribution)
+            t_val = stats.t.ppf(0.95, df=n-1)
+            margin = t_val * std_score / np.sqrt(n)
+
+            base_score = mean_score - margin
         
-        mean_score = np.mean(composite_scores)
-        std_score = np.std(composite_scores, ddof=1)
-        # 95% one‑sided lower bound (t‑distribution)
-        t_val = stats.t.ppf(0.95, df=n-1)
-        margin = t_val * std_score / np.sqrt(n)
+        gap_penalty = self.calc_hinge_penalty(
+            seed_train_losses, seed_val_losses
+        )
     
-        return mean_score - margin
+        return base_score - gap_penalty
 
     def _run_tuning_study(
             self,
@@ -526,8 +556,8 @@ class Tuner:
                 
             # Cross-seed training
             composite_scores = []
-            # seed_train_losses = []
-            # seed_val_losses = []
+            seed_train_losses = []
+            seed_val_losses = []
             for i, seed in enumerate(self.seed_list):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
@@ -555,8 +585,8 @@ class Tuner:
                 trainer.train(train_ds, val_ds)
 
                 # We grab the losses from the trainer's "Best" epoch
-                # seed_train_losses.append(trainer.best_train_loss)
-                # seed_val_losses.append(trainer.best_val_loss)
+                seed_train_losses.append(trainer.best_train_loss)
+                seed_val_losses.append(trainer.best_val_loss)
 
                 # Evaluate the get all the portfolio weights for eah window
                 trainer.evaluate(val_ds)
@@ -587,7 +617,9 @@ class Tuner:
                 
                 del trainer
             
-            final_objective = self._calc_tuning_objective(composite_scores)
+            final_objective = self._calc_tuning_objective(
+                composite_scores, seed_train_losses, seed_val_losses
+            )
 
             return final_objective
         
