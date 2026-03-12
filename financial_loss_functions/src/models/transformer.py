@@ -119,7 +119,7 @@ class TFT(nn.Module):
             hidden_size: int,
             num_layers: int,
             num_stocks: int,
-            attention_heads: int,
+            nheads: int,
             dropout: float,
             expansion_factor: int,
             max_seq_len: int,
@@ -138,7 +138,7 @@ class TFT(nn.Module):
         # 3. Temporal Self-Attention
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=hidden_size,
-            nhead=attention_heads,
+            nhead=nheads,
             dim_feedforward=hidden_size * expansion_factor,
             dropout=dropout,
             batch_first=True,

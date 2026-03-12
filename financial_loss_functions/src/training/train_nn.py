@@ -384,6 +384,8 @@ class MetricModel(BaseModel):
     sign: Literal['+', '-']
 
 class Tuner:
+    direction = 'maximize'
+
     def __init__(
             self,
             tune_metric: dict[str, MetricModel],
@@ -393,7 +395,9 @@ class Tuner:
             torch_device: torch.device | str
         ):
         if tune_metric is not None:
-            self.tune_metric = TypeAdapter(Dict[str, MetricModel]).validate_python(tune_metric)
+            self.tune_metric = TypeAdapter(
+                Dict[str, MetricModel]
+            ).validate_python(tune_metric)
         else:
             self.tune_metric = tune_metric
         
@@ -577,7 +581,7 @@ class Tuner:
 
                 # Check if this trial should be killed
                 if trial.should_prune():
-                    print(f'Trial {trial.number} pruned at seed {i+1}')
+                    print(f'!!!! Trial {trial.number} pruned at seed {i+1} !!!!')
                     raise optuna.exceptions.TrialPruned()
                 # --- PRUNING LOGIC END ---
                 
@@ -590,7 +594,7 @@ class Tuner:
         if model_tuning_space and y_val is not None:
             pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=2)
 
-            study = optuna.create_study(direction='maximize', pruner=pruner)
+            study = optuna.create_study(direction=self.direction, pruner=pruner)
             study.optimize(
                 _objective,
                 n_trials=self.n_trials,
@@ -609,6 +613,9 @@ class Tuner:
             raise ValueError(
             f'Tuning enabled but no ranges found for {model_name}-{loss_name} or no oos evaluation data found'
         )
+    
+    def set_tuning_direction(self, direction: str):
+        self.direction = direction
 
 class CandidatesGrid:
     models_hparams = 'nn_models'
@@ -869,7 +876,7 @@ class CandidatesGrid:
         total_train_count = self._calc_total_models('all')
         print(
             f'\nTraining {total_train_count} models.',
-            '\nRunning all models with {self.loss_mode} losses.'
+            f'Running all models with {self.loss_mode} losses.'
         )
         progress_count = 1
         

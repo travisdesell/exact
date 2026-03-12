@@ -27,7 +27,7 @@ class DeformTime(nn.Module):
             e_layers: int,
             d_layers: int,
             d_model: int,
-            attention_heads: int,
+            nheads: int,
             kernel_size: int,
             dropout: float,
             n_reshape: int,
@@ -62,7 +62,7 @@ class DeformTime(nn.Module):
             [
                 CrossDeformAttn(seq_len=max_seq_len, 
                                 d_model=self.d_model, 
-                                n_heads=attention_heads, 
+                                n_heads=nheads, 
                                 dropout=dropout, 
                                 droprate=dpr[l], 
                                 n_days=n_days[l], 

@@ -99,7 +99,7 @@ class AttentionLSTM(nn.Module):
         hidden_size: int,
         num_layers: int,
         num_stocks: int,
-        attention_heads: int,
+        nheads: int,
         dropout: float = 0.2,
         equal_prior: bool = False,
         **kwargs
@@ -131,7 +131,7 @@ class AttentionLSTM(nn.Module):
         self.equal_prior = equal_prior
         self.ln_lstm = nn.LayerNorm(hidden_size) # Normalizes LSTM output
         
-        self.t_attn = TemporalAttention(hidden_size, attention_heads, dropout)
+        self.t_attn = TemporalAttention(hidden_size, nheads, dropout)
     
         self.dropout = nn.Dropout(dropout)
         
@@ -187,7 +187,7 @@ class InvertedAttentionLSTM(nn.Module):
         hidden_size: int,
         num_layers: int,
         num_stocks: int,
-        attention_heads: int,
+        nheads: int,
         dropout: float,
         max_seq_len: int, # Needed for the inverted Attention/Norm layers,
         equal_prior: bool
@@ -207,7 +207,7 @@ class InvertedAttentionLSTM(nn.Module):
         # We treat each hidden node as a token, and its sequence over time as the 'embedding'
         self.attn = nn.MultiheadAttention(
             embed_dim=max_seq_len, 
-            num_heads=attention_heads,
+            num_heads=nheads,
             batch_first=True
         )
         self.ln_attn = nn.LayerNorm(max_seq_len)
