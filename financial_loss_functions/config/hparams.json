@@ -2,8 +2,8 @@
     "seed_list": [50, 42, 67, 313, 3],
 
     "tuner": {
-        "n_tuning_trials": 30,
-        "n_jobs": 2
+        "n_tuning_trials": 50,
+        "n_jobs": 1
     },
     "rolling_windows": {
         "in_size": 120,
@@ -27,6 +27,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -61,6 +62,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -97,6 +99,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -134,6 +137,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -171,6 +175,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -245,6 +250,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 200,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5

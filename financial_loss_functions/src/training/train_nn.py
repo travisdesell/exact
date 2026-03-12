@@ -152,9 +152,13 @@ class Trainer:
         start_time = time.time()
 
         # Pull hyperparameters with sensible defaults
+        n_epochs = self.train_hparams['epochs']
+        min_epochs = self.train_hparams.get('min_epochs', 0)
         patience = self.train_hparams.get('early_stop_patience', 20)
         min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
         early_stopping = self.train_hparams.get('early_stopping', True)
+
+        clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
         
         train_loader = DataLoader(
             train_ds,
@@ -162,7 +166,7 @@ class Trainer:
             shuffle=True
         )
 
-        for epoch in range(self.train_hparams['epochs']):
+        for epoch in range(n_epochs):
             epoch_start = time.time()
             self.model.train()
             total_loss_sum = 0.0
@@ -184,10 +188,7 @@ class Trainer:
 
                 self.optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(),
-                    max_norm=self.train_hparams.get('clip_grad_norm', 0.5)
-                )
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=clip_grad_norm)
                 self.optimizer.step()
 
                 batch_size = xb.size(0)
@@ -223,7 +224,8 @@ class Trainer:
                     self.patience_counter += 1
 
                 # 2. THE EARLY STOPPING (Only handles the 'break')
-                if early_stopping and self.patience_counter >= patience:
+                if early_stopping and epoch >= min_epochs and \
+                    self.patience_counter >= patience:
                     print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
                     status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
                     break
@@ -690,7 +692,7 @@ class CandidatesGrid:
             print('Tuner Config:\n', tuner_config)
             
             n_trails = tuner_config.get('n_tuning_trials', 20)
-            n_jobs = tuner_config.get('n_jobs', 2)
+            n_jobs = tuner_config.get('n_jobs', 1)
             print(
                 f'Tuning all models with {n_trails} trials, across seeds: {self.seed_list}.'
             )
