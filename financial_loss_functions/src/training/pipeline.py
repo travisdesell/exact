@@ -209,10 +209,10 @@ def run_training_pipeline(
     if tune:
         tune_metric = {
             'sharpe': MetricModel(func=MetricLibrary.get('sharpe'), sign='+'),
-            # 'cvar': MetricModel(func=MetricLibrary.get('cvar'), sign='+'),
-            # # 'max_drawdown': MetricModel(func=MetricLibrary.get('max_drawdown'), sign='+'),
-            # 'omega': MetricModel(func=MetricLibrary.get('omega'), sign='+'),
-            # 'calmar': MetricModel(func=MetricLibrary.get('calmar'), sign='+')
+            'cvar': MetricModel(func=MetricLibrary.get('cvar'), sign='+'),
+            # 'max_drawdown': MetricModel(func=MetricLibrary.get('max_drawdown'), sign='+'),
+            'omega': MetricModel(func=MetricLibrary.get('omega'), sign='+'),
+            'calmar': MetricModel(func=MetricLibrary.get('calmar'), sign='+')
         }
     else:
         tune_metric = None

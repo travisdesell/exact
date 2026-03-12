@@ -1,8 +1,8 @@
 {   
-    "seed_list": [50, 42, 67, 313, 150],
+    "seed_list": [50, 42, 67, 313, 3],
 
     "tuner": {
-        "n_tuning_trials": 20,
+        "n_tuning_trials": 30,
         "n_jobs": 2
     },
     "rolling_windows": {
@@ -75,7 +75,7 @@
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
-                "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
@@ -111,7 +111,7 @@
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
-                "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
@@ -150,7 +150,7 @@
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
-                "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
+                "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
