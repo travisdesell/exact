@@ -235,17 +235,16 @@ class Trainer:
                         
                 else:
                     status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
-
-                if self.best_val_loss == float('inf'):
-                    self.best_train_loss = self.avg_train_loss
-                    self.best_val_loss = avg_val_loss
             
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         
-        if self.best_train_loss == float('inf'):
-            self.best_train_loss = self.avg_train_loss
-        
-        if self.best_model_state is not None:
+        # After the training loop
+        if self.best_model_state is None:
+            # No improvement ever after warm-up; fall back to final model
+            self.best_val_loss = avg_val_loss   # from the last epoch
+            self.best_train_loss = epoch_avg_loss  # from the last epoch
+            self.best_model_state = copy.deepcopy(self.model.state_dict())
+        else:
             self.model.load_state_dict(self.best_model_state)
             
         print(f'Training Complete. Best Val Loss: {self.best_val_loss:.4f}')
