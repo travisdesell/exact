@@ -1,3 +1,5 @@
+import copy
+
 def extract_req_cols(columns_list: list, suffix: str) -> list:
     """
     Extract required columns based on the suffix in the column names. e.g., NSDN_RETURN
@@ -18,3 +20,18 @@ def split_col(col_sep: str, col: str) -> tuple[str, str]:
     if len(parts) != 2:
         raise ValueError(f"Column '{col}' does not match <ticker>_<feature> format")
     return parts[0], parts[1]  # ticker, feature-with-underscores
+
+def reformat_hparams(model_cfg: dict, loss_cfg: dict) -> dict:
+    """
+    Reformat the hyperparameters dict, so that each model + loss 
+    combination gets its own dict.
+    """
+    hparams = {
+        'model': copy.deepcopy(model_cfg['model']),
+        'optimizer': copy.deepcopy(model_cfg['optimizer']),
+        'train': copy.deepcopy(model_cfg['train']),
+        'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
+        'loss': copy.deepcopy(loss_cfg.get('lambdas'))
+    }
+
+    return hparams

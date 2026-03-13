@@ -7,7 +7,7 @@ from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files
 from src.visualization.plots import train_val_losses_plot
 from src.training.train_nn import CandidatesGrid, MetricModel
-from src.utils.io import create_directory, save_to_csv, save_to_json
+from src.utils.io import create_directory, save_to_csv, save_to_json, load_json
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator, filter_models
 from src.data_processing.dataset import (
     Reshaper,
@@ -338,6 +338,12 @@ def run_wfv_pipeline(
     avg_perf_metrics = load_csv_files(
         {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
     )['avg_perf_metrics']
+    
+    opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
+    if os.path.exists(opti_hparams_path):
+        optimized_hparams = load_json(opti_hparams_path)
+    else:
+        raise UserWarning('Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
 
     # Filter models that beat Equal Weight Portfolio
     all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])

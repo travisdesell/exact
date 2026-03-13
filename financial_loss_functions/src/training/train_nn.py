@@ -10,6 +10,7 @@ from torch import Tensor
 from src.utils.device import set_seed
 from torch.utils.data import DataLoader
 from typing import Callable, Type, Any, Optional
+from src.utils.formatting import reformat_hparams
 from src.data_processing.dataset import WindowDataset
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -756,8 +757,7 @@ class CandidatesGrid:
     ) -> np.ndarray:
         # Extract base configs
         model_cfg = self.hparams_config[self.models_hparams][model_name]
-        
-        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name)
+        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name, {})
         
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
@@ -765,13 +765,7 @@ class CandidatesGrid:
 
         # --- Construct the NEW Best Params Dictionary --- 
         # Build new structure to save each combo. Uses defaults if not tuned
-        best_config = {
-            'model': copy.deepcopy(model_cfg['model']),
-            'optimizer': copy.deepcopy(model_cfg['optimizer']),
-            'train': copy.deepcopy(model_cfg['train']),
-            'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
-            'loss': copy.deepcopy(loss_cfg.get('lambdas'))
-        }
+        best_config = reformat_hparams(model_cfg, loss_cfg)
 
         # --- Run the Study ---
         if self.tune:

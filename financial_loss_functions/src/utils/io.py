@@ -163,7 +163,7 @@ def load_path_config(path: str, crsp_data_dir: str | None = None) -> dict:
 
     return config
 
-def load_config(path: str) -> dict:
+def load_json(path: str) -> dict:
     with open(path, 'r') as f:
         config = json.load(f)
     return config

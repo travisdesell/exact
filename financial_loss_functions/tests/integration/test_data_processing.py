@@ -4,12 +4,12 @@ import pytest
 import shutil
 import pandas as pd
 from pathlib import Path
-from src.utils.io import load_config
+from src.utils.io import load_json
 from src.data_processing.pipeline import run_processing_pipeline
 
 # ---------- Integration test for Data Processing Pipeline ---------- #
 def _get_raw_files_names():
-    raw_files_dict = load_config(
+    raw_files_dict = load_json(
         os.path.join('config', 'paths.json')
     )['raw_files']
     return raw_files_dict

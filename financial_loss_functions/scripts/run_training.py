@@ -2,7 +2,7 @@ import os
 import sys
 import signal
 import argparse
-from src.utils.io import load_path_config, load_config
+from src.utils.io import load_path_config, load_json
 from src.training.pipeline import run_tuning_pipeline
 
 _interrupted = False
@@ -125,8 +125,8 @@ if __name__ == '__main__':
                 parser.error("--loss and --model is required when --grid_mode is 'one'")
 
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
-        hparams_config = load_config(os.path.join('config', 'hparams.json'))
-        features_config = load_config(os.path.join('config', 'features.json'))
+        hparams_config = load_json(os.path.join('config', 'hparams.json'))
+        features_config = load_json(os.path.join('config', 'features.json'))
 
         run_tuning_pipeline(
             paths_config,

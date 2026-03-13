@@ -1,7 +1,7 @@
 import os
 import sys
 import signal
-from src.utils.io import load_path_config, load_config
+from src.utils.io import load_path_config, load_json
 from src.training.pipeline import run_wfv_pipeline
 
 _interrupted = False
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     # load_dotenv()
     try:
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
-        hparams_config = load_config(os.path.join('config', 'hparams.json'))
+        hparams_config = load_json(os.path.join('config', 'hparams.json'))
 
         run_wfv_pipeline(
             paths_config,
