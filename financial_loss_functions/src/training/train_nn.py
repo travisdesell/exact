@@ -212,26 +212,32 @@ class Trainer:
                 if self.lr_schedule:
                     self.scheduler.step(avg_val_loss)
                 
-                # 1. THE TRACKER (Runs every epoch, regardless of flags)
-                # This ensures self.best_val_loss and best_train_loss are always the "Peak"
                 # Only allow state-saving after warmup to avoid "Lucky Epoch 0"
-                is_improving = avg_val_loss < (self.best_val_loss - min_delta)
-                is_past_warmup = epoch >= min_epochs
-                if is_improving and is_past_warmup:
-                    # Save best val and train lossed when triggered
+                # 1. Initialize baseline if it's the very first validation
+                if self.best_val_loss == float('inf'):
                     self.best_val_loss = avg_val_loss
                     self.best_train_loss = epoch_avg_loss
-                    
-                    self.best_model_state = copy.deepcopy(self.model.state_dict())
-                    self.patience_counter = 0 # Reset even if not using early_stopping
-                else:
-                    self.patience_counter += 1
 
-                # 2. THE EARLY STOPPING (Only handles the 'break')
-                if early_stopping and epoch >= min_epochs and \
-                    self.patience_counter >= patience:
+                is_improving = avg_val_loss < (self.best_val_loss - min_delta)
+                is_past_warmup = epoch >= min_epochs
+
+                if is_improving:
+                    self.best_val_loss = avg_val_loss
+                    self.best_train_loss = epoch_avg_loss
+                    self.best_model_state = copy.deepcopy(self.model.state_dict())
+                    
+                    self.patience_counter = 0 
+                else:
+                    # ONLY start the "timer" after the warmup is over
+                    if is_past_warmup:
+                        self.patience_counter += 1
+
+                # 2. THE EARLY STOPPING
+                if early_stopping and is_past_warmup and self.patience_counter >= patience:
+                    status_msg = status_msg + \
+                        f'Val Loss: {avg_val_loss:.4f}'
+                    print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
                     print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
-                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
                     break
                         
                 else:
@@ -242,8 +248,8 @@ class Trainer:
         # After the training loop
         if self.best_model_state is None:
             # No improvement ever after warm-up; fall back to final model
-            self.best_val_loss = avg_val_loss   # from the last epoch
-            self.best_train_loss = epoch_avg_loss  # from the last epoch
+            self.best_val_loss = avg_val_loss
+            self.best_train_loss = self.avg_train_loss  # from the last epoch
             self.best_model_state = copy.deepcopy(self.model.state_dict())
         else:
             self.model.load_state_dict(self.best_model_state)
