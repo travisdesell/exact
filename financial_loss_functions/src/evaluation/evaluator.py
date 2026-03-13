@@ -161,3 +161,17 @@ class EqualWeightCalculator:
         self.eq_weights_rets = np.array(eq_wt_daily_returns)
 
         return self.eq_weights_rets
+
+def filter_models(
+        avg_perf: pd.DataFrame, bench_name: str, bench_met: str, all_benchs: list[str]
+    ) -> pd.DataFrame:
+
+    # Get the equal‑weight Metric (Sharpe) value
+    ew_sharpe = avg_perf.loc[bench_name, bench_met]
+
+    # Create mask: keep if (1) it's a benchmark OR (2) its Sharpe > ew_sharpe
+    mask = avg_perf.index.isin(all_benchs) | (avg_perf[bench_met] > ew_sharpe)
+
+    filtered_df = avg_perf[mask]
+
+    return filtered_df

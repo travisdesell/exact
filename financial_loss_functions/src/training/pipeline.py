@@ -1,23 +1,20 @@
+import os
 import time
 import pandas as pd
 from pathlib import Path
+from src.utils.device import get_best_device
+from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files
+from src.visualization.plots import train_val_losses_plot
+from src.training.train_nn import CandidatesGrid, MetricModel
 from src.utils.io import create_directory, save_to_csv, save_to_json
-from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
-from src.utils.device import get_best_device, set_seed, deformtime_device
+from src.evaluation.evaluator import Evaluator, EqualWeightCalculator, filter_models
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     extract_oos_dates,
     extract_sp500_winds
 )
-from src.visualization.plots import (
-    train_val_losses_plot, 
-    plot_windowed_comparison,
-    plot_models_comparison
-)
-from src.training.train_nn import CandidatesGrid, MetricModel
-from src.training.train_trad import TradModelsTrainer
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
@@ -25,7 +22,6 @@ from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Add Best model ranker
 # Unit test NCO
 
 def _common_setup(paths_config):
@@ -34,6 +30,7 @@ def _common_setup(paths_config):
     plots_dir = (Path(paths_config['artifacts']['plots']))
     create_directory(plots_dir)
     results_dir = Path(paths_config['artifacts']['results'])
+    create_directory(results_dir)
     
     models_module = paths_config['models_module']
 
@@ -45,7 +42,7 @@ def _common_setup(paths_config):
 
     best_device = get_best_device()
     
-    return plots_dir, results_dir, best_device
+    return plots_dir, best_device
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -138,30 +135,32 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
         title = metric.replace('_', ' ').upper()
         print(f'\n{title.upper()}:\n', df)
 
-def run_training_pipeline(
-        paths_config: dict,
-        hparams_config: dict,
-        features_config: dict, 
-        grid_mode: str = 'all', 
-        loss_mode: str = 'custom',
-        model_name: str | None = None,
-        loss_name: str | None = None,
-        tune: bool = False
-    ):
+def run_tuning_pipeline(
+    paths_config: dict,
+    hparams_config: dict,
+    features_config: dict, 
+    grid_mode: str = 'all', 
+    loss_mode: str = 'custom',
+    model_name: str | None = None,
+    loss_name: str | None = None,
+    tune: bool = False
+):
     """
-    All models training pipeline entry point
+    Tune and train with best hyperparameters and compare against equal weight and S&P 500.
 
-    @param paths_config Dict Dictionary containing paths
-    @param features_config Dictionary containing hyperparameter information
-    @param grid_mode str `all`, `one_model` or `one_loss`
-    @param loss_mode str `all` or `custom`
-    @param model str Name of the model to be run
-    @param loss str Name of the loss function to be used
+    Args:
+        paths_config (dict): Dictionary containing paths
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
+        features_config (dict): Dictionary containing hyperparameter information
+        grid_mode (str): `all`, `one_model`, `one_loss` of `one`
+        loss_mode (str): `all` or `custom`, Default = `custom`
+        model (str): Name of the model to be run
+        loss (str): Name of the loss function to be used
     """
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, results_dir, best_device = _common_setup(paths_config)
+    plots_dir, best_device = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, returns_train, val_data, returns_val = _load_processed_data(
@@ -184,23 +183,23 @@ def run_training_pipeline(
     evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Tradional Models -------------------- #
-    # max_workers = os.cpu_count() - 1
-    # trad_grid = TradModelsTrainer(
-    #     TradModelLibrary.items(),
-    #     hparams_config,
-    #     max_workers
-    # )
-    # trad_alloc_weights = trad_grid.train_all(
-    #     in_wind_idxs,
-    #     out_wind_idxs,
-    #     returns_train,
-    #     returns_val
-    # )
+    max_workers = os.cpu_count() - 1
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        max_workers
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        in_wind_idxs,
+        out_wind_idxs,
+        returns_train,
+        returns_val
+    )
 
-    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    # del trad_grid
+    del trad_grid
 
     # -------------------- Training Neural Network Models -------------------- #
     # Building hyperparameter tuning metric
@@ -250,7 +249,7 @@ def run_training_pipeline(
         optimized_hparams = candidates_grid.get_optimized_hparams()
         save_to_json(
             optimized_hparams,
-            Path(paths_config['artifacts']['artifacts_dir']) / 'optimized_hparams.json'
+            Path(paths_config['artifacts']['optimized_hparams'])
         )
 
     # Plot training and validation loss curves
@@ -293,38 +292,57 @@ def run_training_pipeline(
         out_wind_idxs
     )
     
+    # Calculate Equal Weight Portfolio's weeights
     eq_wt_calc = EqualWeightCalculator(y_val)
-
     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
-    evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
-    evaluator.add_benchmark_rets('Equal Weight', eq_wt_rets)
+    eq_wt_name = 'Equal_Weight'
+    sp500_name = 'S&P500'
+    evaluator.add_benchmark_rets(eq_wt_name, eq_wt_rets)
+    evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
     
-    # plot_windowed_comparison(
-    #     evaluator.get_all_daily_returns(),
-    #     out_win_date_cols,
-    #     plots_dir / (f'Daily Returns' + '.png')
-    # )
-
     avg_perf_metrics = evaluator.calc_avg_performance()
-
-    # plot_models_comparison(
-    #     total_sharpes,
-    #     'Out-of-Sample Sharpe Ratio Comparison',
-    #     plots_dir / f'Sharpe Comprison.png'
-    # )
-
-    # total_returns = total_returns.describe().T
-    save_to_csv(avg_perf_metrics, results_dir / 'avg_performance.csv')
-    # total_sharpes = total_sharpes.describe().T
-    # total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
+    avg_perf_path = Path(
+        paths_config['artifacts']['avg_perf_metrics']
+    )
+    save_to_csv(avg_perf_metrics, avg_perf_path)
 
     _print_evaludation_info(
-            in_win_date_cols,
-            out_win_date_cols,
-            avgerage_performance_metrics=avg_perf_metrics
-        )
+        in_win_date_cols,
+        out_win_date_cols,
+        avgerage_performance_metrics=avg_perf_metrics,
+    )
 
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
+
+
+def run_wfv_pipeline(
+    paths_config: dict,
+    hparams_config: dict,
+): 
+    """
+    Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
+    
+    Args:
+        paths_config (dict): Dictionary containing paths
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
+    """
+
+    plots_dir, best_device = _common_setup(paths_config)
+
+    eq_wt_name = 'Equal_Weight'
+    sp500_name = 'S&P500'
+    
+    avg_perf_metrics = load_csv_files(
+        {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
+    )['avg_perf_metrics']
+
+    # Filter models that beat Equal Weight Portfolio
+    all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
+    filtered_perf = filter_models(
+        avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
+    )
+
+    print(filtered_perf)

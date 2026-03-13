@@ -28,6 +28,8 @@
     "artifacts": {
         "artifacts_dir": "artifacts/",
         "results": "artifacts/results/",
+        "avg_perf_metrics": "artifacts/results/avg_performance.csv",
+        "optimized_hparams": "artifacts/results/optimized_hparams.json",
         "plots": "artifacts/results/plots/",
         "temp": "artifacts/temp/"
     },
