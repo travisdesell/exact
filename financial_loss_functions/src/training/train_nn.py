@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from typing import Callable, Type, Any, Optional
 from src.data_processing.dataset import WindowDataset
 
-from src.evaluation.evaluator import Evaluator
+from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
 from pydantic import BaseModel, TypeAdapter
 from typing import Callable, Dict, Literal
 from scipy import stats
@@ -412,6 +412,8 @@ class Tuner:
         self.torch_device = torch_device
 
         self.n_seeds = len(self.seed_list)
+
+        self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
     def _calc_pf_metrics_for_seed(
             self, model_name: str, loss_name: str, seed: int,
@@ -427,12 +429,20 @@ class Tuner:
         
         return seed_metrics
     
+    def _calc_excess_returns(self, model_rets: np.ndarray) -> np.ndarray:
+        return model_rets - self.benchmark_rets
+
     def _calc_composite_score(
             self,model_name: str, loss_name: str,
             alloc_weights: np.ndarray, y_val: np.ndarray
         ) -> float:
+        model_loss_name = f'{model_name}-{loss_name}'
+        
         evaluator = Evaluator(y_val, None)
-        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
+        model_rets = evaluator.get_rets_for_one(model_loss_name)
+        excess_rets = self._calc_excess_returns(model_rets)
+        evaluator.update_rets_for_one(model_loss_name, excess_rets)
 
         composite_score = 0
         for _, met_dict in self.tune_metric.items():
@@ -513,6 +523,11 @@ class Tuner:
             model_cfg: dict,
             loss_cfg: dict
         ):
+
+        # # Calculate equal weight portfolio & its returns as benchmark
+        if self.benchmark_rets is None:
+            eq_wt_calc = EqualWeightCalculator(y_val)
+            self.benchmark_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
         model_tuning_space = model_cfg.get('tuning', {})
         
