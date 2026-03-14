@@ -237,7 +237,7 @@ class Trainer:
                 # 2. THE EARLY STOPPING
                 if early_stopping and is_past_warmup and self.patience_counter >= patience:
                     status_msg = status_msg + \
-                        f'Val Loss: {avg_val_loss:.4f}'
+                        f' | Val Loss: {avg_val_loss:.4f}'
                     print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
                     print(f'----- Early Stopping Triggered at Epoch {epoch} -----\n')
                     break
@@ -515,7 +515,7 @@ class Tuner:
             seed_train_losses, seed_val_losses
         )
     
-        return base_score - gap_penalty
+        return base_score - (gap_penalty**2)
 
     def _run_tuning_study(
             self,
