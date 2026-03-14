@@ -138,9 +138,11 @@ class EqualWeightCalculator:
         Calculates simple equal weights for a portfolio
         weight for each stock = 1/num_tickers
         
-        @param num_tickers int number of tickers in the dataset
+        Args:
+            num_tickers (int): Number of tickers in the dataset
 
-        @return np.array equal weight portfolio allocation weights
+        Returns:
+            np.array: Equal weight portfolio allocation weights
         """
         return np.full((num_tickers), 1/num_tickers)
     
@@ -164,7 +166,22 @@ class EqualWeightCalculator:
 
 def filter_models(
         avg_perf: pd.DataFrame, bench_name: str, bench_met: str, all_benchs: list[str]
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Filter out models that do not beat the benchmark (eg. Equal_Weight) and keep ones that do.
+
+    Args:
+        avg_perf (pd.DataFrame): Average Performance of all models across all metrics.
+        bench_name (str): String name of the benchmark that exists in the avg_per dataframe.
+        bench_met (str): String name of the metric that should be used to compare the models.
+        all_benches (list[str]): List of all benchmark names.
+    
+    Returns:
+        tuple: A tuple containing,
+            - filtered_avg_perf (pd.DataFrame): Dataframe containing only models that 
+            outperformed the benchmark on the specified metric.
+            - filtered_models (list[str]): List of names of the models that beat the benchmark.
+    """
 
     # Get the equal‑weight Metric (Sharpe) value
     ew_sharpe = avg_perf.loc[bench_name, bench_met]
@@ -174,4 +191,8 @@ def filter_models(
 
     filtered_df = avg_perf[mask]
 
-    return filtered_df
+    filtered_models = filtered_df.index[
+        ~filtered_df.index.isin(all_benchs)
+    ].to_list()
+
+    return filtered_df, filtered_models

@@ -8,7 +8,9 @@ from src.data_processing.loading import load_csv_files
 from src.visualization.plots import train_val_losses_plot
 from src.training.train_nn import CandidatesGrid, MetricModel
 from src.utils.io import create_directory, save_to_csv, save_to_json, load_json
-from src.evaluation.evaluator import Evaluator, EqualWeightCalculator, filter_models
+from src.evaluation.evaluator import (
+    Evaluator, EqualWeightCalculator, filter_models
+)
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
@@ -227,7 +229,7 @@ def run_tuning_pipeline(
     )
     if grid_mode == 'all':
         nn_alloc_weights = candidates_grid.train_eval_grid(
-            X_train, X_val, y_val
+            X_train, y_train, X_val, y_val
         )
     elif grid_mode == 'one_model' and model_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_model(
@@ -347,8 +349,8 @@ def run_wfv_pipeline(
 
     # Filter models that beat Equal Weight Portfolio
     all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
-    filtered_perf = filter_models(
+    filtered_perf, filtered_models = filter_models(
         avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
     )
 
-    print(filtered_perf)
+    print(filtered_models)

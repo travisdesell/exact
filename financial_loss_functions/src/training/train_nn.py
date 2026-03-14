@@ -237,7 +237,7 @@ class Trainer:
                     status_msg = status_msg + \
                         f'Val Loss: {avg_val_loss:.4f}'
                     print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
-                    print(f'\n--- Early Stopping Triggered at Epoch {epoch} ---')
+                    print(f'----- Early Stopping Triggered at Epoch {epoch} -----\n')
                     break
                         
                 else:
@@ -870,46 +870,32 @@ class CandidatesGrid:
                 'Allocation weights already predicted. Create new instance of this class.'
             )
 
-    def _calc_total_models(self, grid_mode: str) -> int:
-        """
-        Calculate total number of models to be trained based on the grid and loss modes
-        """
-        if grid_mode == 'all':
-            len_custom_losses = len(
-                self.loss_lib['custom']['__default__']
-            ) if 'custom' in self.loss_lib else 0
-            
-            if self.loss_mode == 'custom':
-                len_losses = len_custom_losses
-            else:
-                len_losses = len(self.loss_lib['objectives']['__default__']) + \
-                    len_custom_losses
-            
-            total_train_count = (
-                    len_losses
-                ) * sum(len(models_dict) for models_dict in self.model_lib.values())
-        
-        elif grid_mode == 'one_model':
-            len_custom_losses = len(
-                self.loss_lib['custom']['__default__']
-            ) if 'custom' in self.loss_lib else 0
-            
-            if self.loss_mode == 'custom':
-                total_train_count = len_custom_losses
-            else:
-                total_train_count = (
-                    len(self.loss_lib['objectives']['__default__']) +  len_custom_losses
-                )
-        elif grid_mode == 'one_loss':
-            total_train_count = sum(
-                len(models_dict) for models_dict in self.model_lib.values()
-            )
+    def _count_only_models(self) -> int:
+        n_models = sum(len(models_dict) for models_dict in self.model_lib.values())
+        return n_models
 
-        else:
-            print('Incorrect usage of `calc_total_models` method!')
-            total_train_count = 0
+    def _build_losses_to_use(self) -> dict[str, Callable]:
+        # Build losses that should be used base on loss_mode
+        losses_to_use = {}
+        custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
+        # Grid with custom loss functions
+        if self.loss_mode == 'custom':           
+            print('Training all models with all custom loss functions...')
+            losses_to_use = custom_combos
         
-        return total_train_count
+        # Grid with custom loss functions + only objectives
+        else: # loss_mode = 'all'
+            losses_to_use = custom_combos
+
+            loss_objectives = self.loss_lib['objectives']['__default__'] # Objectives have no category
+            for objtiv_name, objtiv_func in loss_objectives.items():
+                if objtiv_name not in losses_to_use:
+                    losses_to_use[objtiv_name] = objtiv_func
+                else:
+                    print(f'WARNING: Objective {objtiv_name} already exists! Skipping duplicate.')
+                    continue
+        
+        return losses_to_use
 
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
@@ -923,104 +909,55 @@ class CandidatesGrid:
         val_ds   = WindowDataset(X_val, y_val)
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+        losses_to_use = self._build_losses_to_use()
         
-        total_train_count = self._calc_total_models('all')
+        # Calculate number of models to train (model + loss combinations)
+        n_models = self._count_only_models()
+        total_train_count = len(losses_to_use) * n_models
+        
         print(
             f'\nTraining {total_train_count} models.',
             f'Running all models with {self.loss_mode} losses.'
         )
+
         progress_count = 1
-        
-        # Grid with custom loss functions
-        if 'custom' in self.loss_lib:            
-            print('Training all models with all custom loss functions...')
+        # Loop over loss functions
+        for loss_name, loss_func in losses_to_use.items():
+            self.all_alloc_weights.setdefault(loss_name, {})
 
-            custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
-
-            # Loop over loss functions
-            for loss_name, loss_func in custom_combos.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-
-                for category, models_dict in self.model_lib.items():
-                    # Loop over models
-                    for model_name, model_class in models_dict.items():
-                        print(
-                            '\n', '-'*10,
-                            f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                            '-'*10
-                        )
-                        try: 
-                            
-                            alloc_weights = self._train_eval_helper(
-                                model_name,
-                                model_class, 
-                                loss_name,
-                                loss_func,
-                                train_ds,
-                                val_ds,
-                                X_train_shape,
-                                y_train_shape,
-                                y_val
-                            )
-                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
-
-                        except Exception as error:
-                            print(
-                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
-                            )
-                            continue
-                        finally:
-                            progress_count += 1
-        
-        else:
-            print('\nNo custom loss functions provided. Moving to objectives.')
-        
-        if self.loss_mode == 'custom':
-            return self.all_alloc_weights
-
-        else: # mode == 'all'
-            # Grid with only objectives
-            print('\nTraining all models with all objectives (only) as loss functions...')
-            objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
-            
-            # Loop over loss functions
-            for loss_name, loss_func in objectives.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-                
-                for category, models_dict in self.model_lib.items():
-                    # Loop over models
-                    for model_name, model_class in models_dict.items():
-                        print(
-                            '\n', '-'*10,
-                              f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                              '-'*10
-                        )
+            for category, models_dict in self.model_lib.items():
+                # Loop over models
+                for model_name, model_class in models_dict.items():
+                    print(
+                        '\n', '-'*10,
+                        f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                        '-'*10
+                    )
+                    try: 
                         
-                        try: 
-                            
-                            alloc_weights = self._train_eval_helper(
-                                model_name,
-                                model_class, 
-                                loss_name,
-                                loss_func,
-                                train_ds,
-                                val_ds,
-                                X_train_shape,
-                                y_train_shape,
-                                y_val
-                            )
-                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                        alloc_weights = self._train_eval_helper(
+                            model_name,
+                            model_class, 
+                            loss_name,
+                            loss_func,
+                            train_ds,
+                            val_ds,
+                            X_train_shape,
+                            y_train_shape,
+                            y_val
+                        )
+                        self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
-                        except Exception as error:
-                            print(
-                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                                error
-                            )
-                            continue
-                        finally:
-                            progress_count += 1
-                
-            return self.all_alloc_weights
+                    except Exception as error:
+                        print(
+                            f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                        )
+                        continue
+                    finally:
+                        progress_count += 1
+        
+        return self.all_alloc_weights
     
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
@@ -1047,90 +984,50 @@ class CandidatesGrid:
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        total_train_count = self._calc_total_models('one_model')
-        print(f'\nTraining {total_train_count} models.')
+        losses_to_use = self._build_losses_to_use()
+        
+        # Calculate number of models to train (model + loss combinations)
+        total_train_count = len(losses_to_use)
+        
+        print(
+            f'\nTraining {total_train_count} models.',
+            f'Running all models with {self.loss_mode} losses.'
+        )
+
         progress_count = 1
-        
-        # Grid with custom loss functions
-        if 'custom' in self.loss_lib:
-            print('\nTraining all models with all custom loss functions...')
-            custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
+        # Loop over loss functions
+        for loss_name, loss_func in losses_to_use.items():
+            self.all_alloc_weights.setdefault(loss_name, {})
 
-            # Loop over loss functions
-            for loss_name, loss_func in custom_combos.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-
-                print(
-                    '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                    '-'*10
+            print(
+                '\n', '-'*10,
+                f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                '-'*10
+            )
+            try:        
+                alloc_weights = self._train_eval_helper(
+                    model_name,
+                    model_class, 
+                    loss_name,
+                    loss_func,
+                    train_ds,
+                    val_ds,
+                    X_train_shape,
+                    y_train_shape,
+                    y_val
                 )
-                try:        
-                    alloc_weights = self._train_eval_helper(
-                        model_name,
-                        model_class, 
-                        loss_name,
-                        loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
-                    )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                self.all_alloc_weights[loss_name][model_name] = alloc_weights
 
-                except Exception as error:
-                    print(
-                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                        error
-                    )
-                    continue
-                finally:
-                    progress_count += 1
-
-        else:
-            print('\nNo custom loss functions provided. Moving to objectives.')
-        
-        if self.loss_mode == 'custom':
-            return self.all_alloc_weights
-
-        else: # mode == 'all'
-            # Grid with only objectives
-            print('\nTraining all models with all objectives (only) as loss functions...')
-            objectives = self.loss_lib['objectives']['__default__'] # objectives have no category
-            
-            # Loop over loss functions
-            for loss_name, loss_func in objectives.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
+            except Exception as error:
                 print(
-                    '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                    '-'*10
+                    f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
+                    error
                 )
-                try:        
-                    alloc_weights = self._train_eval_helper(
-                        model_name,
-                        model_class, 
-                        loss_name,
-                        loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
-                    )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                continue
+            finally:
+                progress_count += 1
 
-                except Exception as error:
-                    print(
-                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                        error
-                    )
-                    continue
-                finally:
-                    progress_count += 1
-            
-            return self.all_alloc_weights
+        return self.all_alloc_weights
 
     def _search_loss_func(self, loss_name: str) -> Callable | None:
         """Search for required loss function"""
@@ -1169,8 +1066,11 @@ class CandidatesGrid:
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        total_train_count = self._calc_total_models('one_loss')
-        print(f'\nTraining {total_train_count} models.')
+        # Calculate number of models to train (model + loss combinations)
+        total_train_count = self._count_only_models()
+        print(
+            f'\nTraining {total_train_count} models.',
+        )
         progress_count = 1
         
         for category, models_dict in self.model_lib.items():
