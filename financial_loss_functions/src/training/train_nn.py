@@ -710,6 +710,8 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
+
+        self.torch_device = get_best_device()
         
         # Tuner configuration
         self.seed_list = self.hparams_config.get('seed_list')
@@ -908,8 +910,6 @@ class CandidatesGrid:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
 
-        self.torch_device = get_best_device()
-
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
         val_ds   = WindowDataset(X_val, y_val)
@@ -987,6 +987,7 @@ class CandidatesGrid:
             )
         
         self.torch_device = get_best_device(local_rank)
+        self.tuner.torch_device = self.torch_device ########## TEMPORARY FIX. NEEDS REFACTOR
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
@@ -1102,8 +1103,6 @@ class CandidatesGrid:
 
         self._trained_check()
 
-        self.torch_device = get_best_device()
-
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
         val_ds   = WindowDataset(X_val, y_val)
@@ -1184,7 +1183,6 @@ class CandidatesGrid:
         ) -> dict[str, dict[str, np.ndarray]]:
         
         self._trained_check()
-        self.torch_device = get_best_device()
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
@@ -1250,7 +1248,6 @@ class CandidatesGrid:
         ):
 
         self._trained_check()
-        self.torch_device = get_best_device()
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
