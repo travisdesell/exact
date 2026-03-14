@@ -1,6 +1,7 @@
 import os
 import json
 import shutil
+import pickle
 import pandas as pd
 from pathlib import Path
 
@@ -83,6 +84,32 @@ def save_to_json(data: dict, output_file: str) -> None:
     with open(output_file, 'w') as json_file:
         json.dump(data, json_file, indent=4)
         json_file.close()
+
+def save_pickle_temp(data: dict, output_file: str | Path):
+    """
+    Saves a dictionary to a pickle file for temporary usage.
+    
+    Args:
+        data_dict (Dict): Dictionary containing data to be saved
+        output_file (str | Path): Path to output file
+    """
+    with open(output_file, 'wb') as f:
+        pickle.dump(data, f)
+
+def load_pickle_temp(file_path: str | Path) -> dict:
+    """
+    Loads saved pickle temp file
+
+    Args:
+        file_path (str | Path): Pickle file to be loaded
+    
+    Returns:
+        pkl_data (dict): Loaded data from the pickle file
+    """
+    with open(file_path, 'rb') as f:
+        pkl_data = pickle.load(f)
+    
+    return pkl_data
 
 def reset_data_stage(dir_path: str) -> None:
     """

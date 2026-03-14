@@ -1,5 +1,6 @@
 import gc
 import os
+import sys
 import time
 import copy
 import torch
@@ -7,11 +8,12 @@ import optuna
 import psutil
 import numpy as np
 from torch import Tensor
-from src.utils.device import set_seed
 from torch.utils.data import DataLoader
 from typing import Callable, Type, Any, Optional
 from src.utils.formatting import reformat_hparams
 from src.data_processing.dataset import WindowDataset
+from src.utils.device import set_seed, get_best_device
+from src.utils.io import save_pickle_temp, load_pickle_temp
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
 from pydantic import BaseModel, TypeAdapter
@@ -684,11 +686,11 @@ class CandidatesGrid:
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
-            torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
             tune_metric: dict[str, MetricModel] | None = None,
-            enable_diagnostics: bool = False
+            enable_diagnostics: bool = False,
+            temp_dir: str | None = None
         ):
         """
         This runs either all models and loss functions or 
@@ -700,7 +702,7 @@ class CandidatesGrid:
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
-        self.torch_device = torch_device
+        self.torch_device = None
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -738,10 +740,12 @@ class CandidatesGrid:
             self.tuner = None
         
         self.enable_diagnostics = enable_diagnostics
+        self.temp_dir = temp_dir
 
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
 
+        ####### Optimized Hyper, needs fix for MPI #######
         self.optimized_hparams = {} # Will be filled if tuned
     
     def required_reshapes(self, train_data, returns_train, val_data, returns_val):
@@ -760,7 +764,7 @@ class CandidatesGrid:
         X_train_shape: torch.Size,
         y_train_shape: torch.Size,
         y_val: np.ndarray | None = None
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, dict[str, list]]:
         # Extract base configs
         model_cfg = self.hparams_config[self.models_hparams][model_name]
         loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name, {})
@@ -824,7 +828,7 @@ class CandidatesGrid:
         final_trainer.evaluate(val_ds)
 
         # Logging and Diagnostics
-        self.train_val_losses[f'{model_name}-{loss_name}'] = {
+        train_val_losses = {
             'train': final_trainer.train_losses,
             'val': final_trainer.val_losses,
             'eval': final_trainer.eval_losses
@@ -838,7 +842,7 @@ class CandidatesGrid:
             print(f'\n[After training {model_name} with {loss_name}]')
             self._memory_diagnostics()
 
-        return alloc_weights
+        return alloc_weights, train_val_losses
     
     def _memory_diagnostics(self):
         """Print memory usage diagnostics"""
@@ -904,6 +908,8 @@ class CandidatesGrid:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
 
+        self.torch_device = get_best_device()
+
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
         val_ds   = WindowDataset(X_val, y_val)
@@ -936,7 +942,7 @@ class CandidatesGrid:
                     )
                     try: 
                         
-                        alloc_weights = self._train_eval_helper(
+                        alloc_weights, train_val_losses = self._train_eval_helper(
                             model_name,
                             model_class, 
                             loss_name,
@@ -948,6 +954,7 @@ class CandidatesGrid:
                             y_val
                         )
                         self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                        self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
 
                     except Exception as error:
                         print(
@@ -957,8 +964,130 @@ class CandidatesGrid:
                     finally:
                         progress_count += 1
         
-        return self.all_alloc_weights
+        return self.all_alloc_weights    
     
+    def set_temp_directory(self, temp_dir: str):
+        self.temp_dir = temp_dir
+
+    def train_eval_grid_mpi(
+            self, 
+            X_train: np.ndarray,
+            y_train: np.ndarray, 
+            X_val: np.ndarray,
+            y_val: np.ndarray,
+            comm,
+            global_rank,
+            size,
+            local_rank
+        ) -> dict[str, dict[str, np.ndarray]]:
+
+        if not self.temp_dir or not os.path.exists(self.temp_dir):
+            raise FileNotFoundError(
+                f'Temp directory not found: {self.temp_dir}'
+            )
+        
+        self.torch_device = get_best_device(local_rank)
+
+        # Converting to pytorch tensors
+        train_ds = WindowDataset(X_train, y_train)
+        val_ds   = WindowDataset(X_val, y_val)
+
+        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+        losses_to_use = self._build_losses_to_use()
+        
+        # Calculate number of models to train (model + loss combinations)
+        n_models = self._count_only_models()
+        total_train_count = len(losses_to_use) * n_models
+        
+        print(
+            f'\nTraining {total_train_count} models in total.',
+            f'Running all models with {self.loss_mode} losses.'
+        )
+
+        all_combos = []
+        for loss_name, loss_func in losses_to_use.items():
+            for category, models_dict in self.model_lib.items():
+                for model_name, model_class in models_dict.items():
+                    all_combos.append((loss_name, loss_func, model_name, model_class))
+
+        # Distribute combos evenly across ranks
+        chunk_size = len(all_combos) // size
+        remainder = len(all_combos) % size
+        start = global_rank * chunk_size + min(global_rank, remainder)
+        end = start + chunk_size + (1 if global_rank < remainder else 0)
+        this_ranks_combos = all_combos[start:end]
+
+        # Print summary on each rank (optional)
+        print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
+        sys.stdout.flush()
+
+        # Local results dictionary
+        local_alloc_weights = {}
+        local_train_val_losses = {}
+        for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
+            print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+            try:
+                alloc_weights, train_val_losses = self._train_eval_helper(
+                    model_name,
+                    model_class,
+                    loss_name,
+                    loss_func,
+                    train_ds,
+                    val_ds,
+                    X_train_shape,
+                    y_train_shape,
+                    y_val
+                )
+                # Store in local dict
+                if loss_name not in local_alloc_weights:
+                    local_alloc_weights[loss_name] = {}
+                
+                local_alloc_weights[loss_name][model_name] = alloc_weights
+                local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+            
+            except Exception as e:
+                print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                continue
+        
+        temps_wts_prefix = 'temp_alloc_wts'
+        temp_losses_prefix = 'temp_losses'
+        
+        # Save local results to a rank‑specific file
+        save_pickle_temp(
+            local_alloc_weights,
+            self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+        )
+        save_pickle_temp(
+            local_train_val_losses,
+            self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
+        )
+        
+        # Wait for all ranks to finish
+        comm.Barrier()
+
+        # Rank 0 collects and merges all files
+        if global_rank == 0:
+            self.all_alloc_weights = {}
+            self.train_val_losses = {}
+            for r in range(size):
+                # Load all temp alloc wt files
+                rank_alloc_weights = load_pickle_temp(
+                    self.temp_dir / f'{temps_wts_prefix}_{r}.pkl'
+                )
+                # Merge into self.all_alloc_weights
+                for loss_name, models_dict in rank_alloc_weights.items():
+                    self.all_alloc_weights.setdefault(loss_name, {})
+                    self.all_alloc_weights[loss_name].update(models_dict)
+                
+                rank_losses = load_pickle_temp(
+                    self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
+                )
+                # Merge into self.train_val_losses
+                for model_loss, losses_dict in rank_losses.items():
+                    self.train_val_losses[model_loss] = losses_dict
+        else:
+            return None
+                
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
         for _, models_dict in self.model_lib.items():
@@ -972,6 +1101,8 @@ class CandidatesGrid:
         ) -> dict[str, dict[str, np.ndarray]]:
 
         self._trained_check()
+
+        self.torch_device = get_best_device()
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
@@ -1005,7 +1136,7 @@ class CandidatesGrid:
                 '-'*10
             )
             try:        
-                alloc_weights = self._train_eval_helper(
+                alloc_weights, train_val_losses = self._train_eval_helper(
                     model_name,
                     model_class, 
                     loss_name,
@@ -1017,6 +1148,7 @@ class CandidatesGrid:
                     y_val
                 )
                 self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
 
             except Exception as error:
                 print(
@@ -1052,6 +1184,7 @@ class CandidatesGrid:
         ) -> dict[str, dict[str, np.ndarray]]:
         
         self._trained_check()
+        self.torch_device = get_best_device()
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
@@ -1083,7 +1216,7 @@ class CandidatesGrid:
                 )
                 try: 
                     
-                    alloc_weights = self._train_eval_helper(
+                    alloc_weights, train_val_losses = self._train_eval_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -1095,6 +1228,7 @@ class CandidatesGrid:
                         y_val
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
 
                 except Exception as error:
                     print(
@@ -1116,6 +1250,7 @@ class CandidatesGrid:
         ):
 
         self._trained_check()
+        self.torch_device = get_best_device()
 
         # Converting to pytorch tensors
         train_ds = WindowDataset(X_train, y_train)
@@ -1135,7 +1270,7 @@ class CandidatesGrid:
 
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-            alloc_weights = self._train_eval_helper(
+            alloc_weights, train_val_losses = self._train_eval_helper(
                 model_name,
                 model_class, 
                 loss_name,
@@ -1147,6 +1282,7 @@ class CandidatesGrid:
                 y_val
             )
             self.all_alloc_weights[loss_name][model_name] = alloc_weights
+            self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
 
         except Exception as e:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)

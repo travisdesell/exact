@@ -106,6 +106,7 @@ if __name__ == '__main__':
         )
 
         parser.add_argument('-t', '--tune', action='store_true', help='Hyperparameter tune')
+        parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')
 
         args = parser.parse_args()
 
@@ -136,7 +137,8 @@ if __name__ == '__main__':
             loss_mode = args.loss_mode, 
             model_name = args.model,
             loss_name = args.loss,
-            tune = args.tune
+            tune = args.tune,
+            mpi = args.mpi
         )
 
     except SystemExit:

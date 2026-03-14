@@ -2,14 +2,14 @@ import torch
 import random
 import numpy as np
 
-def get_best_device() -> torch.device:
-    if torch.backends.mps.is_available():
-        print('Using mps for GPU acceleration.')
-        return torch.device('mps')
-    
-    elif torch.cuda.is_available():
+def get_best_device(local_rank: int = 0) -> torch.device:
+    if torch.cuda.is_available():
         print('Using cuda for GPU acceleration.')
-        return torch.device('cuda')
+        return torch.device(f'cuda:{local_rank}')
+    
+    elif torch.backends.mps.is_available():
+        print('Using mps for GPU acceleration.')
+        return torch.device(f'mps')
     
     else:
         print('No GPU acceleration. Using CPU.')

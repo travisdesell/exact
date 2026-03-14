@@ -2,7 +2,6 @@ import os
 import time
 import pandas as pd
 from pathlib import Path
-from src.utils.device import get_best_device
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files
 from src.visualization.plots import train_val_losses_plot
@@ -17,6 +16,8 @@ from src.data_processing.dataset import (
     extract_oos_dates,
     extract_sp500_winds
 )
+
+from mpi4py import MPI
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
@@ -33,6 +34,8 @@ def _common_setup(paths_config):
     create_directory(plots_dir)
     results_dir = Path(paths_config['artifacts']['results'])
     create_directory(results_dir)
+    temp_dir = Path(paths_config['artifacts']['temp'])
+    create_directory(temp_dir)
     
     models_module = paths_config['models_module']
 
@@ -41,10 +44,8 @@ def _common_setup(paths_config):
     # Registering all NN models to the library
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
-
-    best_device = get_best_device()
     
-    return plots_dir, best_device
+    return plots_dir, temp_dir
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -137,6 +138,15 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
         title = metric.replace('_', ' ').upper()
         print(f'\n{title.upper()}:\n', df)
 
+def mpi_setup() -> tuple:
+    comm = MPI.COMM_WORLD
+    global_rank = comm.Get_rank()  # Unique ID across all 8 workers
+    world_size = comm.Get_size()   # Total number of workers (8)
+    
+    local_rank = int(os.environ.get('SLURM_LOCALID', 0))
+
+    return comm, global_rank, world_size, local_rank
+
 def run_tuning_pipeline(
     paths_config: dict,
     hparams_config: dict,
@@ -145,7 +155,8 @@ def run_tuning_pipeline(
     loss_mode: str = 'custom',
     model_name: str | None = None,
     loss_name: str | None = None,
-    tune: bool = False
+    tune: bool = False,
+    mpi: bool = False
 ):
     """
     Tune and train with best hyperparameters and compare against equal weight and S&P 500.
@@ -162,7 +173,7 @@ def run_tuning_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, best_device = _common_setup(paths_config)
+    plots_dir, temp_dir = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, returns_train, val_data, returns_val = _load_processed_data(
@@ -222,15 +233,25 @@ def run_tuning_pipeline(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
-        torch_device=best_device,
         loss_mode = loss_mode,
         tune = tune,
         tune_metric = tune_metric
     )
     if grid_mode == 'all':
-        nn_alloc_weights = candidates_grid.train_eval_grid(
-            X_train, y_train, X_val, y_val
-        )
+
+        if mpi:
+            comm, global_rank, world_size, local_rank = mpi_setup()
+            candidates_grid.set_temp_directory(temp_dir)
+            nn_alloc_weights = candidates_grid.train_eval_grid_mpi(
+                X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
+            )
+
+        else:
+            nn_alloc_weights = candidates_grid.train_eval_grid(
+                X_train, y_train, X_val, y_val
+            )
+    
+    
     elif grid_mode == 'one_model' and model_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_model(
             model_name, X_train, y_train, X_val, y_val

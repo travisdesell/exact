@@ -17,3 +17,4 @@ tqdm=4.67.1
 einops==0.8.2
 timm==1.0.25,
 pydantic==2.12.5
+mpi4py==4.1.1
