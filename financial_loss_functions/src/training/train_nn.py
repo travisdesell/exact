@@ -515,7 +515,7 @@ class Tuner:
             seed_train_losses, seed_val_losses
         )
     
-        return base_score - (gap_penalty**2)
+        return base_score - gap_penalty
 
     def _run_tuning_study(
             self,
