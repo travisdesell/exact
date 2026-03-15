@@ -1171,7 +1171,7 @@ def custom_loss_5(
 @LossLibrary.register(category='custom')
 def custom_loss_6(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
-    lambda1: float, lambda2: float, **kwargs
+    cvar_lambda: float, risk_p_lambda: float, **kwargs
 ) -> Tensor:
     """
     loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
@@ -1184,7 +1184,7 @@ def custom_loss_6(
     # print('Sharpe:', sharpe)
     # print('CVaR:', cvar)
     # print('RP:', risk_parity)
-    return sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
+    return sharpe + (cvar_lambda * cvar) + (risk_p_lambda * risk_parity)
 
 # @LossLibrary.register(category='custom')
 def custom_loss_7(

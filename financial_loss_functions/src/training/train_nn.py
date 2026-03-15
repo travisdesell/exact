@@ -702,7 +702,6 @@ class CandidatesGrid:
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
-        self.torch_device = None
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')

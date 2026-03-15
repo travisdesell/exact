@@ -2,7 +2,7 @@
     "seed_list": [50, 42, 67, 313, 3],
 
     "tuner": {
-        "n_tuning_trials": 20,
+        "n_tuning_trials": 50,
         "n_jobs": 1
     },
     "rolling_windows": {
@@ -62,7 +62,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -188,7 +188,7 @@
             "tuning": {
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
-                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8, 16]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
@@ -196,7 +196,6 @@
         },
         "DeformTime": {
             "model": {
-                "seq_len": 120,
                 "e_layers": 2,
                 "d_layers": 2,
                 "d_model": 16,
@@ -224,7 +223,18 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-6
-            }
+            },
+            "tuning": {
+            "e_layers": {"type": "categorical", "choices": [1, 2, 3]},
+            "d_model": {"type": "categorical", "choices": [16, 32, 64, 128]},
+            "nheads": {"type": "categorical", "choices": [2, 4, 8]},
+            "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+            "kernel_size": {"type": "categorical", "choices": [3, 5, 7, 9]},
+            "patch_len": {"type": "categorical", "choices": [4, 6, 8, 12, 16]},
+            "stride": {"type": "categorical", "choices": [4, 8, 16]},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+            "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+        }
         },
         "BiAttentionLSTM": {
             "model": {
@@ -279,21 +289,36 @@
             "lambda1": 10
         },
         "custom_loss_6" : {
-            "lambda1": 0.01,
-            "lambda2": 0.1
+            "lambdas": {
+                "cvar_lambda": 0.01,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         },
         "custom_loss_7" : {
             "lambda1": 0.01,
             "lambda2": 0.1
         },
         "custom_loss_8" : {
-            "log_ret_lambda": 0.01,
-            "cvar_lambda": 0.1,
-            "risk_p_lambda": 0.1
+            "lambdas": {
+                "log_ret_lambda": 0.01,
+                "cvar_lambda": 0.1,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "log_ret_lambda" :{"type": "categorical", "choices": [0.001, 0.01, 0.1]},
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         },
         "custom_loss_9" : {
-            "lambda1": 0.01,
-            "lambda2": 0.1
+            "lambdas": {
+                "lambda1": 0.01,
+                "lambda2": 0.1
+            } 
         },
         "custom_loss_10" : {
             "lambdas": {
@@ -306,8 +331,14 @@
             }
         },
         "custom_loss_11" : {
-            "cvar_lambda": 0.01,
-            "risk_p_lambda": 0.1
+            "lambdas": {
+                "cvar_lambda": 0.01,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         }
     },
     "trad_models": {
