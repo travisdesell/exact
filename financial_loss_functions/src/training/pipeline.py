@@ -366,7 +366,7 @@ def run_wfv_pipeline(
     if os.path.exists(opti_hparams_path):
         optimized_hparams = load_json(opti_hparams_path)
     else:
-        raise UserWarning('Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+        print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
 
     # Filter models that beat Equal Weight Portfolio
     all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])

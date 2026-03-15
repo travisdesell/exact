@@ -8,8 +8,8 @@ import optuna
 import psutil
 import numpy as np
 from torch import Tensor
+from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-from typing import Callable, Type, Any, Optional
 from src.utils.formatting import reformat_hparams
 from src.data_processing.dataset import WindowDataset
 from src.utils.device import set_seed, get_best_device
@@ -30,7 +30,6 @@ class Trainer:
     def __init__(
         self, 
         model,  # Model class, not instance
-        optimizer: torch.optim.Optimizer,
         loss: Callable,
         model_hparams: dict[str, Any],      # Specific to model architecture
         optimizer_hparams: dict[str, Any],  # Specific to optimizer
@@ -43,26 +42,27 @@ class Trainer:
         loss_hparams: dict[str, Any] | None = None
     ):
         """
-        Initialize Trainer instance to train given model.
+        Initialize Trainer instance to any given PyTorch model.
 
-        @param model torch.nn.Module
-            Pytorch neural network class to be trained and evaluated
-        @param optimizer torch.optim
-            Pytorch optimization class to be used to loss optimization
-        @param loss Callable
-            Custom loss function
-        @param model_hparams dict
-            Dictionary containing hyperparameters required for model initialization
-        @param optimizer_hparams dict
-            Dictionary containing hyperparameters required for optimizer initialization
-        @param train_hparams Dict
-            Dictionary containing hyperparameters required for training
-        @param loss_hparams dict | None
-            Dictionary containing hyperparameters for loss functions. Default = None
-        @param in_size int
-            Size of input window
-        @param num_stocks int
-            Number of stocks, i.e, number of output nodes 
+        Args:
+            model (torch.nn.Module): Pytorch neural network class to be trained and evaluated.
+            loss (Callable): Custom loss function.
+            model_hparams (dict): Hyperparameters for model initialization.
+            optimizer_hparams (dict): Hyperparameters for optimizer initialization.
+            train_hparams (dict): Hyperparameters for training.
+            loss_hparams (dict | None): Hyperparameters for loss functions. 
+                Default = None.
+            in_size (int): Size of input window.
+            num_stocks (int): Number of stocks in the dataset (i.e., number of output nodes).
+            max_seq_len (int): Length of input window.
+            device (torch.device | str): GPU or CPU device to run the PyTorch model on.
+            scheduler_hparams (dict[str, Any] | None): Hyperparamaters for LR Scheduler (ReduceLROnPlateau).
+                Default = None.
+            loss_hparams (dict[str, Any] | None): Hyperparameters for the loss function (i.e., lambdas).
+                Default = None
+        
+        Raises:
+            ValueError: Incorrect torch device provided.
         """
 
         if isinstance(device, torch.device) :
@@ -87,29 +87,13 @@ class Trainer:
             max_seq_len = max_seq_len,
             **model_hparams  # Unpack all model-specific hyperparams
         ).to(self.device)
-        
-        # Initialize optimizer with its specific hyperparameters
-        self.optimizer = optimizer(
-            self.model.parameters(),
-            **optimizer_hparams
-        )
-
-        if scheduler_hparams:
-            # 2. Initialize Scheduler
-            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                self.optimizer, 
-                mode='min',       # We want to minimize loss
-                **scheduler_hparams
-            )
-
-            self.lr_schedule = True
-        else:
-            self.lr_schedule = False
 
         self.loss = loss
 
+        self.optimizer_hparams = optimizer_hparams
         self.train_hparams = train_hparams
         self.loss_hparams = loss_hparams or {}
+        self.scheduler_hparams = scheduler_hparams
         
         self.train_losses = [] # Stores average losses, for plotting
         self.val_losses = [] # Stores average losses, for plotting
@@ -143,14 +127,58 @@ class Trainer:
         port_returns = (weights.unsqueeze(1) * returns).sum(dim=-1) 
         return port_returns
 
+    def _init_optimizer(self) -> torch.optim.Optimizer:
+        """
+        Initialize optimizer with its specific hyperparameters.
+        Optimizer used here is AdamW: Adam optimizer with decoupled weight decay.
+        
+        Returns:
+            optimizer (torch.optim.Optimizer): Optimizer object for AdamW
+        """
+        optimizer = torch.optim.AdamW(
+            self.model.parameters(),
+            **self.optimizer_hparams
+        )
+        return optimizer
+
+    def _init_scheduler(
+            self, optimizer: torch.optim.Optimizer
+        ) -> torch.optim.lr_scheduler.ReduceLROnPlateau | None:
+        """
+        Initialize LR Scheduler if scheduler hyperparameters are provided.
+        LR Scheduler used here is ReduceLROnPlateau.
+
+        Args:
+            optimizer (torch.optim.Optimizer): Optimizer object.
+        
+        Returns:
+            scheduler (torch.optim.lr_scheduler.ReduceLROnPlateau | None):
+                LR Scheduler object.
+        """
+        if self.scheduler_hparams:
+            # 2. Initialize Scheduler
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, 
+                mode='min',       # We want to minimize loss
+                **self.scheduler_hparams
+            )
+        else:
+            scheduler = None
+        
+        return scheduler
+
     def train(
-            self, train_ds: WindowDataset, val_ds: Optional[WindowDataset] = None
+            self, train_ds: WindowDataset, val_ds: WindowDataset | None = None
         ):
         """
-        Train inistalized model using a train data split.
+        Train initialized model using the train data split.
+        Validate during training if validation data is provided.
 
-        @param train_ds WindowDataset
-            Training data split converted to windowed dataset tensors
+        Args:
+            train_ds (WindowDataset): Training data split converted to windowed dataset tensors.
+            val_ds (WindowDataset | None): Validation data split for validation during training, 
+                converted to windowed dataset tensors. 
+                If None, validation will not be done during training. Default = None.
         """
         start_time = time.time()
 
@@ -160,8 +188,11 @@ class Trainer:
         patience = self.train_hparams.get('early_stop_patience', 20)
         min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
         early_stopping = self.train_hparams.get('early_stopping', True)
-
         clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
+
+        # Initialize optimizer and scheduler
+        optimizer = self._init_optimizer()
+        scheduler = self._init_scheduler(optimizer)
         
         train_loader = DataLoader(
             train_ds,
@@ -189,10 +220,10 @@ class Trainer:
                     **self.loss_hparams
                 )
 
-                self.optimizer.zero_grad()
+                optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=clip_grad_norm)
-                self.optimizer.step()
+                optimizer.step()
 
                 batch_size = xb.size(0)
 
@@ -211,8 +242,8 @@ class Trainer:
 
                 # --- STEP THE SCHEDULER HERE ---
                 # It takes the current validation loss to decide if it should drop the LR
-                if self.lr_schedule:
-                    self.scheduler.step(avg_val_loss)
+                if scheduler is not None:
+                    scheduler.step(avg_val_loss)
                 
                 # Only allow state-saving after warmup to avoid "Lucky Epoch 0"
                 # 1. Initialize baseline if it's the very first validation
@@ -262,9 +293,15 @@ class Trainer:
         time_taken = round(end_time - start_time, 3)
         print(f'Best Train Loss: {self.best_train_loss:.4f}, Time Taken: {time_taken}s')
 
-    def validate(self, val_ds: WindowDataset):
+    def validate(self, val_ds: WindowDataset) -> float:
         """
-        Validation method to run on each training epoch
+        Validation method to run during each training epoch.
+        
+        Args:
+            val_ds (WindowDataset): Validation data split for validation during training.
+        
+        Returns:
+            avg_val_loss (float): Average validation loss over a batch
         """
         val_loader = DataLoader(
             val_ds,
@@ -301,13 +338,15 @@ class Trainer:
         
         return avg_val_loss
 
-
     def evaluate(self, split_ds: WindowDataset):
         """
-        Evaluate the trained model using a validation data split.
+        Evaluate the trained model using a split, can be validation or test split.
+        This method must not be used during training because we move portfolio 
+        allocation weights to the CPU.
         
-        @param val_ds WindowDataset
-            Validation data split converted to windowed dataset tensors
+        Args:
+            split_ds (WindowDataset): Validation or test data split converted to 
+                windowed dataset tensors.
         """
         start_time = time.time()
         eval_loader = DataLoader(
@@ -357,9 +396,11 @@ class Trainer:
 
     def get_eval_alloc_weights(self) -> np.ndarray:
         """
-        Getter for allocation weights as numpy array
+        Getter for allocation weights for every output window as numpy array.
         
-        @return np.ndarray Portfolio allocation weights for each validation window
+        Returns:
+            (np.ndarray | None): Portfolio allocation weights for each validation window.
+                None if model has not been used to evaluate using `Trainer.evaluate()`.
         """
         if self.eval_alloc_weights:
             wt_array = []
@@ -597,7 +638,6 @@ class Tuner:
 
                 trainer = Trainer(
                     model=model_class,
-                    optimizer=torch.optim.AdamW,
                     loss=loss_func,
                     model_hparams=m_hparams,
                     optimizer_hparams=o_hparams,
@@ -813,7 +853,6 @@ class CandidatesGrid:
         # --- 3. Final Training with the Captured Params ---
         final_trainer = Trainer(
             model=model_class,
-            optimizer=torch.optim.AdamW,
             loss=loss_func,
             model_hparams=best_config['model'],
             optimizer_hparams=best_config['optimizer'],
@@ -864,7 +903,7 @@ class CandidatesGrid:
                 trainer_count += 1
         
         if trainer_count > 0:
-            print(f"  WARNING: {trainer_count} Trainer instances still in memory!")
+            print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
 
     def _trained_check(self):
         """
