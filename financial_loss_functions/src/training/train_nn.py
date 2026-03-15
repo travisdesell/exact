@@ -747,7 +747,6 @@ class CandidatesGrid:
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
 
-        ####### Optimized Hyper, needs fix for MPI #######
         self.optimized_hparams = {} # Will be filled if tuned
     
     def required_reshapes(self, train_data, returns_train, val_data, returns_val):
@@ -766,7 +765,7 @@ class CandidatesGrid:
         X_train_shape: torch.Size,
         y_train_shape: torch.Size,
         y_val: np.ndarray | None = None
-    ) -> tuple[np.ndarray, dict[str, list]]:
+    ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         # Extract base configs
         model_cfg = self.hparams_config[self.models_hparams][model_name]
         loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name, {})
@@ -808,7 +807,9 @@ class CandidatesGrid:
             set_seed(self.seed_list[0])
         
         if self.tune:
-            self.optimized_hparams[f'{model_name}-{loss_name}'] = best_config
+            optimized_hparams = best_config
+        else:
+            optimized_hparams = None
         
         # --- 3. Final Training with the Captured Params ---
         final_trainer = Trainer(
@@ -844,7 +845,7 @@ class CandidatesGrid:
             print(f'\n[After training {model_name} with {loss_name}]')
             self._memory_diagnostics()
 
-        return alloc_weights, train_val_losses
+        return alloc_weights, train_val_losses, optimized_hparams
     
     def _memory_diagnostics(self):
         """Print memory usage diagnostics"""
@@ -942,7 +943,7 @@ class CandidatesGrid:
                     )
                     try: 
                         
-                        alloc_weights, train_val_losses = self._train_eval_helper(
+                        alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                             model_name,
                             model_class, 
                             loss_name,
@@ -955,6 +956,7 @@ class CandidatesGrid:
                         )
                         self.all_alloc_weights[loss_name][model_name] = alloc_weights
                         self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                        self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
                     except Exception as error:
                         print(
@@ -1025,10 +1027,11 @@ class CandidatesGrid:
         # Local results dictionary
         local_alloc_weights = {}
         local_train_val_losses = {}
+        local_optimized_hparams = {}
         for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
             print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
             try:
-                alloc_weights, train_val_losses = self._train_eval_helper(
+                alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                     model_name,
                     model_class,
                     loss_name,
@@ -1045,6 +1048,7 @@ class CandidatesGrid:
                 
                 local_alloc_weights[loss_name][model_name] = alloc_weights
                 local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
             
             except Exception as e:
                 print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
@@ -1052,6 +1056,7 @@ class CandidatesGrid:
         
         temps_wts_prefix = 'temp_alloc_wts'
         temp_losses_prefix = 'temp_losses'
+        temp_hparams_prefix = 'temp_hparams'
         
         # Save local results to a rank‑specific file
         save_pickle_temp(
@@ -1061,6 +1066,10 @@ class CandidatesGrid:
         save_pickle_temp(
             local_train_val_losses,
             self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
+        )
+        save_pickle_temp(
+            local_optimized_hparams,
+            self.temp_dir / f'{temp_hparams_prefix}_{global_rank}.pkl'
         )
         
         # Wait for all ranks to finish
@@ -1086,6 +1095,13 @@ class CandidatesGrid:
                 # Merge into self.train_val_losses
                 for model_loss, losses_dict in rank_losses.items():
                     self.train_val_losses[model_loss] = losses_dict
+                
+                rank_hparams = load_pickle_temp(
+                    self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
+                )
+                # Merge into self.optimized_hparams
+                for model_loss, hparms_dict, in rank_hparams.items():
+                    self.optimized_hparams[model_loss] = hparms_dict
         else:
             return None
                 
@@ -1135,7 +1151,7 @@ class CandidatesGrid:
                 '-'*10
             )
             try:        
-                alloc_weights, train_val_losses = self._train_eval_helper(
+                alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                     model_name,
                     model_class, 
                     loss_name,
@@ -1148,6 +1164,7 @@ class CandidatesGrid:
                 )
                 self.all_alloc_weights[loss_name][model_name] = alloc_weights
                 self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
             except Exception as error:
                 print(
@@ -1214,7 +1231,7 @@ class CandidatesGrid:
                 )
                 try: 
                     
-                    alloc_weights, train_val_losses = self._train_eval_helper(
+                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -1227,6 +1244,7 @@ class CandidatesGrid:
                     )
                     self.all_alloc_weights[loss_name][model_name] = alloc_weights
                     self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
                 except Exception as error:
                     print(
@@ -1267,7 +1285,7 @@ class CandidatesGrid:
 
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-            alloc_weights, train_val_losses = self._train_eval_helper(
+            alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                 model_name,
                 model_class, 
                 loss_name,
@@ -1280,6 +1298,7 @@ class CandidatesGrid:
             )
             self.all_alloc_weights[loss_name][model_name] = alloc_weights
             self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+            self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
         except Exception as e:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
