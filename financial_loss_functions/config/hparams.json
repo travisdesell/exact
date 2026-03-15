@@ -270,7 +270,49 @@
                 "patience": 10,
                 "min_lr": 1e-6
             }
+        },
+        "CrossFormer": {
+            "model": {
+                "hidden_size": 64,
+                "num_layers": 3,
+                "nheads": 8,
+                "dropout": 0.2,
+                "expansion_factor": 4,
+                "seg_len": 6,
+                "win_size": 2,
+                "factor": 10,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-3
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 500,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-8
+            },
+            "tuning": {
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64]},
+                "num_layers": {"type": "categorical", "choices": [2, 3, 4]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.4},
+                "seg_len": {"type": "categorical", "choices": [4, 6, 8, 12]},
+                "win_size": {"type": "categorical", "choices": [2, 4]},
+                "factor": {"type": "categorical", "choices": [5, 10, 20]}
+            }
         }
+
     },
     "losses": {
         "custom_loss_1" : {

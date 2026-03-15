@@ -195,25 +195,6 @@ def run_tuning_pipeline(
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val, MetricLibrary.items())
 
-    # -------------------- Training Tradional Models -------------------- #
-    # max_workers = os.cpu_count() - 1
-    # trad_grid = TradModelsTrainer(
-    #     TradModelLibrary.items(),
-    #     hparams_config,
-    #     max_workers
-    # )
-    # trad_alloc_weights = trad_grid.train_all(
-    #     in_wind_idxs,
-    #     out_wind_idxs,
-    #     returns_train,
-    #     returns_val
-    # )
-
-    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    # del trad_grid
-
     # -------------------- Training Neural Network Models -------------------- #
     # Building hyperparameter tuning metric
     # System designed to take only linear formulas using + or -
@@ -306,7 +287,6 @@ def run_tuning_pipeline(
             artifacts_paths['plots_dir'] / (loss_plot_name + '.png')
         )
 
-    # -------------------- Evaluation on Out-of-Sample data -------------------- #
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for loss_name, models_dict in nn_alloc_weights.items():
@@ -314,8 +294,27 @@ def run_tuning_pipeline(
             evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
     
     del candidates_grid
+
+    # -------------------- Training Tradional Models -------------------- #
+    # max_workers = os.cpu_count() - 1
+    # trad_grid = TradModelsTrainer(
+    #     TradModelLibrary.items(),
+    #     hparams_config,
+    #     max_workers
+    # )
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
+
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    # Overall Evaluation/Comparison starts here
+    # del trad_grid
+    
+    # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
     # Extract dates index columns for the rrespective output windows
     in_win_date_cols, out_win_date_cols = extract_oos_dates(
