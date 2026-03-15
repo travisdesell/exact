@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import pandas as pd
 from pathlib import Path
@@ -246,6 +247,11 @@ def run_tuning_pipeline(
                 X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
             )
 
+            # Stop all non zero ranks
+            if global_rank != 0:
+                print(f'Rank {global_rank}: Work complete. Shutting down.')
+                sys.exit(0) # This stops the process for this rank only
+
         else:
             nn_alloc_weights = candidates_grid.train_eval_grid(
                 X_train, y_train, X_val, y_val, None, None, None, None
@@ -275,6 +281,9 @@ def run_tuning_pipeline(
     
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
+    
+    if mpi and nn_alloc_weights is None:
+        print('!!Rank 0 got empty allocation weights. Needs debug!!')
     
     if tune:
         opti_file_name = artifacts_paths['hparams_dir'] \
