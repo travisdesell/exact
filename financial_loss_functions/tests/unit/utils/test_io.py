@@ -12,7 +12,7 @@ from src.utils.io import (
     save_to_csv,
     reset_data_stage,
     load_path_config, 
-    load_config   
+    load_json   
 )
 
 from src.utils.formatting import extract_req_cols
@@ -227,7 +227,7 @@ def test_load_config_reads_json(tmp_path):
     cfg_path = tmp_path / "some" / "config.json"
     write_json(cfg_path, cfg)
 
-    loaded = load_config(str(cfg_path))
+    loaded = load_json(str(cfg_path))
     assert isinstance(loaded, dict)
     assert loaded["hello"] == "world"
     assert loaded["n"] == 123

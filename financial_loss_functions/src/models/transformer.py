@@ -3,78 +3,112 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
+from src.models.layers.encoders import LSTMEncoder, GlobalAttentionProcessor
 from src.models.layers.TFT_vsn import (
     VariableSelectionNetwork,
     GatedResidualNetwork
 )
 
+class LearnableTemporalWeight(nn.Module):
+    def __init__(self, max_seq_len):
+        super().__init__()
+        # 120 learnable weights, one for each day
+        self.day_weights = nn.Parameter(torch.ones(max_seq_len))
+
+    def forward(self, x):
+        # x: (B, T, H)
+        # Apply weights to the T dimension
+        w = torch.softmax(self.day_weights[:x.size(1)], dim=0)
+        return torch.sum(x * w.view(1, -1, 1), dim=1)
 
 @NNModelLibrary.register(category='transformer')
 class TemporalTransformer(nn.Module):
     """
-    SOTA-style Transformer for Portfolio Optimization.
-    Replaces LSTM with Learned Positional Encodings and Transformer Blocks.
+    Hybrid Model: LSTM for local temporal features + Transformer for global attention.
     """
     def __init__(
         self,
-        input_size: int,    # Number of features (251)
-        hidden_size: int,   # d_model
-        num_layers: int,    # Number of Transformer blocks
-        num_stocks: int,    # Output size
-        attention_heads: int,
+        input_size: int,       # 251 features
+        hidden_size: int,      # Embedding dimension
+        lstm_layers: int,       # LSTM layers
+        trans_layers: int,      # Transformer layers
+        num_stocks: int,       # 50 stocks
+        nheads: int,
         dropout: float,
         expansion_factor: int,
-        max_seq_len: int # Length of your lookback window
+        max_seq_len: int,
+        equal_prior: bool,
+        **kwargs
     ):
         super().__init__()
         
-        # 1. Feature Projection: Projects 251 features to hidden_size
-        self.feature_projection = nn.Linear(input_size, hidden_size)
+        # 1. Feature Projection (Initial step to clean up features), kind of denoising
+        self.feature_proj = nn.Linear(input_size, hidden_size)
         
-        # 2. Learned Positional Encoding
-        # Financial data is sequential; the model needs to know 'when' a bar happened
-        self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
+        self.lstm_encoder = LSTMEncoder(hidden_size, lstm_layers, dropout)
         
-        # 3. Transformer Encoder Blocks
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_size,
-            nhead=attention_heads,
-            dim_feedforward=hidden_size * expansion_factor,
-            dropout=dropout,
-            batch_first=True,
-            activation='gelu' # GELU is standard for SOTA Transformers
+        self.glob_attn = GlobalAttentionProcessor(
+            hidden_size, trans_layers, nheads, expansion_factor, max_seq_len, dropout
         )
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        
-        # 4. Global LayerNorm
-        self.ln_final = nn.LayerNorm(hidden_size)
-        
-        # 5. Output Head
+
+        # self.temporal_pooler = LearnableTemporalWeight(max_seq_len)
+        # self.attn_pooler = AttentionPooling(hidden_size)
+
+        # Output Head
+        # self.ln_final = nn.LayerNorm(hidden_size)
+        # self.alpha = nn.Parameter(torch.ones(hidden_size))
+
+        self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
-        
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
+
     def forward(self, x: Tensor) -> Tensor:
-        # x shape: (Batch, Time, Features)
+        # x: (B, T, 251)
         
-        # Project features to embedding space
-        x = self.feature_projection(x) # (B, T, H)
+        # Initial Projection
+        x = self.feature_proj(x)
         
-        # Add Positional Encoding
-        x = x + self.pos_embedding[:, :x.size(1), :]
+        # Step 1: LSTM local processing
+        # This helps the Transformer 'see' the sequence as a flow
+        x = self.lstm_encoder(x)
         
-        # Pass through Transformer Blocks
-        # Self-attention allows every day in the window to look at every other day
-        out = self.transformer_encoder(x) # (B, T, H)
+        # Step 2: Transformer Global Attention
+        # Every day now looks at every other day through the lens of the LSTM output
+        x = self.glob_attn(x)
         
-        # Mean pooling to average context of the whole window
-        # context = out[:, -1, :] # # Pooling: The last time step's representation makes model sensitive to last day
-        context = out.mean(dim=1)
-        context = self.ln_final(context)
+        # x = lstm_x + trans_x
+        # Step 3: Pooling
+        # Mean pooling the context of the whole 120-day window
+        context = x.mean(dim=1)
+
+        # context = self.ln_final(context)
+
+        # STep 4: Scaling
+        # context = context * self.alpha # Scale it without centering or standardizing
+        context = self.dropout(context)
         
-        # Generate Portfolio Logits
-        logits = self.fc(context) # (B, N)
-        
-        # Softmax to ensure weights sum to 1
+        # Step 5: Portfolio Allocation
+        logits = self.fc(context)  # (B, N)
         return torch.softmax(logits, dim=-1)
+
+    def _recency_pooling(self, x: Tensor) -> Tensor:
+        # x shape: (B, T, H)
+        T = x.size(1)
+        # Create weights that increase linearly: [1, 2, 3, ... 120]
+        weights = torch.linspace(0.5, 1.0, steps=T).to(x.device)
+        weights = weights.view(1, T, 1) # Match dimensions
+        
+        # Weighted average
+        return (x * weights).mean(dim=1)
 
 
 @NNModelLibrary.register(category='transformer')
@@ -85,10 +119,12 @@ class TFT(nn.Module):
             hidden_size: int,
             num_layers: int,
             num_stocks: int,
-            attention_heads: int,
+            nheads: int,
             dropout: float,
             expansion_factor: int,
-            max_seq_len: int
+            max_seq_len: int,
+            equal_prior: bool,
+            **kwargs
         ):
         super().__init__()
         
@@ -102,7 +138,7 @@ class TFT(nn.Module):
         # 3. Temporal Self-Attention
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=hidden_size,
-            nhead=attention_heads,
+            nhead=nheads,
             dim_feedforward=hidden_size * expansion_factor,
             dropout=dropout,
             batch_first=True,
@@ -113,6 +149,15 @@ class TFT(nn.Module):
         # 4. Final Gating & Output
         self.post_attention_grn = GatedResidualNetwork(hidden_size, hidden_size, hidden_size, dropout)
         self.fc = nn.Linear(hidden_size, num_stocks)
+
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
         # x: (B, T, 251)

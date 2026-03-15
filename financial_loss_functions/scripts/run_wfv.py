@@ -1,9 +1,8 @@
 import os
 import sys
 import signal
-import argparse
-from src.utils.io import load_path_config, load_config
-from src.training.pipeline import run_training_pipeline
+from src.utils.io import load_path_config, load_json
+from src.training.pipeline import run_wfv_pipeline
 
 _interrupted = False
 
@@ -73,63 +72,12 @@ signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 if __name__ == '__main__':
     # load_dotenv()
     try:
-        parser = argparse.ArgumentParser(description='Training Grid Configuration Script')
-
-        # Grid mode with a default
-        parser.add_argument(
-            '-gm',
-            '--grid_mode', 
-            choices=['all', 'one_model', 'one_loss'], 
-            default='all',
-            help='Choose the grid search mode (default: all)'
-        )
-
-        # Dependent arguments
-        parser.add_argument(
-            '-lm',
-            '--loss_mode', 
-            choices=['all', 'custom'],
-            default='all',
-            help="Required if grid_mode is 'all' or 'one_model'"
-        )
-
-        parser.add_argument(
-            '-m',
-            '--model',
-            help="Model name required if grid_mode is 'one_model'"
-        )
-        
-        parser.add_argument(
-            '-l',
-            '--loss', 
-            help="Loss name required if grid_mode is 'one_loss'"
-        )
-
-        args = parser.parse_args()
-
-        # # Rule 1: If grid_mode is 'one_model', model MUST be provided
-        if args.grid_mode in ['all', 'one_model']:
-            if args.grid_mode == 'one_model':
-                if not args.model:
-                    parser.error("--model is required when --grid_mode is 'one_model'")
-        
-        # Rule 2: If grid_mode is 'one_loss', loss MUST be provided
-        elif args.grid_mode == 'one_loss':
-            if not args.loss:
-                parser.error("--loss is required when --grid_mode is 'one_loss'")
-
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
-        hparams_config = load_config(os.path.join('config', 'hparams.json'))
-        features_config = load_config(os.path.join('config', 'features.json'))
+        hparams_config = load_json(os.path.join('config', 'hparams.json'))
 
-        run_training_pipeline(
+        run_wfv_pipeline(
             paths_config,
-            hparams_config, 
-            features_config,
-            grid_mode = args.grid_mode, 
-            loss_mode = args.loss_mode, 
-            model_name = args.model,
-            loss_name = args.loss
+            hparams_config
         )
 
     except SystemExit:

@@ -2,12 +2,8 @@ import os
 import sys
 import signal
 import argparse
-from src.utils.io import load_path_config, load_config
-
-# @author: Atharva Vaidya - This fallback helps in allowing unsupported MPS ops to run through CPU when DeformTime triggers them.
-os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
-
-from src.training.pipeline import run_training_one_model
+from src.utils.io import load_path_config, load_json
+from src.training.pipeline import run_tuning_pipeline
 
 _interrupted = False
 
@@ -77,47 +73,72 @@ signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 if __name__ == '__main__':
     # load_dotenv()
     try:
-        parser = argparse.ArgumentParser(description='Training 1 Model + 1 Loss Configuration Script')
+        parser = argparse.ArgumentParser(description='Training Grid Configuration Script')
+
+        # Grid mode with a default
+        parser.add_argument(
+            '-gm',
+            '--grid_mode', 
+            choices=['all', 'one_model', 'one_loss', 'one'], 
+            default='all',
+            help='Choose the grid search mode (default: all)'
+        )
+
+        # Dependent arguments
+        parser.add_argument(
+            '-lm',
+            '--loss_mode', 
+            choices=['all', 'custom'],
+            default='custom',
+            help="Required if grid_mode is 'all' or 'one_model'"
+        )
 
         parser.add_argument(
             '-m',
             '--model',
-            help='Model name is required. See README in src/training.'
-        )
-        parser.add_argument(
-            '-mc',
-            '--model_cat',
-            help='Model category is required. See README in src/training.'
+            help="Model name required if grid_mode is 'one_model' or 'one'"
         )
         
         parser.add_argument(
             '-l',
             '--loss', 
-            help="Loss name is required. See README.md in src/training."
+            help="Loss name required if grid_mode is 'one_loss' or 'one'"
         )
 
-        parser.add_argument(
-            '-lc',
-            '--loss_cat',
-            choices=['objectives', 'custom'],
-            help="Loss category must be 'objectives' or 'custom'. See README in src/training."
-        )
+        parser.add_argument('-t', '--tune', action='store_true', help='Hyperparameter tune')
+        parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')
 
         args = parser.parse_args()
 
+        # # Rule 1: If grid_mode is 'one_model', model MUST be provided
+        if args.grid_mode in ['all', 'one_model']:
+            if args.grid_mode == 'one_model':
+                if not args.model:
+                    parser.error("--model is required when --grid_mode is 'one_model'")
+        
+        # Rule 2: If grid_mode is 'one_loss', loss MUST be provided
+        elif args.grid_mode == 'one_loss':
+            if not args.loss:
+                parser.error("--loss is required when --grid_mode is 'one_loss'")
+        
+        elif args.grid_mode == 'one':
+            if not args.loss or not args.model:
+                parser.error("--loss and --model is required when --grid_mode is 'one'")
+
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
+        hparams_config = load_json(os.path.join('config', 'hparams.json'))
+        features_config = load_json(os.path.join('config', 'features.json'))
 
-        hparams_config = load_config(os.path.join('config', 'hparams.json'))
-        features_config = load_config(os.path.join('config', 'features.json'))
-
-        run_training_one_model(
+        run_tuning_pipeline(
             paths_config,
             hparams_config, 
             features_config,
+            grid_mode = args.grid_mode, 
+            loss_mode = args.loss_mode, 
             model_name = args.model,
-            model_cat=args.model_cat,
             loss_name = args.loss,
-            loss_cat=args.loss_cat
+            tune = args.tune,
+            mpi = args.mpi
         )
 
     except SystemExit:

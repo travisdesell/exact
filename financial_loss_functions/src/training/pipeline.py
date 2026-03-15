@@ -1,47 +1,42 @@
+import os
+import sys
 import time
-import torch
-import numpy as np
 import pandas as pd
-from torch import optim
 from pathlib import Path
-from src.utils.io import create_directory
-from src.evaluation.evaluator import Evaluator
+from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files
-from src.utils.device import get_best_device, set_seed, deformtime_device
+from src.visualization.plots import train_val_losses_plot
+from src.training.train_nn import CandidatesGrid, MetricModel
+from src.utils.io import create_directory, save_to_csv, save_to_json, load_json
+from src.evaluation.evaluator import (
+    Evaluator, EqualWeightCalculator, filter_models
+)
 from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
-    WindowDataset,
     extract_oos_dates,
     extract_sp500_winds
 )
-from src.visualization.plots import (
-    train_val_losses_plot, 
-    plot_windowed_comparison,
-    plot_models_comparison
-)
-from src.training.train import (
-    CandidatesGrid,
-    TradModelsTrainer,
-    Trainer
-)
+
+from mpi4py import MPI
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
+from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Add other NN models
-# Add Best model ranker
 # Unit test NCO
 
-def _common_setup(paths_config, seed_value: int):
-    set_seed(seed_value) # Global seed for reproducibility
-    # Create plots directory if it doesnt exist
-    plots_dir = (Path(paths_config['artifacts']['plots']))
-    create_directory(plots_dir)
-    results_dir = Path(paths_config['artifacts']['results'])
-    
+def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
+    # set_seed(seed_value) # Global seed for reproducibility
+    # Create all artifact directorie if they doen't exist
+    artifacts_paths = {}
+    for name, path in paths_config['artifacts'].items():
+        dir_path = Path(path)
+        create_directory(dir_path)
+        artifacts_paths[name] = dir_path
+
     models_module = paths_config['models_module']
 
     # Registering all Traditional models to the library
@@ -49,10 +44,8 @@ def _common_setup(paths_config, seed_value: int):
     # Registering all NN models to the library
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
-
-    best_device = get_best_device()
     
-    return plots_dir, results_dir, best_device
+    return artifacts_paths
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -143,36 +136,49 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
     for metric, df in kwargs.items():
         # Cleaning up the metric name
         title = metric.replace('_', ' ').upper()
-        print(f'\n{title} summary for each window:\n', df)
+        print(f'\n{title.upper()}:\n', df)
 
-def run_training_pipeline(
-        paths_config: dict,
-        hparams_config: dict,
-        features_config: dict, 
-        grid_mode: str = 'all', 
-        loss_mode: str = 'all',
-        model_name: str | None = None,
-        loss_name: str | None = None
-    ):
+def mpi_setup() -> tuple:
+    comm = MPI.COMM_WORLD
+    global_rank = comm.Get_rank()  # Unique ID across all 8 workers
+    world_size = comm.Get_size()   # Total number of workers (8)
+    
+    local_rank = int(os.environ.get('SLURM_LOCALID', 0))
+
+    return comm, global_rank, world_size, local_rank
+
+def run_tuning_pipeline(
+    paths_config: dict,
+    hparams_config: dict,
+    features_config: dict, 
+    grid_mode: str = 'all', 
+    loss_mode: str = 'custom',
+    model_name: str | None = None,
+    loss_name: str | None = None,
+    tune: bool = False,
+    mpi: bool = False
+):
     """
-    All models training pipeline entry point
+    Tune and train with best hyperparameters and compare against equal weight and S&P 500.
 
-    @param paths_config Dict Dictionary containing paths
-    @param features_config Dictionary containing hyperparameter information
-    @param grid_mode str `all`, `one_model` or `one_loss`
-    @param loss_mode str `all` or `custom`
-    @param model str Name of the model to be run
-    @param loss str Name of the loss function to be used
+    Args:
+        paths_config (dict): Dictionary containing paths
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
+        features_config (dict): Dictionary containing hyperparameter information
+        grid_mode (str): `all`, `one_model`, `one_loss` of `one`
+        loss_mode (str): `all` or `custom`, Default = `custom`
+        model (str): Name of the model to be run
+        loss (str): Name of the loss function to be used
     """
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, results_dir, best_device = _common_setup(
-        paths_config, hparams_config['seed']
-    )
+    artifacts_paths = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
+    train_data, returns_train, val_data, returns_val = _load_processed_data(
+        paths_config
+    )
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
     X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
@@ -187,45 +193,87 @@ def run_training_pipeline(
     # -------------------- Evaluator Setup -------------------- #
 
     # Initializing once to compare all models together
-    evaluator = Evaluator(y_val)
-
-    # -------------------- Training Tradional Models -------------------- #
-    trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
-
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    del trad_grid
+    evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Neural Network Models -------------------- #
+    # Building hyperparameter tuning metric
+    # System designed to take only linear formulas using + or -
+    # Must follow the MetricModel structure
+    if tune:
+        tune_metric = {
+            'sharpe': MetricModel(func=MetricLibrary.get('sharpe'), sign='+'),
+            # 'cvar': MetricModel(func=MetricLibrary.get('cvar'), sign='+'),
+            # # 'max_drawdown': MetricModel(func=MetricLibrary.get('max_drawdown'), sign='+'),
+            # 'omega': MetricModel(func=MetricLibrary.get('omega'), sign='+'),
+            # 'calmar': MetricModel(func=MetricLibrary.get('calmar'), sign='+')
+        }
+    else:
+        tune_metric = None
     
-    # Converting to pytorch tensors
-    train_ds = WindowDataset(X_train, y_train)
-    val_ds   = WindowDataset(X_val, y_val)
-
     candidates_grid = CandidatesGrid(
         model_lib = NNModelLibrary.items(),
         loss_lib = LossLibrary.items(),
         hparams_config = hparams_config,
-        torch_device=best_device,
-        loss_mode = loss_mode
+        loss_mode = loss_mode,
+        tune = tune,
+        tune_metric = tune_metric,
+        mpi = mpi,
+        temp_dir = artifacts_paths['temp_dir']
     )
     if grid_mode == 'all':
-        nn_alloc_weights = candidates_grid.train_eval_grid(train_ds, val_ds)
+
+        if mpi:
+            comm, global_rank, world_size, local_rank = mpi_setup()
+            nn_alloc_weights = candidates_grid.train_eval_grid(
+                X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
+            )
+
+            # Stop all non zero ranks
+            if global_rank != 0:
+                print(f'Rank {global_rank}: Work complete. Shutting down.')
+                sys.exit(0) # This stops the process for this rank only
+
+        else:
+            nn_alloc_weights = candidates_grid.train_eval_grid(
+                X_train, y_train, X_val, y_val, None, None, None, None
+            )
+        
+        results_sufix = 'ALL'
+    
     elif grid_mode == 'one_model' and model_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_model(
-            model_name, train_ds, val_ds
+            model_name, X_train, y_train, X_val, y_val
         )
+        results_sufix = model_name.upper()
+    
     elif grid_mode == 'one_loss' and loss_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one_loss(loss_name, train_ds, val_ds)
+        nn_alloc_weights = candidates_grid.train_eval_one_loss(
+            loss_name, X_train, y_train, X_val, y_val
+        )
+
+        results_sufix = loss_name.upper()
+
+    elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+        nn_alloc_weights = candidates_grid.train_eval_one(
+            model_name, loss_name, X_train, y_train, X_val, y_val
+        )
+
+        results_sufix = f'{model_name}-{loss_name}'
+    
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
+    
+    if mpi and nn_alloc_weights is None:
+        print('!!Rank 0 got empty allocation weights. Needs debug!!')
+    
+    if tune:
+        opti_file_name = artifacts_paths['hparams_dir'] \
+            / f'optimized_{results_sufix}.json'
+        optimized_hparams = candidates_grid.get_optimized_hparams()
+        save_to_json(
+            optimized_hparams,
+            opti_file_name
+        )
 
     # Plot training and validation loss curves
     nn_train_loss_curves = candidates_grid.get_train_val_losses()
@@ -236,10 +284,9 @@ def run_training_pipeline(
             model_loss_curves['val'],
             model_loss_curves['eval'],
             loss_plot_name,
-            plots_dir / (loss_plot_name + '.png')
+            artifacts_paths['plots_dir'] / (loss_plot_name + '.png')
         )
 
-    # -------------------- Evaluation on Out-of-Sample data -------------------- #
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for loss_name, models_dict in nn_alloc_weights.items():
@@ -247,9 +294,27 @@ def run_training_pipeline(
             evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
     
     del candidates_grid
+
+    # -------------------- Training Tradional Models -------------------- #
+    # max_workers = os.cpu_count() - 1
+    # trad_grid = TradModelsTrainer(
+    #     TradModelLibrary.items(),
+    #     hparams_config,
+    #     max_workers
+    # )
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
+
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    # Overall Evaluation/Comparison starts here
-    evaluator.calc_eq_wt_daily_rets()
+    # del trad_grid
+    
+    # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
     # Extract dates index columns for the rrespective output windows
     in_win_date_cols, out_win_date_cols = extract_oos_dates(
@@ -267,214 +332,63 @@ def run_training_pipeline(
         features_config['sp500_returns'],
         out_wind_idxs
     )
-
-    # Adding s&p500 returns to the evaluator as a benchmark
-    evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
     
-    # plot_windowed_comparison(
-    #     evaluator.get_all_daily_returns(),
-    #     out_win_date_cols,
-    #     plots_dir / (f'Daily Returns' + '.png')
-    # )
+    # Calculate Equal Weight Portfolio's weeights
+    eq_wt_calc = EqualWeightCalculator(y_val)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
-    total_returns = evaluator.calc_total_performance('returns')
-    total_sharpes = evaluator.calc_total_performance('sharpe')
-
-    plot_models_comparison(
-        total_sharpes,
-        'Out-of-Sample Sharpe Ratio Comparison',
-        plots_dir / f'Sharpe Comprison.png'
-    )
-
-    total_returns = total_returns.describe().T
-    total_returns.to_csv(results_dir / 'total_returns.csv', sep=',')
-    total_sharpes = total_sharpes.describe().T
-    total_sharpes.to_csv(results_dir / 'total_sharpes.csv', sep=',')
+    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
+    eq_wt_name = 'Equal_Weight'
+    sp500_name = 'S&P500'
+    evaluator.add_benchmark_rets(eq_wt_name, eq_wt_rets)
+    evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
+    
+    perf_file_name = artifacts_paths['avg_perf_dir'] \
+        / 'avg_perf_' + f'{results_sufix}.csv'
+    avg_perf_metrics = evaluator.calc_avg_performance()
+    save_to_csv(avg_perf_metrics, perf_file_name)
 
     _print_evaludation_info(
-            in_win_date_cols,
-            out_win_date_cols,
-            total_returns=total_returns,
-            total_sharpes=total_sharpes
-        )
+        in_win_date_cols,
+        out_win_date_cols,
+        avgerage_performance_metrics=avg_perf_metrics,
+    )
 
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
 
-def run_training_one_model(
-        paths_config: dict,
-        hparams_config: dict,
-        features_config: dict,
-        model_cat: str, 
-        model_name: str,
-        loss_name: str,
-        loss_cat: str
-    ):
+
+def run_wfv_pipeline(
+    paths_config: dict,
+    hparams_config: dict,
+): 
     """
-    Entry point to train one model with one loss function. 
-    Both have to be specified in arguments.
+    Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
     
-    @param paths_config Dict Dictionary containing paths
-    @param features_config Dictionary containing hyperparameter information
-    @param model str Name of the model to be run
-    @param loss str Name of the loss function to be used
+    Args:
+        paths_config (dict): Dictionary containing paths
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
     """
-    print('\n', '=' * 40, ' Training One Model with One Loss ', '=' * 40)
-    start_time = time.time()
 
-    if loss_cat not in ['objectives', 'custom']:
-        raise ValueError('Loss category must be `objectives` or `custom`.')
+    plots_dir, best_device = _common_setup(paths_config)
+
+    eq_wt_name = 'Equal_Weight'
+    sp500_name = 'S&P500'
     
-    plots_dir, results_dir, best_device = _common_setup(
-        paths_config, hparams_config['seed']
-    )
-    # @author: Atharva Vaidya - Apply the DeformTime-specific device workaround before trainer construction.
-    if model_name == 'DeformTime':
-        # Move DeformTime off MPS so unsupported backward operators do not stop training.
-        best_device = deformtime_device(best_device)
+    avg_perf_metrics = load_csv_files(
+        {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
+    )['avg_perf_metrics']
     
-    # -------------------- Model and loss search -------------------- #    
-    model_cls = NNModelLibrary.get(model_cat, model_name)
-    loss_func = LossLibrary.get(loss_cat, loss_name)
-
-    if model_cls and loss_func:
-        # -------------------- Loading Processed Data -------------------- #
-        train_data, returns_train, val_data, returns_val = _load_processed_data(paths_config)
-        
-        # -------------------- Preprocessing (Reshaping) -------------------- #
-        X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
-            train_data,
-            returns_train,
-            val_data,
-            returns_val,
-            hparams_config['rolling_windows'],
-            features_config['common_features']
-        )
-
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
-
-        # -------------------- Evaluator Setup -------------------- #
-        # Initializing once to compare all models together
-        evaluator = Evaluator(y_val)
-
-        # -------------------- Training Tradional Models -------------------- #
-        # trad_grid = TradModelsTrainer(TradModelLibrary.items(), hparams_config)
-        # trad_alloc_weights = trad_grid.train_all(
-        #     in_wind_idxs,
-        #     out_wind_idxs,
-        #     returns_train,
-        #     returns_val
-        # )
-
-        # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-        
-        # del trad_grid
-
-        # -------------------- Training Neural Network -------------------- #
-        print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-        try:
-            trainer = Trainer(
-                model=model_cls,
-                optimizer=optim.AdamW,
-                loss=loss_func,
-                model_hparams=hparams_config['nn_models'][model_name]['model'],
-                optimizer_hparams=hparams_config['nn_models'][model_name]['optimizer'],
-                train_hparams=hparams_config['nn_models'][model_name]['train'],
-                in_size=X_train.shape[2],
-                num_stocks=y_train.shape[2],
-                scheduler_hparams=hparams_config['nn_models'][model_name]['scheduler'],
-                loss_hparams=hparams_config['losses'].get(loss_name),
-                device=best_device
-            )
-
-            trainer.train(train_ds, val_ds)
-            trainer.evaluate(val_ds)
-
-            loss_plot_name = model_name + f'-{loss_name}' + ' Loss Curves'
-            
-            # Plot loss curves
-            train_val_losses_plot(
-                trainer.train_losses,
-                trainer.val_losses,
-                trainer.eval_losses,
-                loss_plot_name,
-                plots_dir / (loss_plot_name + '.png')
-            )
-
-            alloc_weights = trainer.get_eval_alloc_weights()
-
-            # Call on every models output allocation weights to calculate pf returns
-            evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}')
-        except KeyError as ke:
-            print('KeyError: Key not found.', ke)
-        except Exception as error:
-            print(f'DEBUG: Error while training {model_name}. Skipping.', error)
-        
-        # -------------------- Evaluation on Out-of-Sample data -------------------- #
-
-        # Overall Evaluation/Comparison
-        evaluator.calc_eq_wt_daily_rets()
-        
-        # Extract dates index columns for the rrespective output windows
-        in_win_date_cols, out_win_date_cols = extract_oos_dates(
-            val_data,
-            in_wind_idxs,
-            out_wind_idxs
-        )
-        
-        # Loading S&P 500 for benchmarking
-        sp500_rets = _load_sp500_rets(paths_config)
-
-        # Extract s&p500 returns column sliced for the respective output windows
-        sp500_rets_winds = extract_sp500_winds(
-            sp500_rets,
-            features_config['sp500_returns'],
-            out_wind_idxs
-        )
-
-        # Adding s&p500 returns to the evaluator as a benchmark
-        evaluator.add_benchmark_rets('S&P500', sp500_rets_winds)
-
-        # plot_windowed_comparison(
-        #     evaluator.get_all_daily_returns(),
-        #     out_win_date_cols,
-        #     plots_dir /
-        #     (f'Daily Returns_{model_name}-{loss_name}' + '.png')
-        # )
-
-        total_returns = evaluator.calc_total_performance('returns')
-        total_sharpes = evaluator.calc_total_performance('sharpe')
-
-        plot_models_comparison(
-            total_sharpes,
-            'Out-of-Sample Sharpe Ratio Comparison',
-            plots_dir / f'Sharpe Comprison_{model_name}-{loss_name}.png'
-        )
-
-        total_returns = total_returns.describe().T
-        total_returns.to_csv(
-            results_dir / f'total_returns_{model_name}-{loss_name}.csv', sep=','
-        )
-        total_sharpes = total_sharpes.describe().T
-        total_sharpes.to_csv(
-            results_dir / f'total_sharpes_{model_name}-{loss_name}.csv', sep=','
-        ) 
-
-        _print_evaludation_info(
-            in_win_date_cols,
-            out_win_date_cols,
-            total_returns=total_returns,
-            total_sharpes=total_sharpes
-        )
-
-        time_taken = round((time.time() - start_time) / 60, 3)
-        print(f'Time taken for pipeline = {time_taken} mins')
-    
-    elif model_cls is None:
-        raise ValueError(f'Model {model_name} of {model_cat} not found.')
-
+    opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
+    if os.path.exists(opti_hparams_path):
+        optimized_hparams = load_json(opti_hparams_path)
     else:
-        raise ValueError(f'Loss Function {loss_name} not found.')
+        print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+
+    # Filter models that beat Equal Weight Portfolio
+    all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
+    filtered_perf, filtered_models = filter_models(
+        avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
+    )
+
+    print(filtered_models)

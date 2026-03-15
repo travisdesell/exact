@@ -27,5 +27,5 @@ def grid_sample1D(tensor, grid):
 def num_patches(seq_len, patch_len, stride):
     return (seq_len - patch_len) // stride + 1
 
-print(num_patches(96, 7, 4))
+# print(num_patches(96, 7, 4))
 

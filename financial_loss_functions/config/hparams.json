@@ -1,5 +1,10 @@
 {   
-    "seed": 50,
+    "seed_list": [50, 42, 67, 313, 3],
+
+    "tuner": {
+        "n_tuning_trials": 50,
+        "n_jobs": 1
+    },
     "rolling_windows": {
         "in_size": 120,
         "out_size": 60,
@@ -21,7 +26,8 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -30,13 +36,20 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-6
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
         "AttentionLSTM": {
             "model": {
                 "hidden_size": 16,
                 "num_layers": 4,
-                "attention_heads": 2,
+                "nheads": 2,
                 "dropout": 0.2,
                 "equal_prior": false
             },
@@ -48,7 +61,8 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -57,44 +71,24 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-6
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
-        "TemporalTransformer": {
-            "model": {
-                "hidden_size": 16,
-                "num_layers": 2,
-                "attention_heads": 2,
-                "dropout": 0.2,
-                "expansion_factor": 4,
-                "max_seq_len": 120
-            },
-            "optimizer": {
-                "lr": 1e-4,
-                "weight_decay": 1e-2
-            },
-            "train": {
-                "train_batch_size": 64,
-                "val_batch_size": 64,
-                "clip_grad_norm": 0.1,
-                "epochs": 200,
-                "early_stopping": true,
-                "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
-            },
-            "scheduler": {
-                "factor": 0.5,
-                "patience": 10,
-                "min_lr": 1e-6
-            }
-        }, 
         "TFT": {
             "model": {
                 "hidden_size": 16,
                 "num_layers": 1,
-                "attention_heads": 2,
+                "nheads": 2,
                 "dropout": 0.4,
                 "expansion_factor": 2,
-                "max_seq_len": 120
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -104,7 +98,8 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -113,16 +108,25 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-6
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
-        "LSTMTransformer": {
+        "TemporalTransformer": {
             "model": {
                 "hidden_size": 32,
-                "num_layers": 2,
-                "attention_heads": 2,
+                "lstm_layers": 2,
+                "trans_layers": 1,
+                "nheads": 2,
                 "dropout": 0.5,
-                "expansion_factor": 4, 
-                "max_seq_len": 120
+                "expansion_factor": 4,
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-5,
@@ -132,7 +136,8 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -141,15 +146,25 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-8
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
+                "lstm_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "trans_layers": {"type": "categorical", "choices": [1, 2]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
+                "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
         "InvertedAttentionLSTM": {
             "model": {
                 "hidden_size": 16,
                 "num_layers": 4,
-                "attention_heads": 8,
+                "nheads": 8,
                 "dropout": 0.5,
-                "max_seq_len": 120
+                "equal_prior": false
             },
             "optimizer": {
                 "lr": 1e-4,
@@ -159,7 +174,8 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -168,15 +184,22 @@
                 "factor": 0.5,
                 "patience": 10,
                 "min_lr": 1e-6
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8, 16]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         },
         "DeformTime": {
             "model": {
-                "seq_len": 120,
                 "e_layers": 2,
                 "d_layers": 2,
                 "d_model": 16,
-                "attention_heads": 4,
+                "nheads": 4,
                 "kernel_size": 4,
                 "dropout": 0.2,
                 "n_reshape": 12,
@@ -191,7 +214,53 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 200,
+                "epochs": 500,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-6
+            },
+            "tuning": {
+            "e_layers": {"type": "categorical", "choices": [1, 2, 3]},
+            "d_model": {"type": "categorical", "choices": [16, 32, 64, 128]},
+            "nheads": {"type": "categorical", "choices": [2, 4, 8]},
+            "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+            "kernel_size": {"type": "categorical", "choices": [3, 5, 7, 9]},
+            "patch_len": {"type": "categorical", "choices": [4, 6, 8, 12, 16]},
+            "stride": {"type": "categorical", "choices": [4, 8, 16]},
+            "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+            "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+        }
+        },
+        "BiAttentionLSTM": {
+            "model": {
+                "feats_per_stock": 5,
+                "num_global": 1,
+                "hidden_size": 16,
+                "lstm_layers": 2,
+                "t_nheads": 4,
+                "r_nheads": 8,
+                "cont_hidden": 16,
+                "cont_layers": 1,
+                "cont_kernel": 3,
+                "dropout": 0.2,
+                "max_seq_len": 120,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-2
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 500,
+                "min_epochs": 10,
                 "early_stopping": true,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-5
@@ -201,7 +270,49 @@
                 "patience": 10,
                 "min_lr": 1e-6
             }
+        },
+        "CrossFormer": {
+            "model": {
+                "hidden_size": 64,
+                "num_layers": 3,
+                "nheads": 8,
+                "dropout": 0.2,
+                "expansion_factor": 4,
+                "seg_len": 6,
+                "win_size": 2,
+                "factor": 10,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-3
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 500,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-5
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-8
+            },
+            "tuning": {
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64]},
+                "num_layers": {"type": "categorical", "choices": [2, 3, 4]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.4},
+                "seg_len": {"type": "categorical", "choices": [4, 6, 8, 12]},
+                "win_size": {"type": "categorical", "choices": [2, 4]},
+                "factor": {"type": "categorical", "choices": [5, 10, 20]}
+            }
         }
+
     },
     "losses": {
         "custom_loss_1" : {
@@ -220,25 +331,56 @@
             "lambda1": 10
         },
         "custom_loss_6" : {
-            "lambda1": 0.01,
-            "lambda2": 0.1
+            "lambdas": {
+                "cvar_lambda": 0.01,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         },
         "custom_loss_7" : {
             "lambda1": 0.01,
             "lambda2": 0.1
         },
         "custom_loss_8" : {
-            "log_ret_lambda": 0.01,
-            "cvar_lambda": 0.1,
-            "risk_p_lambda": 0.1
+            "lambdas": {
+                "log_ret_lambda": 0.01,
+                "cvar_lambda": 0.1,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "log_ret_lambda" :{"type": "categorical", "choices": [0.001, 0.01, 0.1]},
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         },
         "custom_loss_9" : {
-            "lambda1": 0.01,
-            "lambda2": 0.1
+            "lambdas": {
+                "lambda1": 0.01,
+                "lambda2": 0.1
+            } 
         },
         "custom_loss_10" : {
-            "cvar_lambda": 0.1,
-            "risk_p_lambda": 0.1
+            "lambdas": {
+                "cvar_lambda": 0.1,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
+        },
+        "custom_loss_11" : {
+            "lambdas": {
+                "cvar_lambda": 0.01,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         }
     },
     "trad_models": {

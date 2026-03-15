@@ -7,62 +7,59 @@ The training pipeline uses a grid of candidate model architectures to train and 
 ### Run Candidates Training Grid
 Run the training pipeline using the following command structure:
 ```bash
-python -m scripts.run_training_grid [--grid_mode MODE] [--loss_mode MODE] [OPTIONS]
+python -m scripts.run_training_grid [--grid_mode MODE] [OPTIONS]
 ```
 
 #### Arguments Reference
 | Flag | Long Flag | Choices / Type | Default | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss` | `all` | The scope of the grid search. |
-| `-lm` | `--loss_mode` | `all`, `custom` | `all` |  Use all available loss functions or only custom combinations |
-| `-m`| `--model` | *string* | None | **Required** if grid mode is `one_model`. Name of model.|
-| `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss`. Name of loss function.|
+| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss`, `one` | `all` | The scope of the grid search. |
+| `-lm` | `--loss_mode` | `all`, `custom` | `custom` |  Use all available loss functions or only custom combinations |
+| `-m`| `--model` | *string* | None | **Required** if grid mode is `one_model` or `one`. Name of model.|
+| `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss` or `one`. Name of loss function.|
+| `-t` | `--tune` | *None* | None | Tune all models specified by the grid mode. |
 
 #### Examples:
 1. Run everything (Uses defaults: grid_mode='all', loss_mode='all')
 ```bash
-python -m scripts.run_training_grid
+python -m scripts.run_training
 ```
 
 2. Run specific model with all available loss functions
 ```bash
-python -m scripts.run_training_grid --grid_mode one_model --model '<Model Name>' --loss_mode all
+python -m scripts.run_training --grid_mode one_model --model '<Model Name>' --loss_mode all
 ```
 
 3. Run specific loss function with all available models
 ```bash
-python -m scripts.run_training_grid --grid_mode one_loss --loss '<Loss Name>'
+python -m scripts.run_training --grid_mode one_loss --loss '<Loss Name>'
 ```
 
-4. To get help
+4. Run one model with one loss function
 ```bash
-python -m scripts.run_training_grid --help
+python -m scripts.run_training --grid_mode one --model '<Model Name>' --loss '<Loss Name>'
 ```
 
-### Run Training of One Model with One Loss Function
-Run the training pipeline using the following command: structure:
+5. Run everything with tuning
 ```bash
-python -m scripts.run_training_one [--model MODEL] [--model_cat MODEL CATEGORY] [--loss LOSS] [--loss_cat LOSS CATEGORY]
+python -m scripts.run_training --tune
 ```
 
-#### Arguments Reference
-| Flag | Long Flag | Choices / Type | Default | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `-m` | `--model` | *string* | None | Name of model from the library. |
-| `-mc` | `--model_cat` | *string* | None | Category the model belongs to.|
-| `-l` | `--loss` | *string* | None | Name of the loss function from the library.|
-| `-lc` | `--loss_cat` | `objective`, `custom` | None | Category of loss function.|
-
-#### Example:
+5. To get help
 ```bash
-python -m scripts.run_training_one --model '<Model Name>' --model_cat '<Model Category>' --loss '<Loss Name>' --loss_cat '<Loss Category>'
+python -m scripts.run_training --help
 ```
+
 
 ## Available Models and Loss Functions
 ### Models
 - lstm
     - BaseLSTM: Baseline LSTM architecture 
     - AttentionLSTM: LSTM with with attention heads
+- transformer
+    - TemporalTransformer: LSTM + Transformer encoder
+    - DeformTime
+    - TFT
 
 ### Loss Functions
 #### Objectives:
@@ -88,4 +85,9 @@ python -m scripts.run_training_one --model '<Model Name>' --model_cat '<Model Ca
 - entropy_conc_regularizer
 
 #### Custom Combinations:
-- custom_loss_1: Differentiable Sharpe loss objective with CVaR regularizer
+- custom_loss_6
+- custom_loss_7
+- custom_loss_8
+- cutoms_loss_9
+- custom_loss_10
+- custom_loss_11
