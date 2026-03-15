@@ -27,11 +27,11 @@
     },
     "artifacts": {
         "artifacts_dir": "artifacts/",
-        "results": "artifacts/results/",
-        "avg_perf_metrics": "artifacts/results/avg_performance.csv",
-        "optimized_hparams": "artifacts/results/optimized_hparams.json",
-        "plots": "artifacts/results/plots/",
-        "temp": "artifacts/temp/"
+        "results_dir": "artifacts/results/",
+        "avg_perf_dir": "artifacts/results/avg_performance/",
+        "hparams_dir": "artifacts/results/optimized_hparams/",
+        "plots_dir": "artifacts/results/plots/",
+        "temp_dir": "artifacts/temp/"
     },
     "models_module": "src.models"
 }

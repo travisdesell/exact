@@ -27,16 +27,15 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 # TODO:
 # Unit test NCO
 
-def _common_setup(paths_config):
+def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
     # set_seed(seed_value) # Global seed for reproducibility
-    # Create plots directory if it doesnt exist
-    plots_dir = (Path(paths_config['artifacts']['plots']))
-    create_directory(plots_dir)
-    results_dir = Path(paths_config['artifacts']['results'])
-    create_directory(results_dir)
-    temp_dir = Path(paths_config['artifacts']['temp'])
-    create_directory(temp_dir)
-    
+    # Create all artifact directorie if they doen't exist
+    artifacts_paths = {}
+    for name, path in paths_config['artifacts'].items():
+        dir_path = Path(path)
+        create_directory(dir_path)
+        artifacts_paths[name] = dir_path
+
     models_module = paths_config['models_module']
 
     # Registering all Traditional models to the library
@@ -45,7 +44,7 @@ def _common_setup(paths_config):
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
     
-    return plots_dir, temp_dir
+    return artifacts_paths
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -173,7 +172,7 @@ def run_tuning_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    plots_dir, temp_dir = _common_setup(paths_config)
+    artifacts_paths = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, returns_train, val_data, returns_val = _load_processed_data(
@@ -241,7 +240,7 @@ def run_tuning_pipeline(
 
         if mpi:
             comm, global_rank, world_size, local_rank = mpi_setup()
-            candidates_grid.set_temp_directory(temp_dir)
+            candidates_grid.set_temp_directory(artifacts_paths['temp_dir'])
             nn_alloc_weights = candidates_grid.train_eval_grid_mpi(
                 X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
             )
@@ -250,29 +249,39 @@ def run_tuning_pipeline(
             nn_alloc_weights = candidates_grid.train_eval_grid(
                 X_train, y_train, X_val, y_val
             )
-    
+        
+        results_sufix = 'ALL'
     
     elif grid_mode == 'one_model' and model_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_model(
             model_name, X_train, y_train, X_val, y_val
         )
+        results_sufix = model_name.upper()
+    
     elif grid_mode == 'one_loss' and loss_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one_loss(
             loss_name, X_train, y_train, X_val, y_val
         )
 
+        results_sufix = loss_name.upper()
+
     elif grid_mode == 'one' and model_name is not None and loss_name is not None:
         nn_alloc_weights = candidates_grid.train_eval_one(
             model_name, loss_name, X_train, y_train, X_val, y_val
         )
+
+        results_sufix = f'{model_name}-{loss_name}'
+    
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
     if tune:
+        opti_file_name = artifacts_paths['hparams_dir'] \
+            / f'optimized_{results_sufix}.json'
         optimized_hparams = candidates_grid.get_optimized_hparams()
         save_to_json(
             optimized_hparams,
-            Path(paths_config['artifacts']['optimized_hparams'])
+            opti_file_name
         )
 
     # Plot training and validation loss curves
@@ -284,7 +293,7 @@ def run_tuning_pipeline(
             model_loss_curves['val'],
             model_loss_curves['eval'],
             loss_plot_name,
-            plots_dir / (loss_plot_name + '.png')
+            artifacts_paths['plots_dir'] / (loss_plot_name + '.png')
         )
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
@@ -325,11 +334,10 @@ def run_tuning_pipeline(
     evaluator.add_benchmark_rets(eq_wt_name, eq_wt_rets)
     evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
     
+    perf_file_name = artifacts_paths['avg_perf_dir'] \
+        / 'avg_perf_' + f'{results_sufix}.csv'
     avg_perf_metrics = evaluator.calc_avg_performance()
-    avg_perf_path = Path(
-        paths_config['artifacts']['avg_perf_metrics']
-    )
-    save_to_csv(avg_perf_metrics, avg_perf_path)
+    save_to_csv(avg_perf_metrics, perf_file_name)
 
     _print_evaludation_info(
         in_win_date_cols,

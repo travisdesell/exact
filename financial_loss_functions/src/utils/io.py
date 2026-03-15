@@ -5,7 +5,7 @@ import pickle
 import pandas as pd
 from pathlib import Path
 
-def create_directory(path: str) -> None:
+def create_directory(path: str | Path) -> None:
     """
     Create a directory if it doesn't exist
 
