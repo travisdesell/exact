@@ -234,20 +234,21 @@ def run_tuning_pipeline(
         hparams_config = hparams_config,
         loss_mode = loss_mode,
         tune = tune,
-        tune_metric = tune_metric
+        tune_metric = tune_metric,
+        mpi = mpi,
+        temp_dir = artifacts_paths['temp_dir']
     )
     if grid_mode == 'all':
 
         if mpi:
             comm, global_rank, world_size, local_rank = mpi_setup()
-            candidates_grid.set_temp_directory(artifacts_paths['temp_dir'])
-            nn_alloc_weights = candidates_grid.train_eval_grid_mpi(
+            nn_alloc_weights = candidates_grid.train_eval_grid(
                 X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
             )
 
         else:
             nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val
+                X_train, y_train, X_val, y_val, None, None, None, None
             )
         
         results_sufix = 'ALL'

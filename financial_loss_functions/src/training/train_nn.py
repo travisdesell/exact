@@ -729,8 +729,9 @@ class CandidatesGrid:
             loss_mode: str = 'custom',
             tune: bool = False,
             tune_metric: dict[str, MetricModel] | None = None,
-            enable_diagnostics: bool = False,
-            temp_dir: str | None = None
+            mpi: bool = False,
+            temp_dir: str | None = None,
+            enable_diagnostics: bool = False
         ):
         """
         This runs either all models and loss functions or 
@@ -749,6 +750,8 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
+        self.mpi = mpi
+        self._temp_dir_check()
 
         self.torch_device = get_best_device()
         
@@ -788,10 +791,12 @@ class CandidatesGrid:
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def required_reshapes(self, train_data, returns_train, val_data, returns_val):
-        # Implement different reshaping for different models if needed.
-        # Move Reshaper instance from pipeline.py to here
-        pass
+    def _temp_dir_check(self):
+        if self.mpi:
+            if not self.temp_dir or not os.path.exists(self.temp_dir):
+                raise FileNotFoundError(
+                    f'Temp directory not found: {self.temp_dir}'
+                )
     
     def _train_eval_helper(
         self,
@@ -942,9 +947,63 @@ class CandidatesGrid:
         
         return losses_to_use
 
+    def _mpi_setup_check(mpi_items: list):
+        for i in mpi_items:
+            if i is None:
+                raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
+
+    @staticmethod
+    def _select_ranks_combos(all_combos: list, global_rank, size):
+        # Distribute combos evenly across ranks
+        chunk_size = len(all_combos) // size
+        remainder = len(all_combos) % size
+        start = global_rank * chunk_size + min(global_rank, remainder)
+        end = start + chunk_size + (1 if global_rank < remainder else 0)
+        this_ranks_combos = all_combos[start:end]
+
+        return this_ranks_combos
+    
+    def _merge_all_results(
+            self,
+            size,
+            temps_wts_prefix,
+            temp_losses_prefix,
+            temp_hparams_prefix
+        ):
+        """Merge all results into one dict if rank is 0, i.e., main process."""
+        self.all_alloc_weights = {}
+        self.train_val_losses = {}
+        for r in range(size):
+            # Load all temp alloc wt files
+            rank_alloc_weights = load_pickle_temp(
+                self.temp_dir / f'{temps_wts_prefix}_{r}.pkl'
+            )
+            # Merge into self.all_alloc_weights
+            for loss_name, models_dict in rank_alloc_weights.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
+                self.all_alloc_weights[loss_name].update(models_dict)
+            
+            rank_losses = load_pickle_temp(
+                self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
+            )
+            # Merge into self.train_val_losses
+            for model_loss, losses_dict in rank_losses.items():
+                self.train_val_losses[model_loss] = losses_dict
+            
+            rank_hparams = load_pickle_temp(
+                self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
+            )
+            # Merge into self.optimized_hparams
+            for model_loss, hparms_dict, in rank_hparams.items():
+                self.optimized_hparams[model_loss] = hparms_dict
+
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
-            X_val: np.ndarray, y_val: np.ndarray
+            X_val: np.ndarray, y_val: np.ndarray,
+            comm = None,
+            global_rank = None,
+            size = None,
+            local_rank = None
         ) -> dict[str, dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
@@ -954,7 +1013,6 @@ class CandidatesGrid:
         val_ds   = WindowDataset(X_val, y_val)
 
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
-
         losses_to_use = self._build_losses_to_use()
         
         # Calculate number of models to train (model + loss combinations)
@@ -965,183 +1023,131 @@ class CandidatesGrid:
             f'\nTraining {total_train_count} models.',
             f'Running all models with {self.loss_mode} losses.'
         )
+        
+        # Not using MPI for distributed computing
+        if self.mpi == False:
+            progress_count = 1
+            # Loop over loss functions
+            for loss_name, loss_func in losses_to_use.items():
+                self.all_alloc_weights.setdefault(loss_name, {})
 
-        progress_count = 1
-        # Loop over loss functions
-        for loss_name, loss_func in losses_to_use.items():
-            self.all_alloc_weights.setdefault(loss_name, {})
-
-            for category, models_dict in self.model_lib.items():
-                # Loop over models
-                for model_name, model_class in models_dict.items():
-                    print(
-                        '\n', '-'*10,
-                        f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                        '-'*10
-                    )
-                    try: 
-                        
-                        alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
-                            model_name,
-                            model_class, 
-                            loss_name,
-                            loss_func,
-                            train_ds,
-                            val_ds,
-                            X_train_shape,
-                            y_train_shape,
-                            y_val
-                        )
-                        self.all_alloc_weights[loss_name][model_name] = alloc_weights
-                        self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                        self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
-
-                    except Exception as error:
+                for category, models_dict in self.model_lib.items():
+                    # Loop over models
+                    for model_name, model_class in models_dict.items():
                         print(
-                            f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                            '\n', '-'*10,
+                            f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                            '-'*10
                         )
-                        continue
-                    finally:
-                        progress_count += 1
-        
-        return self.all_alloc_weights    
-    
-    def set_temp_directory(self, temp_dir: str):
-        self.temp_dir = temp_dir
+                        try: 
+                            
+                            alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                                model_name,
+                                model_class, 
+                                loss_name,
+                                loss_func,
+                                train_ds,
+                                val_ds,
+                                X_train_shape,
+                                y_train_shape,
+                                y_val
+                            )
+                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                            self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                            self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
-    def train_eval_grid_mpi(
-            self, 
-            X_train: np.ndarray,
-            y_train: np.ndarray, 
-            X_val: np.ndarray,
-            y_val: np.ndarray,
-            comm,
-            global_rank,
-            size,
-            local_rank
-        ) -> dict[str, dict[str, np.ndarray]]:
-
-        if not self.temp_dir or not os.path.exists(self.temp_dir):
-            raise FileNotFoundError(
-                f'Temp directory not found: {self.temp_dir}'
-            )
-        
-        self.torch_device = get_best_device(local_rank)
-        self.tuner.torch_device = self.torch_device ########## TEMPORARY FIX. NEEDS REFACTOR
-
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
-
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
-        losses_to_use = self._build_losses_to_use()
-        
-        # Calculate number of models to train (model + loss combinations)
-        n_models = self._count_only_models()
-        total_train_count = len(losses_to_use) * n_models
-        
-        print(
-            f'\nTraining {total_train_count} models in total.',
-            f'Running all models with {self.loss_mode} losses.'
-        )
-
-        all_combos = []
-        for loss_name, loss_func in losses_to_use.items():
-            for category, models_dict in self.model_lib.items():
-                for model_name, model_class in models_dict.items():
-                    all_combos.append((loss_name, loss_func, model_name, model_class))
-
-        # Distribute combos evenly across ranks
-        chunk_size = len(all_combos) // size
-        remainder = len(all_combos) % size
-        start = global_rank * chunk_size + min(global_rank, remainder)
-        end = start + chunk_size + (1 if global_rank < remainder else 0)
-        this_ranks_combos = all_combos[start:end]
-
-        # Print summary on each rank (optional)
-        print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
-        sys.stdout.flush()
-
-        # Local results dictionary
-        local_alloc_weights = {}
-        local_train_val_losses = {}
-        local_optimized_hparams = {}
-        for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
-            print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
-            try:
-                alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
-                    model_name,
-                    model_class,
-                    loss_name,
-                    loss_func,
-                    train_ds,
-                    val_ds,
-                    X_train_shape,
-                    y_train_shape,
-                    y_val
-                )
-                # Store in local dict
-                if loss_name not in local_alloc_weights:
-                    local_alloc_weights[loss_name] = {}
-                
-                local_alloc_weights[loss_name][model_name] = alloc_weights
-                local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                        except Exception as error:
+                            print(
+                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                            )
+                            continue
+                        finally:
+                            progress_count += 1
             
-            except Exception as e:
-                print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
-                continue
+            return self.all_alloc_weights
         
-        temps_wts_prefix = 'temp_alloc_wts'
-        temp_losses_prefix = 'temp_losses'
-        temp_hparams_prefix = 'temp_hparams'
-        
-        # Save local results to a rank‑specific file
-        save_pickle_temp(
-            local_alloc_weights,
-            self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
-        )
-        save_pickle_temp(
-            local_train_val_losses,
-            self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
-        )
-        save_pickle_temp(
-            local_optimized_hparams,
-            self.temp_dir / f'{temp_hparams_prefix}_{global_rank}.pkl'
-        )
-        
-        # Wait for all ranks to finish
-        comm.Barrier()
-
-        # Rank 0 collects and merges all files
-        if global_rank == 0:
-            self.all_alloc_weights = {}
-            self.train_val_losses = {}
-            for r in range(size):
-                # Load all temp alloc wt files
-                rank_alloc_weights = load_pickle_temp(
-                    self.temp_dir / f'{temps_wts_prefix}_{r}.pkl'
-                )
-                # Merge into self.all_alloc_weights
-                for loss_name, models_dict in rank_alloc_weights.items():
-                    self.all_alloc_weights.setdefault(loss_name, {})
-                    self.all_alloc_weights[loss_name].update(models_dict)
-                
-                rank_losses = load_pickle_temp(
-                    self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
-                )
-                # Merge into self.train_val_losses
-                for model_loss, losses_dict in rank_losses.items():
-                    self.train_val_losses[model_loss] = losses_dict
-                
-                rank_hparams = load_pickle_temp(
-                    self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
-                )
-                # Merge into self.optimized_hparams
-                for model_loss, hparms_dict, in rank_hparams.items():
-                    self.optimized_hparams[model_loss] = hparms_dict
+        # If MPI is true for distributed computing
         else:
-            return None
+            self._mpi_setup_check([comm, global_rank, size, local_rank])
+            
+            self.torch_device = get_best_device(local_rank)
+            self.tuner.torch_device = self.torch_device ########## TEMPORARY FIX. NEEDS REFACTOR
+
+            all_combos = []
+            for loss_name, loss_func in losses_to_use.items():
+                for category, models_dict in self.model_lib.items():
+                    for model_name, model_class in models_dict.items():
+                        all_combos.append((loss_name, loss_func, model_name, model_class))
+
+            this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
+
+            # Print summary on each rank (optional)
+            print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
+            sys.stdout.flush()
+
+            # Local results dictionary
+            local_alloc_weights = {}
+            local_train_val_losses = {}
+            local_optimized_hparams = {}
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
+                print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+                try:
+                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                        model_name,
+                        model_class,
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape,
+                        y_val
+                    )
+                    # Store in local dict
+                    if loss_name not in local_alloc_weights:
+                        local_alloc_weights[loss_name] = {}
+                    
+                    local_alloc_weights[loss_name][model_name] = alloc_weights
+                    local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                    local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                
+                except Exception as e:
+                    print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    continue
+            
+            temps_wts_prefix = 'temp_alloc_wts'
+            temp_losses_prefix = 'temp_losses'
+            temp_hparams_prefix = 'temp_hparams'
+            
+            # Save local results to a rank‑specific file
+            save_pickle_temp(
+                local_alloc_weights,
+                self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+            )
+            save_pickle_temp(
+                local_train_val_losses,
+                self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
+            )
+            save_pickle_temp(
+                local_optimized_hparams,
+                self.temp_dir / f'{temp_hparams_prefix}_{global_rank}.pkl'
+            )
+            
+            # Wait for all ranks to finish
+            comm.Barrier()
+
+            # Rank 0 collects and merges all files
+            if global_rank == 0:
+                self._merge_all_results(
+                    size,
+                    temps_wts_prefix,
+                    temp_losses_prefix,
+                    temp_hparams_prefix
+                )
+                
+                return self.all_alloc_weights
+            else:
+                return None    
                 
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
@@ -1342,6 +1348,9 @@ class CandidatesGrid:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
         
         return self.all_alloc_weights
+    
+    def set_temp_directory(self, temp_dir: str):
+        self.temp_dir = temp_dir
 
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
         return self.train_val_losses
