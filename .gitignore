@@ -18,6 +18,7 @@ test_output/*
 # Environment files
 .env
 financial_loss_functions/exploration/.ipynb_checkpoints
+sbatch_script.sh
 
 # Dataset directories
 financial_loss_functions/data/raw/2023_sp_500_select_50/
