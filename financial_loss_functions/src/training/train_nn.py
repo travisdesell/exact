@@ -12,7 +12,7 @@ from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 from src.utils.formatting import reformat_hparams
 from src.data_processing.dataset import WindowDataset
-from src.utils.device import set_seed, get_best_device
+from src.utils.device import set_seed
 from src.utils.io import save_pickle_temp, load_pickle_temp
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -647,7 +647,7 @@ class Tuner:
                     max_seq_len=X_train_shape[1],
                     scheduler_hparams=model_cfg.get('scheduler'),
                     loss_hparams=l_hparams,
-                    device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
+                    device=self.torch_device
                 )
                 
                 trainer.train(train_ds, val_ds)
@@ -726,6 +726,7 @@ class CandidatesGrid:
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
             tune_metric: dict[str, MetricModel] | None = None,
@@ -743,6 +744,7 @@ class CandidatesGrid:
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config
+        self.torch_device = torch_device
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -752,8 +754,6 @@ class CandidatesGrid:
         self.tune = tune
         self.mpi = mpi
         self._temp_dir_check()
-
-        self.torch_device = get_best_device()
         
         # Tuner configuration
         self.seed_list = self.hparams_config.get('seed_list')
@@ -867,7 +867,7 @@ class CandidatesGrid:
             max_seq_len=X_train_shape[1],
             scheduler_hparams=best_config['scheduler'],
             loss_hparams=best_config['loss'],
-            device=self.torch_device if not model_name == 'DeformTime' else torch.device('cpu')
+            device=self.torch_device
         )
         
         final_trainer.train(train_ds, val_ds)
@@ -1002,8 +1002,7 @@ class CandidatesGrid:
             X_val: np.ndarray, y_val: np.ndarray,
             comm = None,
             global_rank = None,
-            size = None,
-            local_rank = None
+            size = None
         ) -> dict[str, dict[str, np.ndarray]]:
         """Loops over Loss functions first with a nested loop for models"""
         self._trained_check()
@@ -1068,10 +1067,7 @@ class CandidatesGrid:
         
         # If MPI is true for distributed computing
         else:
-            self._mpi_setup_check([comm, global_rank, size, local_rank])
-            
-            self.torch_device = get_best_device(local_rank)
-            self.tuner.torch_device = self.torch_device ########## TEMPORARY FIX. NEEDS REFACTOR
+            self._mpi_setup_check([comm, global_rank, size])
 
             all_combos = []
             for loss_name, loss_func in losses_to_use.items():

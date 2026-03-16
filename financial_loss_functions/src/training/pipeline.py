@@ -1,8 +1,10 @@
 import os
 import sys
 import time
+import torch
 import pandas as pd
 from pathlib import Path
+from src.utils.device import get_best_device
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files
 from src.visualization.plots import train_val_losses_plot
@@ -17,8 +19,6 @@ from src.data_processing.dataset import (
     extract_oos_dates,
     extract_sp500_winds
 )
-
-from mpi4py import MPI
 
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
@@ -139,13 +139,23 @@ def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
         print(f'\n{title.upper()}:\n', df)
 
 def mpi_setup() -> tuple:
+    # Conditional import of MPI
+    from mpi4py import MPI
+    
     comm = MPI.COMM_WORLD
-    global_rank = comm.Get_rank()  # Unique ID across all 8 workers
-    world_size = comm.Get_size()   # Total number of workers (8)
+    global_rank = comm.Get_rank()  # Unique ID across all
+    world_size = comm.Get_size()   # Total number of workers
     
     local_rank = int(os.environ.get('SLURM_LOCALID', 0))
-
-    return comm, global_rank, world_size, local_rank
+    
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+    else:
+        raise RuntimeError('CUDA is required to run MPI version!')
+    
+    gpu_id = local_rank % num_gpus
+    
+    return comm, global_rank, world_size, gpu_id
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -210,61 +220,89 @@ def run_tuning_pipeline(
     else:
         tune_metric = None
     
-    candidates_grid = CandidatesGrid(
-        model_lib = NNModelLibrary.items(),
-        loss_lib = LossLibrary.items(),
-        hparams_config = hparams_config,
-        loss_mode = loss_mode,
-        tune = tune,
-        tune_metric = tune_metric,
-        mpi = mpi,
-        temp_dir = artifacts_paths['temp_dir']
-    )
-    if grid_mode == 'all':
 
-        if mpi:
-            comm, global_rank, world_size, local_rank = mpi_setup()
+    if mpi:
+
+        comm, global_rank, world_size, gpu_id = mpi_setup()
+        torch_device = get_best_device(gpu_id)
+
+        candidates_grid = CandidatesGrid(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            torch_device = torch_device,
+            loss_mode = loss_mode,
+            tune = tune,
+            tune_metric = tune_metric,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir']
+        )
+
+        if grid_mode == 'all':
             nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val, comm, global_rank, world_size, local_rank 
+                X_train, y_train, X_val, y_val, comm, global_rank, world_size
             )
-
-            # Stop all non zero ranks
-            if global_rank != 0:
-                print(f'Rank {global_rank}: Work complete. Shutting down.')
-                sys.exit(0) # This stops the process for this rank only
-
-        else:
-            nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val, None, None, None, None
-            )
+            results_sufix = 'ALL'
         
-        results_sufix = 'ALL'
-    
-    elif grid_mode == 'one_model' and model_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one_model(
-            model_name, X_train, y_train, X_val, y_val
-        )
-        results_sufix = model_name.upper()
-    
-    elif grid_mode == 'one_loss' and loss_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one_loss(
-            loss_name, X_train, y_train, X_val, y_val
-        )
+        else:
+            raise RuntimeError(
+                'Incorrect mode arguments while running at entry point. if mpi, grid mode must be `all`.'
+            )
 
-        results_sufix = loss_name.upper()
+        # Stop all non zero ranks
+        if global_rank != 0:
+            print(f'Rank {global_rank}: Work complete. Shutting down.')
+            sys.exit(0) # This stops the process for this rank only
+        
+        if nn_alloc_weights is None:
+            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+        
 
-    elif grid_mode == 'one' and model_name is not None and loss_name is not None:
-        nn_alloc_weights = candidates_grid.train_eval_one(
-            model_name, loss_name, X_train, y_train, X_val, y_val
-        )
-
-        results_sufix = f'{model_name}-{loss_name}'
-    
     else:
-        raise RuntimeError('Incorrect mode arguments while running at entry point.')
-    
-    if mpi and nn_alloc_weights is None:
-        print('!!Rank 0 got empty allocation weights. Needs debug!!')
+        # Default cuda or mps device
+        torch_device = get_best_device()
+
+        candidates_grid = CandidatesGrid(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            torch_device = torch_device,
+            loss_mode = loss_mode,
+            tune = tune,
+            tune_metric = tune_metric,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir']
+        )
+
+        if grid_mode == 'all':
+            nn_alloc_weights = candidates_grid.train_eval_grid(
+                X_train, y_train, X_val, y_val, None, None, None
+            )
+            
+            results_sufix = 'ALL'
+        
+        elif grid_mode == 'one_model' and model_name is not None:
+            nn_alloc_weights = candidates_grid.train_eval_one_model(
+                model_name, X_train, y_train, X_val, y_val
+            )
+            results_sufix = model_name.upper()
+        
+        elif grid_mode == 'one_loss' and loss_name is not None:
+            nn_alloc_weights = candidates_grid.train_eval_one_loss(
+                loss_name, X_train, y_train, X_val, y_val
+            )
+
+            results_sufix = loss_name.upper()
+
+        elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+            nn_alloc_weights = candidates_grid.train_eval_one(
+                model_name, loss_name, X_train, y_train, X_val, y_val
+            )
+
+            results_sufix = f'{model_name}-{loss_name}'
+        
+        else:
+            raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
     if tune:
         opti_file_name = artifacts_paths['hparams_dir'] \
@@ -296,23 +334,23 @@ def run_tuning_pipeline(
     del candidates_grid
 
     # -------------------- Training Tradional Models -------------------- #
-    # max_workers = os.cpu_count() - 1
-    # trad_grid = TradModelsTrainer(
-    #     TradModelLibrary.items(),
-    #     hparams_config,
-    #     max_workers
-    # )
-    # trad_alloc_weights = trad_grid.train_all(
-    #     in_wind_idxs,
-    #     out_wind_idxs,
-    #     returns_train,
-    #     returns_val
-    # )
+    max_workers = os.cpu_count() - 1
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        max_workers
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        in_wind_idxs,
+        out_wind_idxs,
+        returns_train,
+        returns_val
+    )
 
-    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    # del trad_grid
+    del trad_grid
     
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
