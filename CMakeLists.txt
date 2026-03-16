@@ -113,6 +113,8 @@ add_subdirectory(rnn)
 add_subdirectory(rnn_tests)
 add_subdirectory(rnn_examples)
 
+add_subdirectory(strategic)
+
 # add_subdirectory(opencl)
 
 add_subdirectory(weights)
