@@ -24,7 +24,7 @@ def delete_file(file_path: str) -> None:
     if os.path.exists(file_path):
         os.remove(file_path)
     else:
-        raise FileNotFoundError(f'File does not exist at {file_path}')
+        print(f'WARNING: File at {file_path} not found.')
 
 def delete_directory(dir_path: str) -> None:
     """

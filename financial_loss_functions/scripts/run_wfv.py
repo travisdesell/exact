@@ -74,10 +74,12 @@ if __name__ == '__main__':
     try:
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
         hparams_config = load_json(os.path.join('config', 'hparams.json'))
+        features_config = load_json(os.path.join('config', 'features.json'))
 
         run_wfv_pipeline(
             paths_config,
-            hparams_config
+            hparams_config,
+            features_config
         )
 
     except SystemExit:

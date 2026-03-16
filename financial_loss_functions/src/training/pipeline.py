@@ -63,8 +63,8 @@ def _load_processed_data(paths_config: dict) -> tuple:
     val_data = processed_dfs['processed_val']
     returns_val = processed_dfs['returns_val']
 
-    print('Train shape:', train_data.shape)
-    print('Val shape:', val_data.shape)
+    # print('Train shape:', train_data.shape)
+    # print('Val shape:', val_data.shape)
 
     return train_data, returns_train, val_data, returns_val
 
@@ -94,14 +94,14 @@ def _preprocess(
     reshaper.extract_features(train_data.columns)
     
     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    print('-'*10, ' train shapes ', '-'*10)
-    print('X_train shpe:', X_train.shape)
-    print('y_train shape:', y_train.shape)
+    # print('-'*10, ' train shapes ', '-'*10)
+    # print('X_train shpe:', X_train.shape)
+    # print('y_train shape:', y_train.shape)
 
     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    print('-'*10, ' val shapes ', '-'*10)
-    print('X_val shape', X_val.shape)
-    print('y_val shape:', y_val.shape)
+    # print('-'*10, ' val shapes ', '-'*10)
+    # print('X_val shape', X_val.shape)
+    # print('y_val shape:', y_val.shape)
 
     # Calculate indexes for input and output windows on split data
     in_wind_indexes, out_wind_indexes = calc_in_out_idx(
@@ -144,7 +144,7 @@ def mpi_setup() -> tuple:
     
     comm = MPI.COMM_WORLD
     global_rank = comm.Get_rank()  # Unique ID across all
-    world_size = comm.Get_size()   # Total number of workers
+    size = comm.Get_size()   # Total number of workers
     
     local_rank = int(os.environ.get('SLURM_LOCALID', 0))
     
@@ -155,7 +155,7 @@ def mpi_setup() -> tuple:
     
     gpu_id = local_rank % num_gpus
     
-    return comm, global_rank, world_size, gpu_id
+    return comm, global_rank, size, gpu_id
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -223,7 +223,7 @@ def run_tuning_pipeline(
 
     if mpi:
 
-        comm, global_rank, world_size, gpu_id = mpi_setup()
+        comm, global_rank, size, gpu_id = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
         candidates_grid = CandidatesGrid(
@@ -240,13 +240,20 @@ def run_tuning_pipeline(
 
         if grid_mode == 'all':
             nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val, comm, global_rank, world_size
+                X_train, y_train, X_val, y_val, comm, global_rank, size
             )
-            results_sufix = 'ALL'
+            results_sufix = grid_mode
+        
+        elif grid_mode == 'one_model' and model_name is not None:
+            nn_alloc_weights = candidates_grid.train_eval_one_model(
+                model_name, X_train, y_train, X_val, y_val, comm, global_rank, size
+            )
+            results_sufix = model_name
         
         else:
             raise RuntimeError(
-                'Incorrect mode arguments while running at entry point. if mpi, grid mode must be `all`.'
+                'Incorrect mode arguments while running at entry point.',
+                'If mpi, grid mode must be `all` or `one_model`.'
             )
 
         # Stop all non zero ranks
@@ -279,20 +286,20 @@ def run_tuning_pipeline(
                 X_train, y_train, X_val, y_val, None, None, None
             )
             
-            results_sufix = 'ALL'
+            results_sufix = grid_mode
         
         elif grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
-                model_name, X_train, y_train, X_val, y_val
+                model_name, X_train, y_train, X_val, y_val, None, None, None
             )
-            results_sufix = model_name.upper()
+            results_sufix = model_name
         
         elif grid_mode == 'one_loss' and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_loss(
                 loss_name, X_train, y_train, X_val, y_val
             )
 
-            results_sufix = loss_name.upper()
+            results_sufix = loss_name
 
         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one(
@@ -332,25 +339,6 @@ def run_tuning_pipeline(
             evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
     
     del candidates_grid
-
-    # -------------------- Training Tradional Models -------------------- #
-    max_workers = os.cpu_count() - 1
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config,
-        max_workers
-    )
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
-
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    del trad_grid
     
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
@@ -382,7 +370,7 @@ def run_tuning_pipeline(
     evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
     
     perf_file_name = artifacts_paths['avg_perf_dir'] \
-        / 'avg_perf_' + f'{results_sufix}.csv'
+        / f'avg_perf_{results_sufix}.csv'
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
@@ -399,6 +387,7 @@ def run_tuning_pipeline(
 def run_wfv_pipeline(
     paths_config: dict,
     hparams_config: dict,
+    features_config: dict
 ): 
     """
     Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
@@ -408,25 +397,61 @@ def run_wfv_pipeline(
         hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
     """
 
-    plots_dir, best_device = _common_setup(paths_config)
-
-    eq_wt_name = 'Equal_Weight'
-    sp500_name = 'S&P500'
+    artifacts_paths = _common_setup(paths_config)
     
-    avg_perf_metrics = load_csv_files(
-        {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
-    )['avg_perf_metrics']
+    # -------------------- Loading Processed Data -------------------- #
+    train_data, returns_train, val_data, returns_val = _load_processed_data(
+        paths_config
+    )
     
-    opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
-    if os.path.exists(opti_hparams_path):
-        optimized_hparams = load_json(opti_hparams_path)
-    else:
-        print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
-
-    # Filter models that beat Equal Weight Portfolio
-    all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
-    filtered_perf, filtered_models = filter_models(
-        avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
+    # -------------------- Preprocessing (Reshaping) -------------------- #
+    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
+        train_data,
+        returns_train,
+        val_data,
+        returns_val,
+        hparams_config['rolling_windows'],
+        features_config['common_features']
     )
 
-    print(filtered_models)
+    # -------------------- Evaluator Setup -------------------- #
+    # Initializing once to compare all models together
+    evaluator = Evaluator(y_val, MetricLibrary.items())
+
+    # -------------------- Training Tradional Models -------------------- #
+    max_workers = os.cpu_count() - 1
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        max_workers
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        in_wind_idxs,
+        out_wind_idxs,
+        returns_train,
+        returns_val
+    )
+
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    
+    del trad_grid
+
+    
+    # avg_perf_metrics = load_csv_files(
+    #     {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
+    # )['avg_perf_metrics']
+    
+    # opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
+    # if os.path.exists(opti_hparams_path):
+    #     optimized_hparams = load_json(opti_hparams_path)
+    # else:
+    #     print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+
+    # # Filter models that beat Equal Weight Portfolio
+    # all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
+    # filtered_perf, filtered_models = filter_models(
+    #     avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
+    # )
+
+    # print(filtered_models)

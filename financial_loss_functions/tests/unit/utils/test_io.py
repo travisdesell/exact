@@ -41,11 +41,6 @@ def test_delete_file_removes_file_and_error_if_missing(tmp_path):
     delete_file(str(f))
     assert not f.exists()
 
-    with pytest.raises(FileNotFoundError) as excinfo:
-    # calling again on non-existent file should raise exception
-        delete_file(str(f))
-    assert f'File does not exist at {f}' in str(excinfo.value)
-
 # ---------- Tests for delete_directory ---------- #
 def test_delete_directory_deletes_and_prints(tmp_path, capsys):
     d = tmp_path / 'dir_to_delete'
