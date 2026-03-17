@@ -1000,9 +1000,9 @@ class CandidatesGrid:
         
         # Delete all temp files
         for r in range(size):
-            delete_file(f'{temps_wts_prefix}_{r}.pkl')
-            delete_file(f'{temp_losses_prefix}_{r}.pkl')
-            delete_file(f'{temp_hparams_prefix}_{r}.pkl')
+            delete_file(self.temp_dir / f'{temps_wts_prefix}_{r}.pkl')
+            delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
+            delete_file(self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl')
 
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
