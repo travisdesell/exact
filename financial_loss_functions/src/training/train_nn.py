@@ -411,19 +411,16 @@ class Trainer:
             print('Model must be trained and validated.')
             return None
     
-    # def device_cleanup(self):
-    #     if self.device_name == 'mps':
-    #         try:
-    #             # Empty MPS cache
-    #             torch.mps.empty_cache()
-            
-    #         except Exception as e:
-    #             print(f'MPS cleanup not available. Error: {e}')
-            
-    #     elif self.device_name == 'cuda':
-    #         torch.cuda.empty_cache()
-    #         torch.cuda.ipc_collect()
-
+    def device_cleanup(self):
+        if self.device.type == 'mps':
+            try:
+                torch.mps.empty_cache()
+            except Exception as e:
+                print(f'MPS cleanup not available. Error: {e}')
+        elif self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+        
 class MetricModel(BaseModel):
     """
     Must use this data model to provide composite score metric for 
@@ -683,6 +680,7 @@ class Tuner:
                     raise optuna.exceptions.TrialPruned()
                 # --- PRUNING LOGIC END ---
                 
+                trainer.device_cleanup()
                 del trainer
             
             final_objective = self._calc_tuning_objective(
@@ -882,6 +880,7 @@ class CandidatesGrid:
 
         alloc_weights = final_trainer.get_eval_alloc_weights()
 
+        final_trainer.device_cleanup()
         del final_trainer
 
         if self.enable_diagnostics:
