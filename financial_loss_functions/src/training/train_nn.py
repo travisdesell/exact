@@ -22,6 +22,7 @@ from scipy import stats
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
+import warnings # Temporary
 
 class Trainer:
     """
@@ -1327,6 +1328,14 @@ class CandidatesGrid:
             self, loss_name: str, X_train: np.ndarray, y_train: np.ndarray, 
             X_val: np.ndarray, y_val: np.ndarray
         ) -> dict[str, dict[str, np.ndarray]]:
+
+        # Deprecation warning
+        warnings.warn(
+            "CandidatesGrid.train_eval_one_loss() is deprecated and will be removed soon. "
+            "Use CandidatesGrid.train_eval_grid() or CandidatesGrid.train_eval_one_model() instead.",
+            category=FutureWarning,
+            stacklevel=2
+        )
         
         self._trained_check()
 

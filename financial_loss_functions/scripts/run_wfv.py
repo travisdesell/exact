@@ -97,15 +97,9 @@ if __name__ == '__main__':
         parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')
 
         args = parser.parse_args()
-
-        # # Rule 1: If grid_mode is 'one_model', model MUST be provided
-        if args.grid_mode in ['all', 'one_model']:
-            if args.grid_mode == 'one_model':
-                if not args.model:
-                    parser.error("--model is required when --grid_mode is 'one_model'")
         
-        # Rule 2: If grid_mode is 'one', model and loss MUST be provided
-        elif args.grid_mode == 'one':
+        # Rule: If grid_mode is 'one', model and loss MUST be provided
+        if args.grid_mode == 'one':
             if not args.loss or not args.model:
                 parser.error("--loss and --model is required when --grid_mode is 'one'")
         

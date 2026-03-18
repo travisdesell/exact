@@ -31,6 +31,9 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 # TODO:
 # Unit test NCO
 
+EQ_WT_NAME = 'Equal_Weight'
+SP500_NAME = 'S&P500'
+
 def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
     # set_seed(seed_value) # Global seed for reproducibility
     # Create all artifact directorie if they doen't exist
@@ -373,10 +376,8 @@ def run_tuning_pipeline(
     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
-    eq_wt_name = 'Equal_Weight'
-    sp500_name = 'S&P500'
-    evaluator.add_benchmark_rets(eq_wt_name, eq_wt_rets)
-    evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
+    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
     
     perf_file_name = artifacts_paths['avg_perf_dir'] \
         / f'avg_perf_{results_sufix}.csv'
@@ -441,6 +442,14 @@ def run_wfv_pipeline(
             artifacts_paths['avg_perf_dir']
         )
 
+        num_files = len(avg_perf_paths)
+        if num_files == 0:
+            raise RuntimeError(
+                'No average Performance files found. Run training and tuning first.'
+            )
+        elif num_files > 1:
+            raise RuntimeError('More than 1 file found for all mode.')
+
     elif grid_mode == 'one_model':
         avg_perf_paths = find_avg_perf_files(
             all_models,
@@ -452,11 +461,19 @@ def run_wfv_pipeline(
             )
         avg_perf_dfs = load_csv_files(avg_perf_paths)
 
-        print(avg_perf_dfs.keys())
+        all_avg_perf = pd.concat(avg_perf_dfs.values(), axis=0)
+        all_avg_perf = all_avg_perf[~all_avg_perf.index.duplicated(keep='first')]
             
-
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
+    
+    # Filter models that beat Equal Weight Portfolio
+    filtered_perf, filtered_models = filter_models(
+        all_avg_perf, EQ_WT_NAME, 'sharpe', [EQ_WT_NAME, SP500_NAME]
+    )
+
+    print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
+    print('Filtered Avg. Performance Metrics: \n',filtered_perf)
 
     # -------------------- Evaluator Setup -------------------- #
     # Initializing once to compare all models together
@@ -491,9 +508,6 @@ def run_wfv_pipeline(
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
     
-    # avg_perf_metrics = load_csv_files(
-    #     {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
-    # )['avg_perf_metrics']
     
     # opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
     # if os.path.exists(opti_hparams_path):
@@ -501,10 +515,3 @@ def run_wfv_pipeline(
     # else:
     #     print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
 
-    # # Filter models that beat Equal Weight Portfolio
-    # all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
-    # filtered_perf, filtered_models = filter_models(
-    #     avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
-    # )
-
-    # print(filtered_models)
