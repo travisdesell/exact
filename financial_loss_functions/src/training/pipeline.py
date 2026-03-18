@@ -6,10 +6,13 @@ import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
 from src.training.train_trad import TradModelsTrainer
-from src.data_processing.loading import load_csv_files
+from src.data_processing.loading import load_csv_files, find_avg_perf_files
 from src.visualization.plots import train_val_losses_plot
 from src.training.train_nn import CandidatesGrid, MetricModel
-from src.utils.io import create_directory, save_to_csv, save_to_json, load_json
+from src.utils.io import (
+    create_directory, save_to_csv, save_to_json,
+    load_json, check_if_files_exist, raise_file_not_found
+)
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
 )
@@ -56,7 +59,10 @@ def _load_processed_data(paths_config: dict) -> tuple:
         'returns_val': Path(paths_config['processed_paths']['returns_val'])
     }
 
-    processed_dfs = load_csv_files(processed_files)
+    # Check if all files exist
+    raise_file_not_found(list(processed_files.values()))
+
+    processed_dfs = load_csv_files(processed_files, index_dt=True)
     train_data = processed_dfs['processed_train']
     returns_train = processed_dfs['returns_train']
 
@@ -69,10 +75,13 @@ def _load_processed_data(paths_config: dict) -> tuple:
     return train_data, returns_train, val_data, returns_val
 
 def _load_sp500_rets(paths_config: dict):
-
+    sp500_path = Path(paths_config['processed_paths']['benchmark_val'])
+    raise_file_not_found([sp500_path])
+    
     # Loading only S&P500 from validation split
     benches = load_csv_files(
-        {'benchmark_val': Path(paths_config['processed_paths']['benchmark_val'])}
+        {'benchmark_val': sp500_path},
+        index_dt=True
     )
 
     return benches['benchmark_val']
@@ -387,7 +396,11 @@ def run_tuning_pipeline(
 def run_wfv_pipeline(
     paths_config: dict,
     hparams_config: dict,
-    features_config: dict
+    features_config: dict,
+    grid_mode: str,
+    model_name: str,
+    loss_name: str,
+    mpi: bool = False
 ): 
     """
     Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
@@ -396,6 +409,8 @@ def run_wfv_pipeline(
         paths_config (dict): Dictionary containing paths
         hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
     """
+    print('\n', '=' * 40, ' Walk-Forward Validation Grid Pipeline ', '=' * 40)
+    start_time = time.time()
 
     artifacts_paths = _common_setup(paths_config)
     
@@ -414,29 +429,67 @@ def run_wfv_pipeline(
         features_config['common_features']
     )
 
+    # -------------------- Loading Relevant Training Artifacts -------------------- #
+    # Get all models from library
+    all_models = []
+    for cat in NNModelLibrary.list_categories():
+        all_models.extend(NNModelLibrary.list_models(cat))
+    
+    if grid_mode == 'all':
+        avg_perf_paths = find_avg_perf_files(
+            ['all'],
+            artifacts_paths['avg_perf_dir']
+        )
+
+    elif grid_mode == 'one_model':
+        avg_perf_paths = find_avg_perf_files(
+            all_models,
+            artifacts_paths['avg_perf_dir']
+        )
+        if len(avg_perf_paths) == 0:
+            raise RuntimeError(
+                'No average Performance files found. Run training and tuning first.'
+            )
+        avg_perf_dfs = load_csv_files(avg_perf_paths)
+
+        print(avg_perf_dfs.keys())
+            
+
+    else:
+        raise RuntimeError('Incorrect mode arguments while running at entry point.')
+
     # -------------------- Evaluator Setup -------------------- #
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val, MetricLibrary.items())
 
     # -------------------- Training Tradional Models -------------------- #
-    max_workers = os.cpu_count() - 1
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config,
-        max_workers
-    )
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
+    # max_workers = os.cpu_count() - 1
+    # trad_grid = TradModelsTrainer(
+    #     TradModelLibrary.items(),
+    #     hparams_config,
+    #     max_workers
+    # )
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
 
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    del trad_grid
+    # del trad_grid
 
+    
+    
+    # -------------------- Walk-Forward Training & Validation -------------------- #
+    
+    
+    
+    
+    time_taken = round((time.time() - start_time) / 60, 3)
+    print(f'Time taken for pipeline = {time_taken} mins')
     
     # avg_perf_metrics = load_csv_files(
     #     {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}

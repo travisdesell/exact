@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 from src.utils.io import check_if_files_exist
 
 def load_raw_crsp_datasets(
@@ -14,8 +15,6 @@ def load_raw_crsp_datasets(
     
     @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] Raw train, val and test data
     """ 
-    check_if_files_exist([train_path, val_path, test_path])
-
     # Load split datasets
     train_data = pd.read_csv(train_path)
     val_data = pd.read_csv(val_path)
@@ -23,7 +22,7 @@ def load_raw_crsp_datasets(
     
     return train_data, val_data, test_data
 
-def load_csv_files(paths_dict: dict[str, str]) -> dict[str, pd.DataFrame]:
+def load_csv_files(paths_dict: dict[str, str], index_dt: bool = False) -> dict[str, pd.DataFrame]:
     """
     Loads csv data files. Provide dictionary of 
     name key and path strings value to be loaded.
@@ -32,13 +31,12 @@ def load_csv_files(paths_dict: dict[str, str]) -> dict[str, pd.DataFrame]:
     
     @return dict[str, pd.DataFrame] dictionary of name key and loaded dataframe as value
     """
-    # Check if all files exist
-    check_if_files_exist(list(paths_dict.values()))
-
+        
     loaded_dfs = {}
     for name, f_path in paths_dict.items():
         temp_df = pd.read_csv(f_path, index_col=0) # Can use parse_dates=True here,but
-        temp_df.index = pd.to_datetime(temp_df.index) #.but pd.to_datetime for control.
+        if index_dt:
+            temp_df.index = pd.to_datetime(temp_df.index) #.but pd.to_datetime for control.
         loaded_dfs[name] = temp_df
 
     return loaded_dfs
@@ -64,3 +62,26 @@ def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
     
     macro_data_dict = load_csv_files(macro_files)
     return macro_data_dict
+
+def find_avg_perf_files(suffixes: list[str], avg_dir: str | Path) -> dict[str, str]:
+    paths_temp = []
+    for suff in suffixes:
+        paths_temp.append(
+            (suff, avg_dir / f'avg_perf_{suff}.csv')
+        )
+    
+    avg_perf_paths = {}
+    existence = check_if_files_exist([tup[1] for tup in paths_temp])
+    for path, status in existence.items():
+        for tup in paths_temp:
+            if path == tup[1]:
+                if status:
+                    avg_perf_paths.update(
+                        {tup[0]: path}
+                    )
+                else:
+                    print(f'Avgerage performance file for {tup[0]} not found at {tup[0]}. Skipping!')
+    
+    del paths_temp
+
+    return avg_perf_paths

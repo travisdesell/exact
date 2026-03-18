@@ -40,18 +40,31 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
-def check_if_files_exist(paths_list: list[str]) -> None:
+def check_if_files_exist(
+        paths_list: list[str | Path]
+    ) -> dict[str | Path, bool]:
     """
     Check if all files exist
     
     @param paths_list List[str] List of file path strings to be checked for existance
     """
+    existence = {}
     for path in paths_list:
-        if not os.path.exists(path):
+        if os.path.exists(path):
+            existence[path] = True
+        else:
+            existence[path] = False
+    
+    return existence
+
+def raise_file_not_found(paths_list: list[str | Path]):
+    existence = check_if_files_exist(paths_list)
+    for path, status in existence.items():
+        if not status:
             raise FileNotFoundError(
                 f'Required file not found: {path}'
             )
-        
+
 def data_dir_check(path: str) -> bool:
     run_permission = False
     if os.path.exists(path):

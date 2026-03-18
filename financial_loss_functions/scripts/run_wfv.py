@@ -1,6 +1,7 @@
 import os
 import sys
 import signal
+import argparse
 from src.utils.io import load_path_config, load_json
 from src.training.pipeline import run_wfv_pipeline
 
@@ -70,8 +71,44 @@ signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
 signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 
 if __name__ == '__main__':
-    # load_dotenv()
     try:
+        parser = argparse.ArgumentParser(description='Walk-Forward Validation Grid Configuration Script')
+
+        # Grid mode with a default
+        parser.add_argument(
+            '-gm',
+            '--grid_mode', 
+            choices=['all', 'one_model', 'one'], 
+            help='Choose the grid search mode. This must be the same as the grid_mode used to run training.'
+        )
+
+        parser.add_argument(
+            '-m',
+            '--model',
+            help="Model name required if grid_mode is 'one_model' or 'one'"
+        )
+
+        parser.add_argument(
+            '-l',
+            '--loss', 
+            help="Loss name required if grid_mode is 'one_loss' or 'one'"
+        )
+
+        parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')
+
+        args = parser.parse_args()
+
+        # # Rule 1: If grid_mode is 'one_model', model MUST be provided
+        if args.grid_mode in ['all', 'one_model']:
+            if args.grid_mode == 'one_model':
+                if not args.model:
+                    parser.error("--model is required when --grid_mode is 'one_model'")
+        
+        # Rule 2: If grid_mode is 'one', model and loss MUST be provided
+        elif args.grid_mode == 'one':
+            if not args.loss or not args.model:
+                parser.error("--loss and --model is required when --grid_mode is 'one'")
+        
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
         hparams_config = load_json(os.path.join('config', 'hparams.json'))
         features_config = load_json(os.path.join('config', 'features.json'))
@@ -79,7 +116,11 @@ if __name__ == '__main__':
         run_wfv_pipeline(
             paths_config,
             hparams_config,
-            features_config
+            features_config,
+            grid_mode = args.grid_mode,
+            model_name = args.model,
+            loss_name = args.loss,
+            mpi = args.mpi
         )
 
     except SystemExit:
