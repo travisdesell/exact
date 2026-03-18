@@ -30,17 +30,12 @@ python -m scripts.run_training
 python -m scripts.run_training --grid_mode one_model --model '<Model Name>' --loss_mode all
 ```
 
-3. Run specific loss function with all available models
-```bash
-python -m scripts.run_training --grid_mode one_loss --loss '<Loss Name>'
-```
-
-4. Run one model with one loss function
+3. Run one model with one loss function
 ```bash
 python -m scripts.run_training --grid_mode one --model '<Model Name>' --loss '<Loss Name>'
 ```
 
-5. Run everything with tuning
+4. Run everything with tuning
 ```bash
 python -m scripts.run_training --tune
 ```
