@@ -5,13 +5,13 @@ import torch
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
+from src.utils.formatting import split_combo_names
 from src.training.train_trad import TradModelsTrainer
-from src.data_processing.loading import load_csv_files, find_avg_perf_files
 from src.visualization.plots import train_val_losses_plot
 from src.training.train_nn import CandidatesGrid, MetricModel
+from src.data_processing.loading import load_csv_files, find_avg_perf_files
 from src.utils.io import (
-    create_directory, save_to_csv, save_to_json,
-    load_json, check_if_files_exist, raise_file_not_found
+    create_directory, save_to_csv, save_to_json, load_json, raise_file_not_found
 )
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
@@ -473,7 +473,10 @@ def run_wfv_pipeline(
     )
 
     print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
-    print('Filtered Avg. Performance Metrics: \n',filtered_perf)
+    print('Filtered Avg. Performance Metrics: \n', filtered_perf)
+
+    split_combos = split_combo_names(filtered_models, '-')
+    print(split_combos)
 
     # -------------------- Evaluator Setup -------------------- #
     # Initializing once to compare all models together

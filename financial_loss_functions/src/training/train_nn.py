@@ -6,13 +6,14 @@ import copy
 import torch
 import optuna
 import psutil
+import random
 import numpy as np
 from torch import Tensor
+from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 from src.utils.formatting import reformat_hparams
 from src.data_processing.dataset import WindowDataset
-from src.utils.device import set_seed
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -437,11 +438,12 @@ class MetricModel(BaseModel):
 
 class Tuner:
     direction = 'maximize'
+    max_seed = 1000000
 
     def __init__(
             self,
             tune_metric: dict[str, MetricModel],
-            seed_list: list[int],
+            n_seeds: int,
             n_trails: int,
             n_jobs: int,
             torch_device: torch.device | str
@@ -453,12 +455,10 @@ class Tuner:
         else:
             self.tune_metric = tune_metric
         
-        self.seed_list = seed_list
+        self.n_seeds = n_seeds
         self.n_trials = n_trails
         self.n_jobs = n_jobs
         self.torch_device = torch_device
-
-        self.n_seeds = len(self.seed_list)
 
         self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
@@ -625,7 +625,16 @@ class Tuner:
             composite_scores = []
             seed_train_losses = []
             seed_val_losses = []
-            for i, seed in enumerate(self.seed_list):
+
+            # loop over list of random seeds
+            rng = random.Random(trial.number) # To avoid global random state and for reproducibilty
+            rnd_seeds = [rng.randint(0, self.max_seed) for _ in range(self.n_seeds)]
+            print(
+                '+'*20,
+                f'Trial {trial.number}, seeds: {rnd_seeds}',
+                '+'*20
+            )
+            for i, seed in enumerate(rnd_seeds):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
                     '='*20,
@@ -752,23 +761,24 @@ class CandidatesGrid:
         
         self.tune = tune
         self.mpi = mpi
+        self.temp_dir = temp_dir
         self._temp_dir_check()
         
         # Tuner configuration
-        self.seed_list = self.hparams_config.get('seed_list')
         if self.tune and tune_metric:
             tuner_config = self.hparams_config.get('tuner', {})
             print('Tuner Config:\n', tuner_config)
             
-            n_trails = tuner_config.get('n_tuning_trials', 20)
+            n_seeds = self.hparams_config.get('n_seeds', 5)
+            n_trials = tuner_config.get('n_tuning_trials', 20)
             n_jobs = tuner_config.get('n_jobs', 1)
             print(
-                f'Tuning all models with {n_trails} trials, across seeds: {self.seed_list}.'
+                f'Tuning all models with {n_trials} trials, across {n_seeds} seeds.'
             )
             self.tuner = Tuner(
                 tune_metric,
-                self.seed_list,
-                n_trails,
+                n_seeds,
+                n_trials,
                 n_jobs,
                 self.torch_device
             )
@@ -783,7 +793,6 @@ class CandidatesGrid:
             self.tuner = None
         
         self.enable_diagnostics = enable_diagnostics
-        self.temp_dir = temp_dir
 
         self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
@@ -847,7 +856,9 @@ class CandidatesGrid:
             del study
         else:
             # If not tuning, we just use the original values and use the first seed in the seed list
-            set_seed(self.seed_list[0])
+            # set_seed(self.seed_list[0])
+            # No set seed
+            pass
         
         if self.tune:
             optimized_hparams = best_config
@@ -1451,3 +1462,22 @@ class CandidatesGrid:
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
+    
+class WalkForwardValidator:
+    def __init__(
+            self,
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
+            filtered_models = list[tuple[str, str]]
+        ):
+        
+        self.model_lib = model_lib
+        self.loss_lib = loss_lib
+        self.hparams_config = hparams_config # Default config. Not optimized
+        self.torch_device = torch_device
+        self.filtered_models = filtered_models
+        
+        
+        # self.optimized_hparams = optimized_hparams # Optimized

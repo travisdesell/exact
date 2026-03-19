@@ -35,3 +35,17 @@ def reformat_hparams(model_cfg: dict, loss_cfg: dict) -> dict:
     }
 
     return hparams
+
+def split_combo_names(
+        model_losses: list[str], sep: str
+    ) -> list[tuple[str, str]]:
+
+    split_combos = []
+    for i in model_losses:
+        parts = i.split(sep, 1)
+        if len(parts) != 2:
+            raise ValueError(f'Model + Loss combo name string is incorrect: {i}')
+        
+        split_combos.append((parts[0], parts[1]))
+
+    return split_combos
