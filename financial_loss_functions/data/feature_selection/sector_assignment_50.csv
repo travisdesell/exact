@@ -1,0 +1,51 @@
+ticker,company,sector,secondary_sector,key_business
+AKAM,"Akamai Technologies, Inc.",Information Technology,,"CDN, cybersecurity, and cloud computing"
+ATO,Atmos Energy Corporation,Utilities,,Natural gas utility
+BXP,"BXP, Inc.",Real Estate,,Office REIT (Class A workplaces)
+CAG,"Conagra Brands, Inc.",Consumer Staples,,Branded food products
+CHRW,"C.H. Robinson Worldwide, Inc.",Industrials,,Third-party logistics (3PL)
+CINF,Cincinnati Financial Corporation,Financials,,Property and casualty insurance
+COO,"The Cooper Companies, Inc.",Health Care,,Contact lenses and women's health devices
+CPB,The Campbell's Company,Consumer Staples,,"Packaged foods (soups, snacks, sauces)"
+CPT,Camden Property Trust,Real Estate,,Multifamily residential REIT
+DECK,Deckers Outdoor Corporation,Consumer Discretionary,,"Footwear (UGG, HOKA, Teva)"
+DPZ,"Domino's Pizza, Inc.",Consumer Discretionary,,Quick-service restaurant (pizza delivery)
+DVA,DaVita Inc.,Health Care,,Kidney dialysis services
+ED,"Consolidated Edison, Inc.",Utilities,,"Electric, gas, and steam utility"
+EIX,Edison International,Utilities,,Electric utility (Southern California Edison)
+EMN,Eastman Chemical Company,Materials,,Specialty chemicals and materials
+ESS,"Essex Property Trust, Inc.",Real Estate,,Multifamily residential REIT
+ETR,Entergy Corporation,Utilities,,Electric utility
+EXPD,"Expeditors International of Washington, Inc.",Industrials,,Freight forwarding and logistics
+EXR,Extra Space Storage Inc.,Real Estate,,Self-storage REIT
+FDS,FactSet Research Systems Inc.,Financials,Information Technology,Financial data and analytics software
+FFIV,"F5, Inc.",Information Technology,,Application security and delivery
+FRT,Federal Realty Investment Trust,Real Estate,,Retail REIT (mixed-use properties)
+HBAN,Huntington Bancshares Incorporated,Financials,,Regional banking
+HOLX,"Hologic, Inc.",Health Care,,Women's health diagnostics and imaging
+HSIC,"Henry Schein, Inc.",Health Care,,Healthcare distribution
+IEX,Indian Energy Exchange,Utilities,Financials,Power trading exchange
+IRM,Iron Mountain Incorporated,Real Estate,Information Technology,Records management and data centers
+IVZ,Invesco Ltd.,Financials,,Asset management
+JBHT,"J.B. Hunt Transport Services, Inc.",Industrials,,Transportation and logistics
+JKHY,"Jack Henry & Associates, Inc.",Financials,,FinTech and payment processing
+KIM,Kimco Realty Corporation,Real Estate,,Retail REIT (grocery-anchored shopping centers)
+KMB,Kimberly-Clark Corporation,Consumer Staples,,"Personal care products (Huggies, Kleenex, Kotex)"
+KMX,"CarMax, Inc.",Consumer Discretionary,,Used vehicle retail
+LH,Labcorp Holdings Inc.,Health Care,,Clinical laboratory services
+LNT,Alliant Energy Corporation,Utilities,,Electric and gas utility
+MHK,"Mohawk Industries, Inc.",Consumer Discretionary,,Flooring manufacturer
+NDSN,Nordson Corporation,Industrials,Health Care,Precision dispensing and medical devices
+NTRS,Northern Trust Corporation,Financials,,Asset servicing and wealth management
+NVR,"NVR, Inc.",Consumer Discretionary,Financials,Home construction and mortgage banking
+PKG,Packaging Corporation of America,Industrials,,Containerboard and corrugated packaging
+PODD,Insulet Corporation,Health Care,,Diabetes medical devices (Omnipod)
+REG,Regency Centers Corporation,Real Estate,,Retail REIT (grocery-anchored)
+RHI,Robert Half Inc.,Industrials,,Staffing and consulting services
+STLD,"Steel Dynamics, Inc.",Materials,,Steel production and metals recycling
+TECH,Bio-Techne Corporation,Health Care,,Life sciences reagents and instruments
+TFX,Teleflex Incorporated,Health Care,,Medical devices (vascular and surgical)
+TRMB,Trimble Inc.,Industrials,Information Technology,Geospatial and construction technology
+TRV,"The Travelers Companies, Inc.",Financials,,Property and casualty insurance
+UHS,"Universal Health Services, Inc.",Health Care,,Hospital and behavioral health services
+WRB,W. R. Berkley Corporation,Financials,,Commercial lines property and casualty insurance

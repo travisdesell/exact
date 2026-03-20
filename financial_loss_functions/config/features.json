@@ -1,3 +1,9 @@
 {
-    "common_features": ["sprtrn"]
+    "common_features": ["sprtrn"],
+    "sp500_returns": "sprtrn",
+    "macro_per_stock": 2,
+    "feature_selection": {
+        "lags": [10, 30, 50, 60],
+        "low_corr_threshold": 0.1
+    }
 }
