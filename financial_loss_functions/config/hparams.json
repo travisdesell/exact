@@ -2,7 +2,7 @@
     "n_seeds": 5,
 
     "tuner": {
-        "n_tuning_trials": 50,
+        "n_tuning_trials": 30,
         "n_jobs": 1
     },
     "rolling_windows": {
@@ -65,7 +65,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,

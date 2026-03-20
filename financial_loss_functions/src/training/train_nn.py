@@ -480,10 +480,9 @@ class Tuner:
         return model_rets - self.benchmark_rets
 
     def _calc_composite_score(
-            self,model_name: str, loss_name: str,
+            self, model_loss_name,
             alloc_weights: np.ndarray, y_val: np.ndarray
         ) -> float:
-        model_loss_name = f'{model_name}-{loss_name}'
         
         evaluator = Evaluator(y_val, None)
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
@@ -570,6 +569,8 @@ class Tuner:
             model_cfg: dict,
             loss_cfg: dict
         ):
+        
+        model_loss_name = f'{model_name}-{loss_name}'
 
         # # Calculate equal weight portfolio & its returns as benchmark
         if self.benchmark_rets is None:
@@ -669,8 +670,7 @@ class Tuner:
                 
                 # Calculate composite scores from allocation weights
                 composite_score = self._calc_composite_score(
-                    model_name,
-                    loss_name,
+                    model_loss_name,
                     alloc_weights,
                     y_val
                 )
@@ -702,7 +702,11 @@ class Tuner:
         if model_tuning_space and y_val is not None:
             pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=2)
 
-            study = optuna.create_study(direction=self.direction, pruner=pruner)
+            study = optuna.create_study(
+                direction=self.direction,
+                pruner=pruner,
+                study_name=model_loss_name
+            )
             study.optimize(
                 _objective,
                 n_trials=self.n_trials,

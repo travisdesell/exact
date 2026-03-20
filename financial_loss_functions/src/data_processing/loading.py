@@ -63,11 +63,13 @@ def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
     macro_data_dict = load_csv_files(macro_files)
     return macro_data_dict
 
-def find_avg_perf_files(suffixes: list[str], avg_dir: str | Path) -> dict[str, str]:
+def find_artifact_files(
+        prefix: str, suffixes: list[str], dir_path: str | Path, ext: str
+    ) -> dict[str, str]:
     paths_temp = []
     for suff in suffixes:
         paths_temp.append(
-            (suff, avg_dir / f'avg_perf_{suff}.csv')
+            (suff, dir_path / f'{prefix}_{suff}{ext}')
         )
     
     avg_perf_paths = {}
@@ -80,8 +82,6 @@ def find_avg_perf_files(suffixes: list[str], avg_dir: str | Path) -> dict[str, s
                         {tup[0]: path}
                     )
                 else:
-                    print(f'Avgerage performance file for {tup[0]} not found at {tup[0]}. Skipping!')
-    
-    del paths_temp
+                    print(f'{prefix.upper()} file for {tup[0]} not found at {tup[0]}. Skipping!')
 
     return avg_perf_paths

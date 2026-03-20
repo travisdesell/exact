@@ -9,7 +9,7 @@ from src.utils.formatting import split_combo_names
 from src.training.train_trad import TradModelsTrainer
 from src.visualization.plots import train_val_losses_plot
 from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
-from src.data_processing.loading import load_csv_files, find_avg_perf_files
+from src.data_processing.loading import load_csv_files, find_artifact_files
 from src.utils.io import (
     create_directory, save_to_csv, save_to_json, load_json, raise_file_not_found
 )
@@ -451,9 +451,11 @@ def run_wfv_pipeline(
         all_models.extend(NNModelLibrary.list_models(cat))
     
     if grid_mode == 'all':
-        avg_perf_paths = find_avg_perf_files(
+        avg_perf_paths = find_artifact_files(
+            'avg_perf',
             ['all'],
-            artifacts_paths['avg_perf_dir']
+            artifacts_paths['avg_perf_dir'],
+            '.csv'
         )
 
         num_files = len(avg_perf_paths)
@@ -465,9 +467,12 @@ def run_wfv_pipeline(
             raise RuntimeError('More than 1 file found for all mode.')
 
     elif grid_mode == 'one_model':
-        avg_perf_paths = find_avg_perf_files(
+        # Average Performance files
+        avg_perf_paths = find_artifact_files(
+            'avg_perf',
             all_models,
-            artifacts_paths['avg_perf_dir']
+            artifacts_paths['avg_perf_dir'],
+            '.csv'
         )
         if len(avg_perf_paths) == 0:
             raise RuntimeError(
@@ -477,7 +482,23 @@ def run_wfv_pipeline(
 
         all_avg_perf = pd.concat(avg_perf_dfs.values(), axis=0)
         all_avg_perf = all_avg_perf[~all_avg_perf.index.duplicated(keep='first')]
-            
+
+        # Optimized Hyperparameter files
+        opti_paths = find_artifact_files(
+            'optimized',
+            all_models,
+            artifacts_paths['hparams_dir'],
+            '.json'
+        )
+
+        if len(opti_paths) == 0:
+            print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+            optimized_hparams = None
+        else:
+            optimized_hparams = {}
+            for path in opti_paths:
+                optimized_hparams.update(load_json(path))
+       
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
@@ -521,7 +542,8 @@ def run_wfv_pipeline(
             torch_device = torch_device,
             filtered_models = split_model_combos,
             mpi = mpi,
-            temp_dir = artifacts_paths['temp_dir']
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = optimized_hparams
         )
 
         #### MPI Verions here ####
@@ -537,7 +559,8 @@ def run_wfv_pipeline(
             torch_device = torch_device,
             filtered_models = split_model_combos,
             mpi = mpi,
-            temp_dir = artifacts_paths['temp_dir']
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = optimized_hparams
         )
     
     
@@ -545,10 +568,4 @@ def run_wfv_pipeline(
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
     
-    
-    # opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
-    # if os.path.exists(opti_hparams_path):
-    #     optimized_hparams = load_json(opti_hparams_path)
-    # else:
-    #     print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
 
