@@ -195,6 +195,9 @@ class Reshaper:
             return None
         else:
             return self.features
+    
+    def update_stride(self, stride: int):
+        self.stride = stride
 
 class WindowDataset(Dataset):
     def __init__(self, X: np.ndarray, y: np.ndarray):

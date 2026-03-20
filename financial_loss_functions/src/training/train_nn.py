@@ -234,7 +234,7 @@ class Trainer:
 
             epoch_avg_loss = total_loss_sum / total_samples
             self.train_losses.append(epoch_avg_loss)
-            status_msg = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}'
+            status_msg = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.5f}'
             self.avg_train_loss = epoch_avg_loss
 
             # --- Validation & Early Stopping Logic ---
@@ -270,13 +270,13 @@ class Trainer:
                 # 2. THE EARLY STOPPING
                 if early_stopping and is_past_warmup and self.patience_counter >= patience:
                     status_msg = status_msg + \
-                        f' | Val Loss: {avg_val_loss:.4f}'
+                        f' | Val Loss: {avg_val_loss:.5f}'
                     print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
                     print(f'----- Early Stopping Triggered at Epoch {epoch} -----\n')
                     break
                         
                 else:
-                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.5f}'
             
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         
@@ -289,11 +289,11 @@ class Trainer:
         else:
             self.model.load_state_dict(self.best_model_state)
             
-        print(f'Training Complete. Best Val Loss: {self.best_val_loss:.4f}')
+        print(f'Training Complete. Best Val Loss: {self.best_val_loss:.5f}')
             
         end_time = time.time()
         time_taken = round(end_time - start_time, 3)
-        print(f'Best Train Loss: {self.best_train_loss:.4f}, Time Taken: {time_taken}s')
+        print(f'Best Train Loss: {self.best_train_loss:.5f}, Time Taken: {time_taken}s')
 
     def validate(self, val_ds: WindowDataset) -> float:
         """
@@ -394,7 +394,7 @@ class Trainer:
         
         end_time = time.time()
         time_taken = round(end_time-start_time, 3)
-        print(f'Average Eval Loss: {self.avg_eval_loss:.4f}, Time Taken: {time_taken}')
+        print(f'Average Eval Loss: {self.avg_eval_loss:.5f}, Time Taken: {time_taken}')
 
     def get_eval_alloc_weights(self) -> np.ndarray:
         """
@@ -725,7 +725,38 @@ class Tuner:
     def set_tuning_direction(self, direction: str):
         self.direction = direction
 
-class CandidatesGrid:
+
+class GridUtilities:
+    def __init__(
+            self,
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
+            mpi: bool = False,
+            temp_dir: str | None = None
+        ):
+        self.model_lib = model_lib
+        self.loss_lib = loss_lib
+        self.hparams_config = hparams_config # Default config. Not optimized
+        self.torch_device = torch_device
+        self.mpi = mpi
+        self.temp_dir = temp_dir
+        
+        self._temp_dir_check()
+
+    def _temp_dir_check(self):
+        if self.mpi:
+            if not self.temp_dir or not os.path.exists(self.temp_dir):
+                raise FileNotFoundError(
+                    f'Temp directory not found: {self.temp_dir}'
+                )
+    
+    def set_temp_directory(self, temp_dir: str):
+        self.temp_dir = temp_dir
+
+
+class CandidatesGrid(GridUtilities):
     models_hparams = 'nn_models'
     losses_hparams = 'losses'
     
@@ -749,10 +780,10 @@ class CandidatesGrid:
 
         train_eval_* methods can be run only once with each instance
         """
-        self.model_lib = model_lib
-        self.loss_lib = loss_lib
-        self.hparams_config = hparams_config
-        self.torch_device = torch_device
+
+        super().__init__(
+            model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
+        )
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -760,9 +791,6 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
-        self.mpi = mpi
-        self.temp_dir = temp_dir
-        self._temp_dir_check()
         
         # Tuner configuration
         if self.tune and tune_metric:
@@ -799,12 +827,6 @@ class CandidatesGrid:
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def _temp_dir_check(self):
-        if self.mpi:
-            if not self.temp_dir or not os.path.exists(self.temp_dir):
-                raise FileNotFoundError(
-                    f'Temp directory not found: {self.temp_dir}'
-                )
     
     def _train_eval_helper(
         self,
@@ -1453,9 +1475,6 @@ class CandidatesGrid:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
         
         return self.all_alloc_weights
-    
-    def set_temp_directory(self, temp_dir: str):
-        self.temp_dir = temp_dir
 
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
         return self.train_val_losses
@@ -1463,21 +1482,30 @@ class CandidatesGrid:
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
     
-class WalkForwardValidator:
+class WalkForwardValidator(GridUtilities):
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
             torch_device: torch.device | str,
-            filtered_models = list[tuple[str, str]]
+            filtered_models: list[tuple[str, str]] | None = None,
+            mpi: bool = False,
+            temp_dir: str | None = None,
+            optimized_hparams = None
         ):
-        
-        self.model_lib = model_lib
-        self.loss_lib = loss_lib
-        self.hparams_config = hparams_config # Default config. Not optimized
-        self.torch_device = torch_device
+
+        super().__init__(
+            model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
+        )
         self.filtered_models = filtered_models
+        self.optimized_hparams = optimized_hparams # Optimized
+    
+    def validated_grid(
+        self, X_train: np.ndarray, y_train: np.ndarray, 
+        X_val: np.ndarray, y_val: np.ndarray):
         
-        
-        # self.optimized_hparams = optimized_hparams # Optimized
+        validate_count = len(self.filtered_models)
+        print(
+            f'\nTraining {validate_count} models.',
+        )
