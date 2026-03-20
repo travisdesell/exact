@@ -30,7 +30,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -102,7 +102,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -140,7 +140,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -178,7 +178,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -217,7 +217,7 @@
                 "epochs": 500,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -263,7 +263,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -294,7 +294,7 @@
                 "epochs": 500,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,

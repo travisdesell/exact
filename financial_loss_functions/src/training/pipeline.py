@@ -466,6 +466,22 @@ def run_wfv_pipeline(
         elif num_files > 1:
             raise RuntimeError('More than 1 file found for all mode.')
 
+        # Optimized Hyperparameter files
+        opti_paths = find_artifact_files(
+            'optimized',
+            ['all'],
+            artifacts_paths['hparams_dir'],
+            '.json'
+        )
+
+        if len(opti_paths) == 0:
+            print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+            optimized_hparams = None
+        else:
+            optimized_hparams = {}
+            for path in opti_paths:
+                optimized_hparams.update(load_json(path))
+
     elif grid_mode == 'one_model':
         # Average Performance files
         avg_perf_paths = find_artifact_files(
@@ -496,9 +512,9 @@ def run_wfv_pipeline(
             optimized_hparams = None
         else:
             optimized_hparams = {}
-            for path in opti_paths:
+            for path in opti_paths.values():
                 optimized_hparams.update(load_json(path))
-       
+
     else:
         raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
