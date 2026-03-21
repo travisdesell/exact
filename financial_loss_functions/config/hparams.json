@@ -151,7 +151,7 @@
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "lstm_layers": {"type": "categorical", "choices": [1, 2, 4]},
                 "trans_layers": {"type": "categorical", "choices": [1, 2]},
-                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "nheads":{"type": "categorical", "choices":[2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},

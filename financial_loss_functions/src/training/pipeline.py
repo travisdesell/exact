@@ -96,7 +96,6 @@ def rolling_reshape(
         returns_val: pd.DataFrame,
         windows_config: dict,
         common_features: list,
-        wfv: bool
     ) -> tuple:
     reshaper = Reshaper(
         windows_config['in_size'],
@@ -110,10 +109,6 @@ def rolling_reshape(
     # print('-'*10, ' train shapes ', '-'*10)
     # print('X_train shpe:', X_train.shape)
     # print('y_train shape:', y_train.shape)
-
-    if wfv:
-        # Stride = Output window size for wfv
-        reshaper.update_stride(stride=windows_config['out_size'])
 
     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
     # print('-'*10, ' val shapes ', '-'*10)
@@ -214,8 +209,7 @@ def run_tuning_pipeline(
         val_data,
         returns_val,
         hparams_config['rolling_windows'],
-        features_config['common_features'],
-        wfv = False
+        features_config['common_features']
     )
 
     # -------------------- Evaluator Setup -------------------- #
@@ -532,19 +526,18 @@ def run_wfv_pipeline(
     split_model_combos = split_combo_names(filtered_models, '-')
 
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = rolling_reshape(
-        train_data,
-        returns_train,
-        val_data,
-        returns_val,
-        hparams_config['rolling_windows'],
-        features_config['common_features'],
-        wfv = True
-    )
+    # X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = rolling_reshape(
+    #     train_data,
+    #     returns_train,
+    #     val_data,
+    #     returns_val,
+    #     hparams_config['rolling_windows'],
+    #     features_config['common_features'],
+    # )
 
-    # -------------------- Evaluator Setup -------------------- #
-    # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    # # -------------------- Evaluator Setup -------------------- #
+    # # Initializing once to compare all models together
+    # evaluator = Evaluator(y_val, MetricLibrary.items())
    
     # -------------------- Walk-Forward Training & Validation -------------------- #
     if mpi:
@@ -555,6 +548,7 @@ def run_wfv_pipeline(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
             hparams_config = hparams_config,
+            common_features = features_config['common_features'],
             torch_device = torch_device,
             filtered_models = split_model_combos,
             mpi = mpi,
@@ -572,12 +566,15 @@ def run_wfv_pipeline(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
             hparams_config = hparams_config,
+            common_features = features_config['common_features'],
             torch_device = torch_device,
             filtered_models = split_model_combos,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
             optimized_hparams = optimized_hparams
         )
+
+        grid_validator.validate_grid(train_data, returns_train, val_data, returns_val)
     
     
     

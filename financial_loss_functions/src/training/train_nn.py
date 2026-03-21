@@ -758,6 +758,30 @@ class GridUtilities:
     
     def set_temp_directory(self, temp_dir: str):
         self.temp_dir = temp_dir
+    
+    def _search_model(self, model_name: str) -> Type | None:
+        """Search for required model"""
+        for _, models_dict in self.model_lib.items():
+            if model_name in models_dict:
+                return models_dict[model_name]
+        return None
+    
+    def _search_loss_func(self, loss_name: str) -> Callable | None:
+        """Search for required loss function"""
+        for _, cat_dict in self.loss_lib.items():
+            for _, sub_cat_dict in cat_dict.items():
+                if loss_name in sub_cat_dict:
+                    return sub_cat_dict[loss_name]
+        
+        # objectives = self.loss_lib['objectives']['__default__']
+        # if loss_name in objectives:
+        #     return objectives[loss_name]
+        
+        # custom_combos = self.loss_lib['custom']['__default__']
+        # if loss_name in custom_combos:
+        #     return custom_combos[loss_name]
+        
+        return None
 
 
 class CandidatesGrid(GridUtilities):
@@ -1189,12 +1213,7 @@ class CandidatesGrid(GridUtilities):
             else:
                 return None    
                 
-    def _search_model(self, model_name: str) -> Type | None:
-        """Search for required model"""
-        for _, models_dict in self.model_lib.items():
-            if model_name in models_dict:
-                return models_dict[model_name]
-        return None
+    
 
     def train_eval_one_model(
             self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
@@ -1344,23 +1363,6 @@ class CandidatesGrid(GridUtilities):
             else:
                 return None
 
-    def _search_loss_func(self, loss_name: str) -> Callable | None:
-        """Search for required loss function"""
-        for _, cat_dict in self.loss_lib.items():
-            for _, sub_cat_dict in cat_dict.items():
-                if loss_name in sub_cat_dict:
-                    return sub_cat_dict[loss_name]
-        
-        # objectives = self.loss_lib['objectives']['__default__']
-        # if loss_name in objectives:
-        #     return objectives[loss_name]
-        
-        # custom_combos = self.loss_lib['custom']['__default__']
-        # if loss_name in custom_combos:
-        #     return custom_combos[loss_name]
-        
-        return None
-
     def train_eval_one_loss(
             self, loss_name: str, X_train: np.ndarray, y_train: np.ndarray, 
             X_val: np.ndarray, y_val: np.ndarray
@@ -1492,6 +1494,7 @@ class WalkForwardValidator(GridUtilities):
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
+            common_features: list[str],
             torch_device: torch.device | str,
             filtered_models: list[tuple[str, str]] | None = None,
             mpi: bool = False,
@@ -1502,14 +1505,53 @@ class WalkForwardValidator(GridUtilities):
         super().__init__(
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
         )
+        self.common_features = common_features
         self.filtered_models = filtered_models
         self.optimized_hparams = optimized_hparams # Optimized
     
-    def validated_grid(
-        self, X_train: np.ndarray, y_train: np.ndarray, 
-        X_val: np.ndarray, y_val: np.ndarray):
+    def _collected_combos(self):
+        relevant_temp = {'models': {}, 'losses': {}}
+        all_combos = []
+        for model_loss in self.filtered_models:
+            model_name = model_loss[0]
+            loss_name = model_loss[1]
+
+            if model_name not in relevant_temp['models']:
+                relevant_temp['models'][model_name] = self._search_model(model_name)
+            
+            if loss_name not in relevant_temp['losses']:
+                relevant_temp['losses'][loss_name] = self._search_loss_func(loss_name)
+
+            all_combos.append(
+                (
+                    model_name,
+                    relevant_temp['models'][model_name],
+                    loss_name,
+                    relevant_temp['losses'][loss_name]
+                )
+            )
+        return all_combos
+
+    def validate_grid(self, train_data, returns_train, val_data, returns_val):
         
         validate_count = len(self.filtered_models)
         print(
             f'\nTraining {validate_count} models.',
         )
+
+        all_combos = self._collected_combos()
+
+        for idx, (model_name, model_cls, loss_name, loss_func) in enumerate(all_combos, 1):
+
+            print(
+                '\n', '-'*10,
+                f' Walk-Forward Validating {model_name} - {loss_name}, {idx}/{validate_count}',
+                '-'*10
+            )
+            
+
+            # TODO:
+            # 1. Collect wf indexes, then slice and reshape data at every step.
+            # 2. Collect median number of epochs from the best trial and save with optimized hparams
+            # 3. Train and validate, expand train set, reshape and validate again
+            # 4. Train and validate for a set of seeds.
