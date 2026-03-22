@@ -111,6 +111,7 @@ class Trainer:
         # For Early Stopping
         self.best_val_loss = float('inf')
         self.best_train_loss = float('inf')
+        self.best_epoch = 0
         self.best_model_state = None
         self.patience_counter = 0
     
@@ -260,6 +261,7 @@ class Trainer:
                 if is_improving:
                     self.best_val_loss = avg_val_loss
                     self.best_train_loss = epoch_avg_loss
+                    self.best_epoch = epoch
                     self.best_model_state = copy.deepcopy(self.model.state_dict())
                     
                     self.patience_counter = 0 
@@ -416,6 +418,9 @@ class Trainer:
     
     def get_best_losses(self) -> tuple[float, float]:
         return self.best_train_loss, self.best_val_loss
+    
+    def get_best_epoch(self) -> int:
+        return self.best_epoch
     
     def device_cleanup(self):
         if self.device.type == 'mps':
@@ -632,6 +637,7 @@ class Tuner:
             composite_scores = []
             seed_train_losses = []
             seed_val_losses = []
+            seed_best_epochs = []
 
             # loop over list of random seeds
             rng = random.Random(trial.number) # To avoid global random state and for reproducibilty
@@ -671,6 +677,8 @@ class Tuner:
                 seed_train_losses.append(best_train_loss)
                 seed_val_losses.append(best_val_loss)
 
+                seed_best_epochs.append(trainer.get_best_epoch())
+
                 # Evaluate the get all the portfolio weights for eah window
                 trainer.evaluate(val_ds)
                 alloc_weights = trainer.get_eval_alloc_weights()
@@ -699,6 +707,9 @@ class Tuner:
                 
                 trainer.device_cleanup()
                 del trainer
+            
+            # Inside _objective, after the seed loop
+            trial.set_user_attr('best_epochs', seed_best_epochs)
             
             final_objective = self._calc_tuning_objective(
                 composite_scores, seed_train_losses, seed_val_losses
@@ -865,7 +876,22 @@ class CandidatesGrid(GridUtilities):
 
         self.optimized_hparams = {} # Will be filled if tuned
     
+    def _map_new_params(self, best_config: dict, new_hparams: dict) -> dict:
+        
+        # Map the best Optuna parameters into our new dictionary
+        for k, v in new_hparams.items():
+            if k in best_config['model']: best_config['model'][k] = v
+            elif k in best_config['optimizer']: best_config['optimizer'][k] = v
+            elif k in best_config['loss']: best_config['loss'][k] = v
+
+        return best_config
     
+    def _add_median_epoch(self, best_config: dict, best_epochs: list[int]):
+        best_config['train']['median_epoch'] = int(np.median(best_epochs))
+
+        return best_config
+
+
     def _train_eval_helper(
         self,
         model_name: str,
@@ -907,11 +933,10 @@ class CandidatesGrid(GridUtilities):
                 loss_cfg,
             )
             best_found_params = study.best_params
-            # Map the best Optuna parameters into our new dictionary
-            for k, v in best_found_params.items():
-                if k in best_config['model']: best_config['model'][k] = v
-                elif k in best_config['optimizer']: best_config['optimizer'][k] = v
-                elif k in best_config['loss']: best_config['loss'][k] = v
+            best_epochs = study.best_trial.user_attrs.get('seed_best_epochs', [])
+            
+            best_config = self._map_new_params(best_config, best_found_params)
+            best_config = self._add_median_epoch(best_config, best_epochs)
             
             del study
         else:
