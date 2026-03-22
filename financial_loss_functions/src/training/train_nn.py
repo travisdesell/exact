@@ -8,12 +8,13 @@ import optuna
 import psutil
 import random
 import numpy as np
+import pandas as pd
 from torch import Tensor
 from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 from src.utils.formatting import reformat_hparams
-from src.data_processing.dataset import WindowDataset
+from src.data_processing.dataset import WindowDataset, Reshaper, calc_in_out_idx
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -413,6 +414,9 @@ class Trainer:
             print('Model must be trained and validated.')
             return None
     
+    def get_best_losses(self) -> tuple[float, float]:
+        return self.best_train_loss, self.best_val_loss
+    
     def device_cleanup(self):
         if self.device.type == 'mps':
             try:
@@ -439,6 +443,8 @@ class MetricModel(BaseModel):
 class Tuner:
     direction = 'maximize'
     max_seed = 1000000
+    n_startup_trials = 20
+    n_warmup_steps = 2
 
     def __init__(
             self,
@@ -661,8 +667,9 @@ class Tuner:
                 trainer.train(train_ds, val_ds)
 
                 # We grab the losses from the trainer's "Best" epoch
-                seed_train_losses.append(trainer.best_train_loss)
-                seed_val_losses.append(trainer.best_val_loss)
+                best_train_loss, best_val_loss = trainer.get_best_losses()
+                seed_train_losses.append(best_train_loss)
+                seed_val_losses.append(best_val_loss)
 
                 # Evaluate the get all the portfolio weights for eah window
                 trainer.evaluate(val_ds)
@@ -700,7 +707,10 @@ class Tuner:
             return final_objective
         
         if model_tuning_space and y_val is not None:
-            pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=2)
+            pruner = optuna.pruners.MedianPruner(
+                n_startup_trials=self.n_startup_trials,
+                n_warmup_steps=self.n_warmup_steps
+            )
 
             study = optuna.create_study(
                 direction=self.direction,
@@ -1508,6 +1518,11 @@ class WalkForwardValidator(GridUtilities):
         self.common_features = common_features
         self.filtered_models = filtered_models
         self.optimized_hparams = optimized_hparams # Optimized
+
+        self.stride = self.hparams_config['rolling_windows']['out_size'] # Output size by default
+    
+    def update_stride(self, stride: int):
+        self.stride = stride
     
     def _collected_combos(self):
         relevant_temp = {'models': {}, 'losses': {}}
@@ -1531,27 +1546,69 @@ class WalkForwardValidator(GridUtilities):
                 )
             )
         return all_combos
+    
+    def _calc_num_steps(self, rets_val):
+        total_val_days = len(rets_val)
+        extra_days = total_val_days % self.stride
 
-    def validate_grid(self, train_data, returns_train, val_data, returns_val):
+        num_steps = (total_val_days - extra_days) // self.stride
+
+        return num_steps, extra_days
+
+    def validate_grid(
+            self, train: pd.DataFrame, rets_train: pd.DataFrame, 
+            val: pd.DataFrame, rets_val: pd.DataFrame
+        ):
+
+        # Prepare dataset
+        num_steps, extra_days = self._calc_num_steps(rets_val)
         
+        init_train = pd.concat([train, val.iloc[:extra_days]], axis=0)
+        init_train_out = pd.concat([rets_val, rets_val.iloc[:extra_days]], axis=0)
+        init_val = val.iloc[extra_days:]
+        init_val_out = rets_val.iloc[extra_days:]
+
+        
+        # Search and prepare models combos
         validate_count = len(self.filtered_models)
         print(
-            f'\nTraining {validate_count} models.',
+            '\n', '='*20,
+            f'Walk-forward validating {validate_count} models, over {num_steps} steps.',
+            '='*20
         )
 
         all_combos = self._collected_combos()
-
+        
         for idx, (model_name, model_cls, loss_name, loss_func) in enumerate(all_combos, 1):
 
-            print(
+            walk_train = init_train.copy()
+            walk_train_out = init_train_out.copy()
+
+            walk_val = None
+            walk_val_out = None
+            for step in range(1, num_steps+1):
+                print(
                 '\n', '-'*10,
-                f' Walk-Forward Validating {model_name} - {loss_name}, {idx}/{validate_count}',
+                f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}, Step: {step}',
                 '-'*10
             )
-            
+                current_end = step * self.stride
+                current_start = current_end - self.stride
+
+                if current_start > 0:
+                    walk_train = pd.concat([walk_train, walk_val], axis=0)
+                    walk_train_out = pd.concat([walk_train_out, walk_val_out], axis=0)
+                
+                walk_val = init_val.iloc[current_start: current_end]
+                walk_val_out = init_val_out.iloc[current_start: current_end]
+
+                ##### RESHAPE HERE
+
+
+
 
             # TODO:
-            # 1. Collect wf indexes, then slice and reshape data at every step.
+            # 1. Reshape data at every step.
             # 2. Collect median number of epochs from the best trial and save with optimized hparams
             # 3. Train and validate, expand train set, reshape and validate again
             # 4. Train and validate for a set of seeds.

@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from typing import Type, Any
-from src.data_processing.dataset import build_dataset
 from src.data_processing.preprocess_crsp import preprocessor2
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -85,6 +84,40 @@ class TradModelsTrainer:
             name: np.vstack(weights) 
             for name, weights in self.all_alloc_weights.items()
         }
+    
+    @staticmethod
+    def _build_dataset(
+        in_sample_idx: tuple[int, int], # (Start, End)
+        out_sample_idx: tuple[int, int],
+        returns_train: pd.DataFrame, 
+        returns_val: pd.DataFrame,
+        returns_test: pd.DataFrame | None = None
+    ) -> dict[str, pd.DataFrame]:
+        """
+        Dataset builder function for covariance based models (tradional).
+        Combines and slices to create in-sample and out-of-sample datasets.
+        """
+        
+        #### If train data must be sliced or shifted, it must be implmented here 
+        # after grabbing index from dataset.py
+        if returns_test is None:
+            returns_is = pd.concat(
+                [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]]]
+            )
+            
+            # iloc[200:250] gives rows 200-249 (Exactly 50 rows)
+            returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]]
+        
+        elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
+            returns_is = pd.concat(
+                [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]]]
+            )
+            returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]]
+        else:
+            raise ValueError('Incorrect type for test returns.')
+
+        # Sorting in alphabetical order
+        return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
 
     def train_all(
             self,
@@ -101,7 +134,7 @@ class TradModelsTrainer:
         # Prepare small data packets in the main thread to minimize IPC overhead
         prepared_slices = []
         for i in range(num_slices):
-            returns_is, _ = build_dataset(
+            returns_is, _ = self._build_dataset(
                 in_sample_indexes[i],
                 out_sample_indexes[i],
                 returns_train,
