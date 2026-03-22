@@ -82,7 +82,7 @@ class Reshaper:
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
-    def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
+    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
         all_data_value = df_window.values
@@ -174,7 +174,7 @@ class Reshaper:
             if y_df.isna().any().any():
                 raise ValueError('Window has missing data. Fix before training.')
         
-            X_list.append(self._transform_one_window(X_df))
+            X_list.append(self.transform_one_window(X_df))
             y_list.append(y_df.values)
             good_starts.append(s)
         

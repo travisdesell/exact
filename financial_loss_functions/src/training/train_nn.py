@@ -1515,11 +1515,19 @@ class WalkForwardValidator(GridUtilities):
         super().__init__(
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
         )
-        self.common_features = common_features
         self.filtered_models = filtered_models
         self.optimized_hparams = optimized_hparams # Optimized
 
-        self.stride = self.hparams_config['rolling_windows']['out_size'] # Output size by default
+        self.in_size = self.hparams_config['rolling_windows']['in_size']
+        out_size = self.hparams_config['rolling_windows']['out_size']
+        self.stride =  out_size # Output size by default
+
+        self.reshaper = Reshaper(
+            self.in_size,
+            out_size,
+            self.hparams_config['rolling_windows']['stride'],
+            common_features
+        )
     
     def update_stride(self, stride: int):
         self.stride = stride
@@ -1547,13 +1555,75 @@ class WalkForwardValidator(GridUtilities):
             )
         return all_combos
     
-    def _calc_num_steps(self, rets_val):
+    def _calc_num_steps(self, rets_val: pd.DataFrame) ->tuple[int, int]:
         total_val_days = len(rets_val)
         extra_days = total_val_days % self.stride
 
         num_steps = (total_val_days - extra_days) // self.stride
 
         return num_steps, extra_days
+
+    @staticmethod
+    def _init_datasets(
+            train: pd.DataFrame, rets_train: pd.DataFrame,
+            val: pd.DataFrame, rets_val: pd.DataFrame, extra_days: int
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        init_train = pd.concat([train, val.iloc[:extra_days]], axis=0)
+        init_rets_train = pd.concat([rets_train, rets_val.iloc[:extra_days]], axis=0)
+        init_val = val.iloc[extra_days:]
+        init_rets_val = rets_val.iloc[extra_days:]
+
+        return init_train, init_rets_train, init_val, init_rets_val
+
+    def _validate_1_model(
+            self,
+            init_train,
+            init_rets_train,
+            init_val,
+            init_rets_val,
+            model_name,
+            model_cls,
+            loss_name,
+            loss_func,
+            num_steps
+        ):
+        walk_train = init_train.copy()
+        walk_rets_train = init_rets_train.copy()
+        walk_val = None
+        walk_rets_val = None
+        
+        # Take steps
+        for step in range(1, num_steps+1):
+            print(
+                '\n', '='*10,
+                f' WFV: {model_name} - {loss_name}, Step: {step}',
+                '='*10
+            )
+            current_end = step * self.stride
+            current_start = current_end - self.stride
+
+            if current_start > 0:
+                walk_train = pd.concat([walk_train, walk_val], axis=0)
+                walk_rets_train = pd.concat([walk_rets_train, walk_rets_val], axis=0)
+            
+            # Save walk_val and returns val for every step
+            walk_val = init_val.iloc[current_start: current_end] # To be added to train data later
+            walk_rets_val = init_rets_val.iloc[current_start: current_end]
+
+            # Reshaping entire training data
+            X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
+
+            # Reshaping only last window
+            infer_in = self.reshaper.transform_one_window(walk_train.iloc[-self.in_size:])
+            infer_in = infer_in.reshape(1, infer_in.shape[0], infer_in.shape[1])
+
+            infer_out = walk_rets_val.values
+            infer_out = infer_out.reshape(1, infer_out.shape[0], infer_out.shape[1])
+
+
+            print(X_train.shape, y_train.shape, infer_in.shape, infer_out.shape)
+
+            # CONTINUE WITH TRAINING HERE #
 
     def validate_grid(
             self, train: pd.DataFrame, rets_train: pd.DataFrame, 
@@ -1562,53 +1632,42 @@ class WalkForwardValidator(GridUtilities):
 
         # Prepare dataset
         num_steps, extra_days = self._calc_num_steps(rets_val)
-        
-        init_train = pd.concat([train, val.iloc[:extra_days]], axis=0)
-        init_train_out = pd.concat([rets_val, rets_val.iloc[:extra_days]], axis=0)
-        init_val = val.iloc[extra_days:]
-        init_val_out = rets_val.iloc[extra_days:]
 
+        init_train, init_rets_train, init_val, init_rets_val = self._init_datasets(
+            train, rets_train, val, rets_val, extra_days
+        )
+
+        self.reshaper.extract_features(init_train.columns)
         
         # Search and prepare models combos
         validate_count = len(self.filtered_models)
         print(
-            '\n', '='*20,
-            f'Walk-forward validating {validate_count} models, over {num_steps} steps.',
-            '='*20
+            f'\nWalk-forward validating {validate_count} models, over {num_steps} steps.'
         )
-
         all_combos = self._collected_combos()
         
         for idx, (model_name, model_cls, loss_name, loss_func) in enumerate(all_combos, 1):
-
-            walk_train = init_train.copy()
-            walk_train_out = init_train_out.copy()
-
-            walk_val = None
-            walk_val_out = None
-            for step in range(1, num_steps+1):
-                print(
+            print(
                 '\n', '-'*10,
-                f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}, Step: {step}',
+                f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
                 '-'*10
             )
-                current_end = step * self.stride
-                current_start = current_end - self.stride
-
-                if current_start > 0:
-                    walk_train = pd.concat([walk_train, walk_val], axis=0)
-                    walk_train_out = pd.concat([walk_train_out, walk_val_out], axis=0)
+            self._validate_1_model(
+                init_train,
+                init_rets_train,
+                init_val,
+                init_rets_val,
+                model_name,
+                model_cls,
+                loss_name,
+                loss_func,
+                num_steps
+            )
                 
-                walk_val = init_val.iloc[current_start: current_end]
-                walk_val_out = init_val_out.iloc[current_start: current_end]
-
-                ##### RESHAPE HERE
-
 
 
 
             # TODO:
-            # 1. Reshape data at every step.
-            # 2. Collect median number of epochs from the best trial and save with optimized hparams
-            # 3. Train and validate, expand train set, reshape and validate again
-            # 4. Train and validate for a set of seeds.
+            # 1. Collect median number of epochs from the best trial and save with optimized hparams
+            # 2. Train and validate, expand train set, reshape and validate again
+            # 3. Train and validate for a set of seeds.

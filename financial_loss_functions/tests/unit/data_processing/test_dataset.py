@@ -56,7 +56,7 @@ def test_transform_one_window_new_layouts(layout, expected_shape):
     r = Reshaper(in_size=1, out_size=1, stride=1, common_features=['sprtrn'], layout=layout)
     r.extract_features(cols)
 
-    out = r._transform_one_window(df_window)
+    out = r.transform_one_window(df_window)
 
     assert out.shape == expected_shape
 
