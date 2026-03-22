@@ -10,6 +10,7 @@ import random
 import numpy as np
 import pandas as pd
 from torch import Tensor
+from abc import ABC, abstractmethod
 from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
@@ -751,7 +752,10 @@ class Tuner:
         self.direction = direction
 
 
-class GridUtilities:
+class GridUtilities(ABC):
+    mdls_hparams_name = 'nn_models'
+    ls_hparams_name = 'losses'
+
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
@@ -803,12 +807,39 @@ class GridUtilities:
         #     return custom_combos[loss_name]
         
         return None
+    
+    def _memory_diagnostics(self):
+        """Print memory usage diagnostics"""
+        process = psutil.Process(os.getpid())
+        mem_gb = process.memory_info().rss / 1024 ** 3
+        
+        print(f"  Process memory: {mem_gb:.2f} GB")
+        
+        # if DEVICE == 'cuda':
+        #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+        #     print(f"  GPU cached: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
+        
+        # Count Trainer instances
+        trainer_count = 0
+        for obj in gc.get_objects():
+            if type(obj).__name__ == 'Trainer':
+                trainer_count += 1
+        
+        if trainer_count > 0:
+            print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
+    
+    def _mpi_setup_check(mpi_items: list):
+        for i in mpi_items:
+            if i is None:
+                raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
+
+    @abstractmethod
+    def _train_eval_helper(self):
+        pass
 
 
 class CandidatesGrid(GridUtilities):
-    models_hparams = 'nn_models'
-    losses_hparams = 'losses'
-    
+
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
@@ -887,10 +918,9 @@ class CandidatesGrid(GridUtilities):
         return best_config
     
     def _add_median_epoch(self, best_config: dict, best_epochs: list[int]):
-        best_config['train']['median_epoch'] = int(np.median(best_epochs))
+        best_config['train']['epochs'] = int(np.median(best_epochs))
 
         return best_config
-
 
     def _train_eval_helper(
         self,
@@ -905,8 +935,8 @@ class CandidatesGrid(GridUtilities):
         y_val: np.ndarray | None = None
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         # Extract base configs
-        model_cfg = self.hparams_config[self.models_hparams][model_name]
-        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name, {})
+        model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
+        loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
         
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
@@ -933,7 +963,7 @@ class CandidatesGrid(GridUtilities):
                 loss_cfg,
             )
             best_found_params = study.best_params
-            best_epochs = study.best_trial.user_attrs.get('seed_best_epochs', [])
+            best_epochs = study.best_trial.user_attrs.get('seed_best_epochs')
             
             best_config = self._map_new_params(best_config, best_found_params)
             best_config = self._add_median_epoch(best_config, best_epochs)
@@ -985,26 +1015,6 @@ class CandidatesGrid(GridUtilities):
             self._memory_diagnostics()
 
         return alloc_weights, train_val_losses, optimized_hparams
-    
-    def _memory_diagnostics(self):
-        """Print memory usage diagnostics"""
-        process = psutil.Process(os.getpid())
-        mem_gb = process.memory_info().rss / 1024 ** 3
-        
-        print(f"  Process memory: {mem_gb:.2f} GB")
-        
-        # if DEVICE == 'cuda':
-        #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
-        #     print(f"  GPU cached: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
-        
-        # Count Trainer instances
-        trainer_count = 0
-        for obj in gc.get_objects():
-            if type(obj).__name__ == 'Trainer':
-                trainer_count += 1
-        
-        if trainer_count > 0:
-            print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
 
     def _trained_check(self):
         """
@@ -1042,11 +1052,6 @@ class CandidatesGrid(GridUtilities):
                     continue
         
         return losses_to_use
-
-    def _mpi_setup_check(mpi_items: list):
-        for i in mpi_items:
-            if i is None:
-                raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
 
     @staticmethod
     def _select_ranks_combos(all_combos: list, global_rank, size):
@@ -1248,8 +1253,6 @@ class CandidatesGrid(GridUtilities):
             else:
                 return None    
                 
-    
-
     def train_eval_one_model(
             self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
             X_val: np.ndarray, y_val: np.ndarray,
@@ -1600,17 +1603,89 @@ class WalkForwardValidator(GridUtilities):
 
         return init_train, init_rets_train, init_val, init_rets_val
 
-    def _validate_1_model(
+    def _reshape_step_data(
             self,
-            init_train,
-            init_rets_train,
-            init_val,
-            init_rets_val,
-            model_name,
-            model_cls,
-            loss_name,
-            loss_func,
-            num_steps
+            walk_train: pd.DataFrame,
+            walk_rets_train: pd.DataFrame,
+            walk_rets_val: pd.DataFrame    
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        # Reshaping entire training data
+        X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
+
+        # Reshaping only last window
+        infer_in = self.reshaper.transform_one_window(walk_train.iloc[-self.in_size:])
+        infer_in = infer_in.reshape(1, infer_in.shape[0], infer_in.shape[1])
+
+        infer_out = walk_rets_val.values
+        infer_out = infer_out.reshape(1, infer_out.shape[0], infer_out.shape[1])
+
+        return X_train, y_train, infer_in, infer_out
+
+    def _train_eval_helper(
+            self,
+            model_name: str,
+            model_cls: Type,
+            loss_name: str,
+            loss_func: Callable, 
+            train_ds: 'WindowDataset',
+            infer_ds: 'WindowDataset',
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size
+        ):
+        model_loss_name = f'{model_name}-{loss_name}'
+        
+        # Gather best hyperparameters or use defaults
+        if isinstance(self.optimized_hparams, dict) and model_loss_name in \
+            self.optimized_hparams:
+            best_hparams = self.optimized_hparams.get(model_loss_name)
+        else:
+            print('!No optimized hyperparameters provided, using defaults!')
+            model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
+            loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
+
+            best_hparams = reformat_hparams(model_cfg, loss_cfg)
+
+        trainer = Trainer(
+            model=model_cls,
+            loss=loss_func,
+            model_hparams=best_hparams['model'],
+            optimizer_hparams=best_hparams['optimizer'],
+            train_hparams=best_hparams['train'],
+            in_size=X_train_shape[2],
+            num_stocks=y_train_shape[2],
+            max_seq_len=X_train_shape[1],
+            scheduler_hparams=best_hparams['scheduler'],
+            loss_hparams=best_hparams['loss'],
+            device=self.torch_device
+        )
+        
+        trainer.train(train_ds)
+        trainer.evaluate(infer_ds)
+
+        # Logging and Diagnostics
+        train_infer_losses = {
+            'train': trainer.train_losses,
+            'eval': trainer.eval_losses
+        }
+
+        alloc_weights = trainer.get_eval_alloc_weights()
+
+        trainer.device_cleanup()
+        del trainer
+
+        return alloc_weights, train_infer_losses
+
+    def _walk_1_model(
+            self,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame,
+            model_name: str,
+            model_cls: Type,
+            loss_name: str,
+            loss_func: Callable,
+            num_steps: int
         ):
         walk_train = init_train.copy()
         walk_rets_train = init_rets_train.copy()
@@ -1631,24 +1706,28 @@ class WalkForwardValidator(GridUtilities):
                 walk_train = pd.concat([walk_train, walk_val], axis=0)
                 walk_rets_train = pd.concat([walk_rets_train, walk_rets_val], axis=0)
             
-            # Save walk_val and returns val for every step
+            # Save walk_val and returns val at every step
             walk_val = init_val.iloc[current_start: current_end] # To be added to train data later
             walk_rets_val = init_rets_val.iloc[current_start: current_end]
 
-            # Reshaping entire training data
-            X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
+            X_train, y_train, infer_in, infer_out = self._reshape_step_data(
+                walk_train, walk_rets_train, walk_rets_val
+            )
 
-            # Reshaping only last window
-            infer_in = self.reshaper.transform_one_window(walk_train.iloc[-self.in_size:])
-            infer_in = infer_in.reshape(1, infer_in.shape[0], infer_in.shape[1])
-
-            infer_out = walk_rets_val.values
-            infer_out = infer_out.reshape(1, infer_out.shape[0], infer_out.shape[1])
-
-
-            print(X_train.shape, y_train.shape, infer_in.shape, infer_out.shape)
-
-            # CONTINUE WITH TRAINING HERE #
+            train_ds = WindowDataset(X_train, y_train)
+            infer_ds = WindowDataset(infer_in, infer_out)
+            X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+            
+            alloc_weights, train_infer_losses = self._train_eval_helper(
+                model_name,
+                model_cls,
+                loss_name,
+                loss_func,
+                train_ds,
+                infer_ds,
+                X_train_shape,
+                y_train_shape
+            )
 
     def validate_grid(
             self, train: pd.DataFrame, rets_train: pd.DataFrame, 
@@ -1673,11 +1752,11 @@ class WalkForwardValidator(GridUtilities):
         
         for idx, (model_name, model_cls, loss_name, loss_func) in enumerate(all_combos, 1):
             print(
-                '\n', '-'*10,
+                '\n', '-'*20,
                 f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
-                '-'*10
+                '-'*20
             )
-            self._validate_1_model(
+            self._walk_1_model(
                 init_train,
                 init_rets_train,
                 init_val,
@@ -1693,6 +1772,5 @@ class WalkForwardValidator(GridUtilities):
 
 
             # TODO:
-            # 1. Collect median number of epochs from the best trial and save with optimized hparams
-            # 2. Train and validate, expand train set, reshape and validate again
+            # Collect all inference walk step results
             # 3. Train and validate for a set of seeds.
