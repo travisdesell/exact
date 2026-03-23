@@ -574,12 +574,14 @@ def run_wfv_pipeline(
             optimized_hparams = optimized_hparams
         )
 
-        grid_validator.validate_grid(
+        all_alloc_weights = grid_validator.validate_grid(
             train_data,
             returns_train,
             val_data,
             returns_val
         )
+
+        print(all_alloc_weights)
     
     
     

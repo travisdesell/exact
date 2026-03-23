@@ -287,7 +287,8 @@ class Trainer:
         # After the training loop
         if self.best_model_state is None:
             # No improvement ever after warm-up; fall back to final model
-            self.best_val_loss = avg_val_loss
+            if val_ds:
+                self.best_val_loss = avg_val_loss
             self.best_train_loss = self.avg_train_loss  # from the last epoch
             self.best_model_state = copy.deepcopy(self.model.state_dict())
         else:
@@ -902,7 +903,7 @@ class CandidatesGrid(GridUtilities):
         
         self.enable_diagnostics = enable_diagnostics
 
-        self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
 
         self.optimized_hparams = {} # Will be filled if tuned
@@ -1080,9 +1081,8 @@ class CandidatesGrid(GridUtilities):
                 self.temp_dir / f'{temps_wts_prefix}_{r}.pkl'
             )
             # Merge into self.all_alloc_weights
-            for loss_name, models_dict in rank_alloc_weights.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-                self.all_alloc_weights[loss_name].update(models_dict)
+            for model_loss, models_dict in rank_alloc_weights.items():
+                self.all_alloc_weights[model_loss] = models_dict
             
             rank_losses = load_pickle_temp(
                 self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
@@ -1136,7 +1136,6 @@ class CandidatesGrid(GridUtilities):
             progress_count = 1
             # Loop over loss functions
             for loss_name, loss_func in losses_to_use.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
 
                 for category, models_dict in self.model_lib.items():
                     # Loop over models
@@ -1159,7 +1158,7 @@ class CandidatesGrid(GridUtilities):
                                 y_train_shape,
                                 y_val
                             )
-                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                            self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                             self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                             self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
@@ -1211,7 +1210,7 @@ class CandidatesGrid(GridUtilities):
                     if loss_name not in local_alloc_weights:
                         local_alloc_weights[loss_name] = {}
                     
-                    local_alloc_weights[loss_name][model_name] = alloc_weights
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
                 
@@ -1289,7 +1288,6 @@ class CandidatesGrid(GridUtilities):
             progress_count = 1
             # Loop over loss functions
             for loss_name, loss_func in losses_to_use.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
 
                 print(
                     '\n', '-'*10,
@@ -1308,7 +1306,7 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
@@ -1359,7 +1357,7 @@ class CandidatesGrid(GridUtilities):
                     if loss_name not in local_alloc_weights:
                         local_alloc_weights[loss_name] = {}
                     
-                    local_alloc_weights[loss_name][model_name] = alloc_weights
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
                 
@@ -1425,8 +1423,6 @@ class CandidatesGrid(GridUtilities):
         if not loss_func: # loss function not found
             raise RuntimeError(f'{loss_name} LOSS FUNCTION NOT FOUND IN LIBRARY!')
 
-        self.all_alloc_weights.setdefault(loss_name, {})
-
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
         # Calculate number of models to train (model + loss combinations)
@@ -1457,7 +1453,7 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
@@ -1496,8 +1492,6 @@ class CandidatesGrid(GridUtilities):
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        self.all_alloc_weights.setdefault(loss_name, {})
-
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
             alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
@@ -1511,7 +1505,7 @@ class CandidatesGrid(GridUtilities):
                 y_train_shape,
                 y_val
             )
-            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+            self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
             self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
             self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
@@ -1556,6 +1550,9 @@ class WalkForwardValidator(GridUtilities):
             self.hparams_config['rolling_windows']['stride'],
             common_features
         )
+
+        self.all_alloc_weights: dict[str, list[np.ndarray]] = {}
+        self.train_infer_losses: dict[str, list[dict[str, list[float]]]] = {}
     
     def update_stride(self, stride: int):
         self.stride = stride
@@ -1686,20 +1683,22 @@ class WalkForwardValidator(GridUtilities):
             loss_name: str,
             loss_func: Callable,
             num_steps: int
-        ):
+        ) -> tuple[list[np.ndarray], list[dict[str, list[float]]]]:
         walk_train = init_train.copy()
         walk_rets_train = init_rets_train.copy()
         walk_val = None
         walk_rets_val = None
         
         # Take steps
-        for step in range(1, num_steps+1):
+        steps_alloc_weights = []
+        steps_train_infer_losses = []
+        for step in range(0, num_steps):
             print(
                 '\n', '='*10,
-                f' WFV: {model_name} - {loss_name}, Step: {step}',
+                f' WFV: {model_name} - {loss_name}, Step: {step}/{num_steps}',
                 '='*10
             )
-            current_end = step * self.stride
+            current_end = (step + 1) * self.stride
             current_start = current_end - self.stride
 
             if current_start > 0:
@@ -1729,6 +1728,11 @@ class WalkForwardValidator(GridUtilities):
                 y_train_shape
             )
 
+            steps_alloc_weights.append(alloc_weights)
+            steps_train_infer_losses.append(train_infer_losses)
+
+        return steps_alloc_weights, steps_train_infer_losses
+
     def validate_grid(
             self, train: pd.DataFrame, rets_train: pd.DataFrame, 
             val: pd.DataFrame, rets_val: pd.DataFrame
@@ -1756,7 +1760,7 @@ class WalkForwardValidator(GridUtilities):
                 f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
                 '-'*20
             )
-            self._walk_1_model(
+            steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
                 init_train,
                 init_rets_train,
                 init_val,
@@ -1767,10 +1771,11 @@ class WalkForwardValidator(GridUtilities):
                 loss_func,
                 num_steps
             )
-                
 
-
-
+            self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+            self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+            
             # TODO:
-            # Collect all inference walk step results
             # 3. Train and validate for a set of seeds.
+
+        return self.all_alloc_weights
