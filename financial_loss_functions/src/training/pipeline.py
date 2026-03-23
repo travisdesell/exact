@@ -20,6 +20,7 @@ from src.data_processing.dataset import (
     Reshaper,
     calc_in_out_idx,
     extract_oos_dates,
+    get_date_index_col,
     extract_sp500_winds
 )
 
@@ -29,7 +30,7 @@ from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
 # TODO:
-# Unit test NCO
+# Trad models trainer -> critical bug: Adding walk step data is incorrect.
 
 EQ_WT_NAME = 'Equal_Weight'
 SP500_NAME = 'S&P500'
@@ -125,20 +126,29 @@ def rolling_reshape(
 
     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
-def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
-    eval_dates_info = {
-        'Input Window Start': [],
-        'Input Window End': [],
-        'Out Window Start': [],
-        'Out Window End': []
-    }
-    
-    for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
-        eval_dates_info['Input Window Start'].append(in_date[0])
-        eval_dates_info['Input Window End'].append(in_date[-1])
-        eval_dates_info['Out Window Start'].append(out_date[0])
-        eval_dates_info['Out Window End'].append(out_date[-1])
-    
+def _print_evaludation_info(out_win_date_cols, in_win_date_cols: list|None=None, **kwargs):
+    if in_win_date_cols:
+        eval_dates_info = {
+            'Input Window Start': [],
+            'Input Window End': [],
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        
+        for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
+            eval_dates_info['Input Window Start'].append(in_date[0])
+            eval_dates_info['Input Window End'].append(in_date[-1])
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+    else:
+        eval_dates_info = {
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        for out_date in out_win_date_cols:
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+        
     print('\nModels evaluated on:')
     print(pd.DataFrame(eval_dates_info))
 
@@ -346,39 +356,13 @@ def run_tuning_pipeline(
 
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
-    for loss_name, models_dict in nn_alloc_weights.items():
-        for nn_model_name, alloc_weights in models_dict.items():
-            evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
+    for model_loss, alloc_weights in nn_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
     
     del candidates_grid
-    
-    # -------------------- Training Tradional Models -------------------- #
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config,
-        max_workers = os.cpu_count() - 1
-    )
-    trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
-    )
-
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    del trad_grid
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
-    # Extract dates index columns for the rrespective output windows
-    in_win_date_cols, out_win_date_cols = extract_oos_dates(
-        val_data,
-        in_wind_idxs,
-        out_wind_idxs
-    )
-    
     # Loading S&P 500 for benchmarking
     sp500_rets = _load_sp500_rets(paths_config)
 
@@ -402,9 +386,16 @@ def run_tuning_pipeline(
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
+    # Extract dates index columns for the rrespective output windows
+    in_win_date_cols, out_win_date_cols = extract_oos_dates(
+        val_data,
+        in_wind_idxs,
+        out_wind_idxs
+    )
+
     _print_evaludation_info(
-        in_win_date_cols,
         out_win_date_cols,
+        in_win_date_cols,
         avgerage_performance_metrics=avg_perf_metrics,
     )
 
@@ -524,20 +515,6 @@ def run_wfv_pipeline(
     print('Filtered Avg. Performance Metrics: \n', filtered_perf)
 
     split_model_combos = split_combo_names(filtered_models, '-')
-
-    # -------------------- Preprocessing (Reshaping) -------------------- #
-    # X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = rolling_reshape(
-    #     train_data,
-    #     returns_train,
-    #     val_data,
-    #     returns_val,
-    #     hparams_config['rolling_windows'],
-    #     features_config['common_features'],
-    # )
-
-    # # -------------------- Evaluator Setup -------------------- #
-    # # Initializing once to compare all models together
-    # evaluator = Evaluator(y_val, MetricLibrary.items())
    
     # -------------------- Walk-Forward Training & Validation -------------------- #
     if mpi:
@@ -568,24 +545,74 @@ def run_wfv_pipeline(
             hparams_config = hparams_config,
             common_features = features_config['common_features'],
             torch_device = torch_device,
-            filtered_models = split_model_combos,
+            filtered_models = split_model_combos, #### SLICE FOR TESTING
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
             optimized_hparams = optimized_hparams
         )
 
-        all_alloc_weights = grid_validator.validate_grid(
+        nn_alloc_weights = grid_validator.validate_grid(
             train_data,
             returns_train,
             val_data,
             returns_val
         )
 
-        print(all_alloc_weights)
+    eval_windows, out_wind_idxs = grid_validator.get_eval_windows()
     
+    # -------------------- Training Tradional Models -------------------- #
+    # trad_grid = TradModelsTrainer(
+    #     TradModelLibrary.items(),
+    #     hparams_config,
+    #     max_workers = os.cpu_count() - 1
+    # )
+    # trad_alloc_weights = trad_grid.train_all(
+    #     in_wind_idxs,
+    #     out_wind_idxs,
+    #     returns_train,
+    #     returns_val
+    # )
+
+    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
+    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
+    # del trad_grid
+
+    # -------------------- Evaluation -------------------- #
+    
+    # Initializing Evaluator
+    evaluator = Evaluator(eval_windows, MetricLibrary.items())  
+
+    for model_loss, alloc_weights in nn_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
+
+    # Loading S&P 500 for benchmarking
+    sp500_rets = _load_sp500_rets(paths_config)
+
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
+        out_wind_idxs
+    )  
+    
+    # Calculate Equal Weight Portfolio's weeights
+    eq_wt_calc = EqualWeightCalculator(eval_windows)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+
+    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
+    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
+
+    avg_perf_metrics = evaluator.calc_avg_performance()
+
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
+    
+    _print_evaludation_info(
+        out_win_date_cols=out_win_date_cols,
+        avgerage_performance_metrics=avg_perf_metrics
+    )
     
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')
-    
-

@@ -1551,8 +1551,14 @@ class WalkForwardValidator(GridUtilities):
             common_features
         )
 
-        self.all_alloc_weights: dict[str, list[np.ndarray]] = {}
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
         self.train_infer_losses: dict[str, list[dict[str, list[float]]]] = {}
+
+        self.num_steps = None
+        self.init_train = None
+        self.init_rets_train = None
+        self.init_val = None
+        self.init_rets_val = None
     
     def update_stride(self, stride: int):
         self.stride = stride
@@ -1588,17 +1594,20 @@ class WalkForwardValidator(GridUtilities):
 
         return num_steps, extra_days
 
-    @staticmethod
     def _init_datasets(
+            self,
             train: pd.DataFrame, rets_train: pd.DataFrame,
             val: pd.DataFrame, rets_val: pd.DataFrame, extra_days: int
-        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        ):
         init_train = pd.concat([train, val.iloc[:extra_days]], axis=0)
         init_rets_train = pd.concat([rets_train, rets_val.iloc[:extra_days]], axis=0)
         init_val = val.iloc[extra_days:]
         init_rets_val = rets_val.iloc[extra_days:]
 
-        return init_train, init_rets_train, init_val, init_rets_val
+        self.init_train = init_train
+        self.init_rets_train = init_rets_train
+        self.init_val = init_val
+        self.init_rets_val = init_rets_val
 
     def _reshape_step_data(
             self,
@@ -1642,6 +1651,9 @@ class WalkForwardValidator(GridUtilities):
 
             best_hparams = reformat_hparams(model_cfg, loss_cfg)
 
+        #### FOR TESTING ####
+        # best_hparams['train']['epochs'] = 10
+        #####################
         trainer = Trainer(
             model=model_cls,
             loss=loss_func,
@@ -1681,8 +1693,7 @@ class WalkForwardValidator(GridUtilities):
             model_name: str,
             model_cls: Type,
             loss_name: str,
-            loss_func: Callable,
-            num_steps: int
+            loss_func: Callable
         ) -> tuple[list[np.ndarray], list[dict[str, list[float]]]]:
         walk_train = init_train.copy()
         walk_rets_train = init_rets_train.copy()
@@ -1692,13 +1703,13 @@ class WalkForwardValidator(GridUtilities):
         # Take steps
         steps_alloc_weights = []
         steps_train_infer_losses = []
-        for step in range(0, num_steps):
+        for step in range(1, self.num_steps+1):
             print(
                 '\n', '='*10,
-                f' WFV: {model_name} - {loss_name}, Step: {step}/{num_steps}',
+                f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps}',
                 '='*10
             )
-            current_end = (step + 1) * self.stride
+            current_end = step * self.stride
             current_start = current_end - self.stride
 
             if current_start > 0:
@@ -1706,8 +1717,8 @@ class WalkForwardValidator(GridUtilities):
                 walk_rets_train = pd.concat([walk_rets_train, walk_rets_val], axis=0)
             
             # Save walk_val and returns val at every step
-            walk_val = init_val.iloc[current_start: current_end] # To be added to train data later
-            walk_rets_val = init_rets_val.iloc[current_start: current_end]
+            walk_val = init_val.iloc[current_start : current_end] # To be added to train data later
+            walk_rets_val = init_rets_val.iloc[current_start : current_end]
 
             X_train, y_train, infer_in, infer_out = self._reshape_step_data(
                 walk_train, walk_rets_train, walk_rets_val
@@ -1731,26 +1742,26 @@ class WalkForwardValidator(GridUtilities):
             steps_alloc_weights.append(alloc_weights)
             steps_train_infer_losses.append(train_infer_losses)
 
-        return steps_alloc_weights, steps_train_infer_losses
+        return np.vstack(steps_alloc_weights), np.vstack(steps_train_infer_losses)
 
     def validate_grid(
             self, train: pd.DataFrame, rets_train: pd.DataFrame, 
             val: pd.DataFrame, rets_val: pd.DataFrame
-        ):
+        ) -> dict[str, np.ndarray]:
 
         # Prepare dataset
-        num_steps, extra_days = self._calc_num_steps(rets_val)
+        self.num_steps, extra_days = self._calc_num_steps(rets_val)
 
-        init_train, init_rets_train, init_val, init_rets_val = self._init_datasets(
+        self._init_datasets(
             train, rets_train, val, rets_val, extra_days
         )
 
-        self.reshaper.extract_features(init_train.columns)
+        self.reshaper.extract_features(self.init_train.columns)
         
         # Search and prepare models combos
         validate_count = len(self.filtered_models)
         print(
-            f'\nWalk-forward validating {validate_count} models, over {num_steps} steps.'
+            f'\nWalk-forward validating {validate_count} models, over {self.num_steps} steps.'
         )
         all_combos = self._collected_combos()
         
@@ -1761,21 +1772,32 @@ class WalkForwardValidator(GridUtilities):
                 '-'*20
             )
             steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
-                init_train,
-                init_rets_train,
-                init_val,
-                init_rets_val,
+                self.init_train,
+                self.init_rets_train,
+                self.init_val,
+                self.init_rets_val,
                 model_name,
                 model_cls,
                 loss_name,
-                loss_func,
-                num_steps
+                loss_func
             )
 
             self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
             self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
-            
-            # TODO:
-            # 3. Train and validate for a set of seeds.
 
         return self.all_alloc_weights
+
+    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
+        eval_windows = []
+        out_wind_idxs = []
+        for step in range(1, self.num_steps+1):
+            current_end = step * self.stride
+            current_start = current_end - self.stride
+
+            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
+
+            eval_windows.append(walk_rets_val.values)
+
+            out_wind_idxs.append((current_start, current_end))
+        
+        return np.stack(eval_windows), out_wind_idxs
