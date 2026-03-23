@@ -7,6 +7,7 @@ import torch
 import optuna
 import psutil
 import random
+import traceback
 import numpy as np
 import pandas as pd
 from torch import Tensor
@@ -24,7 +25,6 @@ from typing import Callable, Dict, Literal
 from scipy import stats
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
-
 import warnings # Temporary
 
 class Trainer:
@@ -195,6 +195,9 @@ class Trainer:
         early_stopping = self.train_hparams.get('early_stopping', True)
         clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
 
+        if n_epochs <= 0:
+            raise ValueError(f'Number of epochs must be > 0, got {n_epochs}')
+        
         # Initialize optimizer and scheduler
         optimizer = self._init_optimizer()
         scheduler = self._init_scheduler(optimizer)
@@ -285,14 +288,17 @@ class Trainer:
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         
         # After the training loop
-        if self.best_model_state is None:
+        if self.best_model_state is not None:
+            self.model.load_state_dict(self.best_model_state)
+        else:
             # No improvement ever after warm-up; fall back to final model
-            if val_ds:
+            if val_ds is not None:
                 self.best_val_loss = avg_val_loss
+
+            # Save bests
+            self.best_epoch = epoch
             self.best_train_loss = self.avg_train_loss  # from the last epoch
             self.best_model_state = copy.deepcopy(self.model.state_dict())
-        else:
-            self.model.load_state_dict(self.best_model_state)
             
         print(f'Training Complete. Best Val Loss: {self.best_val_loss:.5f}')
             
@@ -925,8 +931,8 @@ class CandidatesGrid(GridUtilities):
         return best_config
     
     def _add_median_epoch(self, best_config: dict, best_epochs: list[int]):
-        best_config['train']['epochs'] = int(np.median(best_epochs))
-
+        best_config['train']['median_epochs'] = int(np.median(best_epochs)) + 1
+        # 1 is added because the epoch saved starts from 0 in the training loop
         return best_config
 
     def _train_eval_helper(
@@ -970,7 +976,7 @@ class CandidatesGrid(GridUtilities):
                 loss_cfg,
             )
             best_found_params = study.best_params
-            best_epochs = study.best_trial.user_attrs.get('seed_best_epochs')
+            best_epochs = study.best_trial.user_attrs.get('best_epochs')
             
             best_config = self._map_new_params(best_config, best_found_params)
             best_config = self._add_median_epoch(best_config, best_epochs)
@@ -1101,7 +1107,7 @@ class CandidatesGrid(GridUtilities):
                 self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
             )
             # Merge into self.optimized_hparams
-            for model_loss, hparms_dict, in rank_hparams.items():
+            for model_loss, hparms_dict in rank_hparams.items():
                 self.optimized_hparams[model_loss] = hparms_dict
 
         
@@ -1110,6 +1116,8 @@ class CandidatesGrid(GridUtilities):
             delete_file(self.temp_dir / f'{temps_wts_prefix}_{r}.pkl')
             delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
             delete_file(self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl')
+
+        print('All temp files merged and then deleted.')
 
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
@@ -1172,6 +1180,7 @@ class CandidatesGrid(GridUtilities):
                             print(
                                 f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
                             )
+                            traceback.print_exc()
                             continue
                         finally:
                             progress_count += 1
@@ -1212,9 +1221,6 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    # Store in local dict
-                    if loss_name not in local_alloc_weights:
-                        local_alloc_weights[loss_name] = {}
                     
                     local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
@@ -1222,6 +1228,7 @@ class CandidatesGrid(GridUtilities):
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
                     continue
             
             temps_wts_prefix = 'all_temp_alloc_wts'
@@ -1321,6 +1328,7 @@ class CandidatesGrid(GridUtilities):
                         f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
                         error
                     )
+                    traceback.print_exc()
                     continue
                 finally:
                     progress_count += 1
@@ -1359,9 +1367,6 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    # Store in local dict
-                    if loss_name not in local_alloc_weights:
-                        local_alloc_weights[loss_name] = {}
                     
                     local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
@@ -1369,6 +1374,7 @@ class CandidatesGrid(GridUtilities):
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
                     continue
             
             temps_wts_prefix = f'{model_name}_temp_alloc_wts'
@@ -1468,6 +1474,7 @@ class CandidatesGrid(GridUtilities):
                         f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
                         error
                     )
+                    traceback.print_exc()
                     continue
                 finally:
                     progress_count += 1
@@ -1517,6 +1524,7 @@ class CandidatesGrid(GridUtilities):
 
         except Exception as e:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
+            traceback.print_exc()
         
         return self.all_alloc_weights
 
@@ -1650,6 +1658,11 @@ class WalkForwardValidator(GridUtilities):
         if isinstance(self.optimized_hparams, dict) and model_loss_name in \
             self.optimized_hparams:
             best_hparams = self.optimized_hparams.get(model_loss_name)
+            median_epochs = best_hparams.get('median_epochs')
+            if median_epochs is not None:
+                best_hparams['epochs'] = median_epochs
+            else:
+                print(f'WARNING: No median epochs found. Using default number of epochs!')
         else:
             print('!No optimized hyperparameters provided, using defaults!')
             model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
