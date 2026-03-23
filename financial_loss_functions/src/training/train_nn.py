@@ -450,14 +450,14 @@ class MetricModel(BaseModel):
 class Tuner:
     direction = 'maximize'
     max_seed = 1000000
-    n_startup_trials = 20
-    n_warmup_steps = 2
+    n_startup_perc = 0.3
 
     def __init__(
             self,
             tune_metric: dict[str, MetricModel],
             n_seeds: int,
-            n_trails: int,
+            n_trials: int,
+            n_warmup_steps: int, 
             n_jobs: int,
             torch_device: torch.device | str
         ):
@@ -469,9 +469,12 @@ class Tuner:
             self.tune_metric = tune_metric
         
         self.n_seeds = n_seeds
-        self.n_trials = n_trails
+        self.n_trials = n_trials
+        self.n_warmup_steps = n_warmup_steps
         self.n_jobs = n_jobs
         self.torch_device = torch_device
+
+        self.n_startup_trials = int(self.n_trials * self.n_startup_perc)
 
         self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
@@ -878,8 +881,9 @@ class CandidatesGrid(GridUtilities):
             tuner_config = self.hparams_config.get('tuner', {})
             print('Tuner Config:\n', tuner_config)
             
-            n_seeds = self.hparams_config.get('n_seeds', 5)
-            n_trials = tuner_config.get('n_tuning_trials', 20)
+            n_seeds = tuner_config.get('n_seeds', 5)
+            n_trials = tuner_config.get('n_tuning_trials', 30)
+            n_warmup_steps = tuner_config.get('n_warmup_steps', 2)
             n_jobs = tuner_config.get('n_jobs', 1)
             print(
                 f'Tuning all models with {n_trials} trials, across {n_seeds} seeds.'
@@ -888,6 +892,7 @@ class CandidatesGrid(GridUtilities):
                 tune_metric,
                 n_seeds,
                 n_trials,
+                n_warmup_steps,
                 n_jobs,
                 self.torch_device
             )
