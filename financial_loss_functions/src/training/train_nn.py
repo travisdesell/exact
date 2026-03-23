@@ -832,6 +832,7 @@ class GridUtilities(ABC):
         if trainer_count > 0:
             print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
     
+    @staticmethod
     def _mpi_setup_check(mpi_items: list):
         for i in mpi_items:
             if i is None:
