@@ -355,7 +355,7 @@ def run_tuning_pipeline(
             model_loss_curves['val'],
             model_loss_curves['eval'],
             loss_plot_name,
-            artifacts_paths['plots_dir'] / (loss_plot_name + '.png')
+            artifacts_paths['tuned_plots_dir'] / (loss_plot_name + '.png')
         )
 
     # Calculate returns of all predicted portfolio allocation weights
@@ -586,7 +586,7 @@ def run_wfv_pipeline(
             model_loss_curves['train'],
             model_loss_curves['eval'],
             wfv_plot_name,
-            artifacts_paths['plots_dir'] / (wfv_plot_name + '.png')
+            artifacts_paths['wfv_plots_dir'] / (wfv_plot_name + '.png')
         )
     
     # -------------------- Evaluator Setup -------------------- #
@@ -633,7 +633,15 @@ def run_wfv_pipeline(
     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
 
+    # Suffix for saving files depending on the mode used
+    # This is just for saving files and wont be used to load files later
+    if grid_mode in ['all', 'one_model']:
+        results_suffix = 'All'
+    elif grid_mode == 'one':
+        results_suffix = f'{model_name}-{loss_name}'
+    
     avg_perf_metrics = evaluator.calc_avg_performance()
+    # TODO: SAVE RESULTS
 
     # Extract dates index columns for the respective output windows
     out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
@@ -642,7 +650,8 @@ def run_wfv_pipeline(
         evaluator.get_all_daily_returns(),
         out_win_date_cols,
         2,
-        artifacts_paths['plots_dir'] / ('WFV Performances' + '.png')
+        artifacts_paths['wfv_plots_dir'] / \
+            (f'WFV Performances_{results_suffix}' + '.png')
     )
     
     _print_evaludation_info(
