@@ -13,7 +13,7 @@ python -m scripts.run_training_grid [--grid_mode MODE] [OPTIONS]
 #### Arguments Reference
 | Flag | Long Flag | Choices / Type | Default | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss`, `one` | `all` | The scope of the grid search. |
+| `-gm` | `--grid_mode` | `all`, `one_model`, `one` | `all` | The scope of the grid search. |
 | `-lm` | `--loss_mode` | `all`, `custom` | `custom` |  Use all available loss functions or only custom combinations |
 | `-m`| `--model` | *string* | None | **Required** if grid mode is `one_model` or `one`. Name of model.|
 | `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss` or `one`. Name of loss function.|
