@@ -1664,6 +1664,31 @@ class WalkForwardValidator(GridUtilities):
 
         return np.vstack(steps_alloc_weights), steps_train_infer_losses
 
+    def _data_check(self, init_train: pd.DataFrame, init_rets_val: pd.DataFrame):
+        """
+        Checks data consistency to ensure number of steps in the 
+        walk forward is correctly divides given evaluation data.
+        """
+        total_val_days = len(init_rets_val)
+        expected_steps = total_val_days // self.stride
+        if expected_steps != self.num_steps:
+            raise ValueError(
+                f'Provided num_steps ({self.num_steps}) does not match actual '
+                f'number of full windows of length {self.stride} in validation set '
+                f'({expected_steps}). Adjust num_steps or data.'
+            )
+        if total_val_days < self.stride:
+            raise ValueError(
+                f'Validation set too short: need at least {self.stride} days, '
+                f'got {total_val_days}.'
+            )
+        # Eensure initial training set has at least in_size days for first inference
+        if len(init_train) < self.in_size:
+            raise ValueError(
+                f'Initial training set must have at least {self.in_size} days to form the first inference window, '
+                f'got {len(init_train)} days.'
+            )
+
     def validate_grid(
             self,
             init_train: pd.DataFrame,
@@ -1671,6 +1696,8 @@ class WalkForwardValidator(GridUtilities):
             init_val: pd.DataFrame,
             init_rets_val: pd.DataFrame
         ) -> dict[str, np.ndarray]:
+
+        self._data_check(init_train, init_rets_val)
 
         self.reshaper.extract_features(init_train.columns)
         
