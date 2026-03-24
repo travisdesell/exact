@@ -16,7 +16,7 @@ from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 from src.utils.formatting import reformat_hparams
-from src.data_processing.dataset import WindowDataset, Reshaper, calc_in_out_idx
+from src.data_processing.dataset import WindowDataset, Reshaper, calc_current_idxs
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -194,9 +194,6 @@ class Trainer:
         min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
         early_stopping = self.train_hparams.get('early_stopping', True)
         clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
-
-        if n_epochs <= 0:
-            raise ValueError(f'Number of epochs must be > 0, got {n_epochs}')
         
         # Initialize optimizer and scheduler
         optimizer = self._init_optimizer()
@@ -1542,6 +1539,7 @@ class WalkForwardValidator(GridUtilities):
             hparams_config: dict[str, dict[str, Any]],
             common_features: list[str],
             torch_device: torch.device | str,
+            num_steps: int,
             filtered_models: list[tuple[str, str]] | None = None,
             mpi: bool = False,
             temp_dir: str | None = None,
@@ -1551,6 +1549,7 @@ class WalkForwardValidator(GridUtilities):
         super().__init__(
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
         )
+        self.num_steps = num_steps
         self.filtered_models = filtered_models
         self.optimized_hparams = optimized_hparams # Optimized
 
@@ -1568,12 +1567,6 @@ class WalkForwardValidator(GridUtilities):
         self.all_alloc_weights: dict[str, np.ndarray] = {}
         self.train_infer_losses: dict[str, list[dict[str, list[float]]]] = {}
 
-        self.num_steps = None
-        self.init_train = None
-        self.init_rets_train = None
-        self.init_val = None
-        self.init_rets_val = None
-    
     def update_stride(self, stride: int):
         self.stride = stride
     
@@ -1599,29 +1592,6 @@ class WalkForwardValidator(GridUtilities):
                 )
             )
         return all_combos
-    
-    def _calc_num_steps(self, rets_val: pd.DataFrame) ->tuple[int, int]:
-        total_val_days = len(rets_val)
-        extra_days = total_val_days % self.stride
-
-        num_steps = (total_val_days - extra_days) // self.stride
-
-        return num_steps, extra_days
-
-    def _init_datasets(
-            self,
-            train: pd.DataFrame, rets_train: pd.DataFrame,
-            val: pd.DataFrame, rets_val: pd.DataFrame, extra_days: int
-        ):
-        init_train = pd.concat([train, val.iloc[:extra_days]], axis=0)
-        init_rets_train = pd.concat([rets_train, rets_val.iloc[:extra_days]], axis=0)
-        init_val = val.iloc[extra_days:]
-        init_rets_val = rets_val.iloc[extra_days:]
-
-        self.init_train = init_train
-        self.init_rets_train = init_rets_train
-        self.init_val = init_val
-        self.init_rets_val = init_rets_val
 
     def _reshape_step_data(
             self,
@@ -1659,10 +1629,12 @@ class WalkForwardValidator(GridUtilities):
             self.optimized_hparams:
             best_hparams = self.optimized_hparams.get(model_loss_name)
             median_epochs = best_hparams.get('median_epochs')
-            if median_epochs is not None:
+            if median_epochs:
                 best_hparams['epochs'] = median_epochs
             else:
-                print(f'WARNING: No median epochs found. Using default number of epochs!')
+                print(
+                    f'WARNING: No median epochs found or is 0, {median_epochs}. Using default number of epochs!'
+                )
         else:
             print('!No optimized hyperparameters provided, using defaults!')
             model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
@@ -1670,9 +1642,9 @@ class WalkForwardValidator(GridUtilities):
 
             best_hparams = reformat_hparams(model_cfg, loss_cfg)
 
-        #### FOR TESTING ####
-        # best_hparams['train']['epochs'] = 10
-        #####################
+        ### FOR TESTING ####
+        # best_hparams['train']['epochs'] = 5
+        ####################
         trainer = Trainer(
             model=model_cls,
             loss=loss_func,
@@ -1728,8 +1700,7 @@ class WalkForwardValidator(GridUtilities):
                 f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps}',
                 '='*10
             )
-            current_end = step * self.stride
-            current_start = current_end - self.stride
+            current_start, current_end = calc_current_idxs(step, self.stride)
 
             if current_start > 0:
                 walk_train = pd.concat([walk_train, walk_val], axis=0)
@@ -1764,18 +1735,14 @@ class WalkForwardValidator(GridUtilities):
         return np.vstack(steps_alloc_weights), np.vstack(steps_train_infer_losses)
 
     def validate_grid(
-            self, train: pd.DataFrame, rets_train: pd.DataFrame, 
-            val: pd.DataFrame, rets_val: pd.DataFrame
+            self,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame
         ) -> dict[str, np.ndarray]:
 
-        # Prepare dataset
-        self.num_steps, extra_days = self._calc_num_steps(rets_val)
-
-        self._init_datasets(
-            train, rets_train, val, rets_val, extra_days
-        )
-
-        self.reshaper.extract_features(self.init_train.columns)
+        self.reshaper.extract_features(init_train.columns)
         
         # Search and prepare models combos
         validate_count = len(self.filtered_models)
@@ -1791,10 +1758,10 @@ class WalkForwardValidator(GridUtilities):
                 '-'*20
             )
             steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
-                self.init_train,
-                self.init_rets_train,
-                self.init_val,
-                self.init_rets_val,
+                init_train,
+                init_rets_train,
+                init_val,
+                init_rets_val,
                 model_name,
                 model_cls,
                 loss_name,
@@ -1805,18 +1772,3 @@ class WalkForwardValidator(GridUtilities):
             self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
 
         return self.all_alloc_weights
-
-    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
-        eval_windows = []
-        out_wind_idxs = []
-        for step in range(1, self.num_steps+1):
-            current_end = step * self.stride
-            current_start = current_end - self.stride
-
-            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
-
-            eval_windows.append(walk_rets_val.values)
-
-            out_wind_idxs.append((current_start, current_end))
-        
-        return np.stack(eval_windows), out_wind_idxs

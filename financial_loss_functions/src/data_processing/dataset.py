@@ -236,11 +236,7 @@ class WindowDataset(Dataset):
         # Return one sample
         return self.X[idx], self.y[idx]
 
-# class DatasetSampler:
-#     def __init__(self, in_size: int, out_size: int, stride: int):
-#         self.in_size = in_size
-#         self.out_size = out_size
-#         self.stride = stride
+
 def calc_in_out_idx(
         split_data: pd.DataFrame, in_size: int, out_size: int, stride: int
     ) -> tuple[list[tuple], list[tuple]]:
@@ -301,3 +297,82 @@ def extract_sp500_winds(
         sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
     
     return np.vstack(sp500_windows)
+
+def calc_current_idxs(step: int, stride: int):
+    if step == 0:
+        raise ValueError('Got step 0. Must be > 0')
+    
+    current_end = step * stride
+    current_start = current_end - stride
+
+    return current_start, current_end
+
+class WFAdjustment:
+    def __init__(self, stride: int):
+        self.stride = stride
+        self.num_steps = 0
+        self.extra_days = 0
+    
+    def _calc_walk_steps(self, rets_val: pd.DataFrame) -> tuple[int, int]:
+        total_val_days = len(rets_val)
+        self.extra_days = total_val_days % self.stride
+        self.num_steps = (total_val_days - self.extra_days) // self.stride
+
+        return self.num_steps
+    
+    def init_datasets(
+            self,
+            train: pd.DataFrame, rets_train: pd.DataFrame,
+            split: pd.DataFrame, rets_split: pd.DataFrame
+        ):
+        """
+        Create initial datasets by adjusting for the extra days.
+        This method adds the first 'extra' days to the training data.
+        """
+        self._calc_walk_steps(rets_split)
+        
+        init_train = pd.concat(
+            [train, split.iloc[:self.extra_days]],
+            axis=0
+        )
+        init_rets_train = pd.concat(
+            [rets_train, rets_split.iloc[:self.extra_days]],
+            axis=0
+        )
+        init_val = split.iloc[self.extra_days:]
+        init_rets_val = rets_split.iloc[self.extra_days:]
+
+        self.init_train = init_train
+        self.init_rets_train = init_rets_train
+        self.init_val = init_val
+        self.init_rets_val = init_rets_val
+
+        print(
+            f'Evaluation dataset contains {self.num_steps} steps.',
+            f'{self.extra_days} from evaluation dataset moved to training dataset.'
+        )
+    
+    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
+        eval_windows = []
+        out_wind_idxs = []
+        for step in range(1, self.num_steps+1):
+            current_start, current_end = calc_current_idxs(step, self.stride)
+
+            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
+
+            eval_windows.append(walk_rets_val.values)
+
+            out_wind_idxs.append((current_start, current_end))
+        
+        return np.stack(eval_windows), out_wind_idxs
+    
+    def get_data(
+            self
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        return self.init_train, self.init_rets_train, self.init_val, self.init_rets_val
+    
+    def get_num_steps(self) -> int:
+        return self.num_steps
+    
+    def get_extra_days(self) -> int:
+        return self.extra_days

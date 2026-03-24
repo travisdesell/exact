@@ -8,16 +8,17 @@ from src.utils.device import get_best_device
 from src.utils.formatting import split_combo_names
 from src.training.train_trad import TradModelsTrainer
 from src.visualization.plots import train_val_losses_plot
-from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.data_processing.loading import load_csv_files, find_artifact_files
 from src.utils.io import (
     create_directory, save_to_csv, save_to_json, load_json, raise_file_not_found
 )
+from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
 )
 from src.data_processing.dataset import (
     Reshaper,
+    WFAdjustment,
     calc_in_out_idx,
     extract_oos_dates,
     get_date_index_col,
@@ -28,9 +29,6 @@ from src.data_processing.dataset import (
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
-
-# TODO:
-# Trad models trainer -> critical bug: Adding walk step data is incorrect.
 
 EQ_WT_NAME = 'Equal_Weight'
 SP500_NAME = 'S&P500'
@@ -90,41 +88,41 @@ def _load_sp500_rets(paths_config: dict):
 
     return benches['benchmark_val']
     
-def rolling_reshape(
-        train_data: pd.DataFrame,
-        returns_train: pd.DataFrame,
-        val_data: pd.DataFrame,
-        returns_val: pd.DataFrame,
-        windows_config: dict,
-        common_features: list,
-    ) -> tuple:
-    reshaper = Reshaper(
-        windows_config['in_size'],
-        windows_config['out_size'],
-        windows_config['stride'],
-        common_features
-    )
-    reshaper.extract_features(train_data.columns)
+# def rolling_reshape(
+#         train_data: pd.DataFrame,
+#         returns_train: pd.DataFrame,
+#         val_data: pd.DataFrame,
+#         returns_val: pd.DataFrame,
+#         windows_config: dict,
+#         common_features: list,
+#     ) -> tuple:
+#     reshaper = Reshaper(
+#         windows_config['in_size'],
+#         windows_config['out_size'],
+#         windows_config['stride'],
+#         common_features
+#     )
+#     reshaper.extract_features(train_data.columns)
     
-    X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    # print('-'*10, ' train shapes ', '-'*10)
-    # print('X_train shpe:', X_train.shape)
-    # print('y_train shape:', y_train.shape)
+#     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
+#     # print('-'*10, ' train shapes ', '-'*10)
+#     # print('X_train shpe:', X_train.shape)
+#     # print('y_train shape:', y_train.shape)
 
-    X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    # print('-'*10, ' val shapes ', '-'*10)
-    # print('X_val shape', X_val.shape)
-    # print('y_val shape:', y_val.shape)
+#     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
+#     # print('-'*10, ' val shapes ', '-'*10)
+#     # print('X_val shape', X_val.shape)
+#     # print('y_val shape:', y_val.shape)
 
-    # Calculate indexes for input and output windows on split data
-    in_wind_indexes, out_wind_indexes = calc_in_out_idx(
-        returns_val,
-        windows_config['in_size'],
-        windows_config['out_size'],
-        reshaper.stride
-    ) 
+#     # Calculate indexes for input and output windows on split data
+#     in_wind_indexes, out_wind_indexes = calc_in_out_idx(
+#         returns_val,
+#         windows_config['in_size'],
+#         windows_config['out_size'],
+#         reshaper.stride
+#     ) 
 
-    return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
+#     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
 def _print_evaludation_info(out_win_date_cols, in_win_date_cols: list|None=None, **kwargs):
     if in_win_date_cols:
@@ -213,14 +211,23 @@ def run_tuning_pipeline(
     )
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = rolling_reshape(
-        train_data,
-        returns_train,
-        val_data,
-        returns_val,
-        hparams_config['rolling_windows'],
+    reshaper = Reshaper(
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride'],
         features_config['common_features']
     )
+    reshaper.extract_features(train_data.columns)
+    
+    X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
+    # print('-'*10, ' train shapes ', '-'*10)
+    # print('X_train shpe:', X_train.shape)
+    # print('y_train shape:', y_train.shape)
+
+    X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
+    # print('-'*10, ' val shapes ', '-'*10)
+    # print('X_val shape', X_val.shape)
+    # print('y_val shape:', y_val.shape)
 
     # -------------------- Evaluator Setup -------------------- #
 
@@ -362,6 +369,13 @@ def run_tuning_pipeline(
     del candidates_grid
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
+    # Calculate indexes for input and output windows on split data
+    in_wind_idxs, out_wind_idxs = calc_in_out_idx(
+        returns_val,
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride']
+    ) 
 
     # Loading S&P 500 for benchmarking
     sp500_rets = _load_sp500_rets(paths_config)
@@ -412,6 +426,7 @@ def run_wfv_pipeline(
     loss_name: str | None,
     mpi: bool = False
 ): 
+    
     """
     Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
     
@@ -515,7 +530,14 @@ def run_wfv_pipeline(
     print('Filtered Avg. Performance Metrics: \n', filtered_perf)
 
     split_model_combos = split_combo_names(filtered_models, '-')
-   
+
+    # -------------------- Prepare Datasets -------------------- #
+    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
+    data_adjuster.init_datasets(train_data, returns_train, val_data, returns_val)
+    init_train, init_rets_train, init_val, init_rets_val = data_adjuster.get_data()
+    num_steps = data_adjuster.get_num_steps()
+    eval_windows, out_wind_idxs = data_adjuster.get_eval_windows()
+
     # -------------------- Walk-Forward Training & Validation -------------------- #
     if mpi:
         comm, global_rank, size, gpu_id = mpi_setup()
@@ -527,6 +549,7 @@ def run_wfv_pipeline(
             hparams_config = hparams_config,
             common_features = features_config['common_features'],
             torch_device = torch_device,
+            num_steps = num_steps,
             filtered_models = split_model_combos,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
@@ -534,6 +557,8 @@ def run_wfv_pipeline(
         )
 
         #### MPI Verions here ####
+        print('MPI Version of WFV not yet implmented! Exiting.')
+        exit()
     
     else:
         # Using default MPS or CUDA
@@ -545,6 +570,7 @@ def run_wfv_pipeline(
             hparams_config = hparams_config,
             common_features = features_config['common_features'],
             torch_device = torch_device,
+            num_steps = num_steps,
             filtered_models = split_model_combos, #### SLICE FOR TESTING
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
@@ -552,36 +578,31 @@ def run_wfv_pipeline(
         )
 
         nn_alloc_weights = grid_validator.validate_grid(
-            train_data,
-            returns_train,
-            val_data,
-            returns_val
+            init_train, init_rets_train, init_val, init_rets_val
         )
-
-    eval_windows, out_wind_idxs = grid_validator.get_eval_windows()
     
-    # -------------------- Training Tradional Models -------------------- #
-    # trad_grid = TradModelsTrainer(
-    #     TradModelLibrary.items(),
-    #     hparams_config,
-    #     max_workers = os.cpu_count() - 1
-    # )
-    # trad_alloc_weights = trad_grid.train_all(
-    #     in_wind_idxs,
-    #     out_wind_idxs,
-    #     returns_train,
-    #     returns_val
-    # )
-
-    # for trad_model_name, alloc_weights in trad_alloc_weights.items():
-    #     evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    # del trad_grid
-
-    # -------------------- Evaluation -------------------- #
-    
+    # -------------------- Evaluator Setup -------------------- #
     # Initializing Evaluator
     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
+    
+    # -------------------- Training Tradional Models -------------------- #
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        num_steps,
+        max_workers = os.cpu_count() - 1
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        init_rets_train=init_rets_train,
+        init_rets_split=init_rets_val
+    )
+
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    
+    del trad_grid
+
+    # -------------------- Out-of-Sample Evaluation -------------------- #
 
     for model_loss, alloc_weights in nn_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss)

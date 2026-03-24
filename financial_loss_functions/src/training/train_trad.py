@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from typing import Type, Any
+from src.data_processing.dataset import calc_current_idxs
 from src.data_processing.preprocess_crsp import preprocessor2
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -14,10 +15,13 @@ class TradModelsTrainer:
             self,
             model_lib: dict[str, Type],
             hparams_config: dict[str, dict[str, Any]],
+            num_steps: int,
             max_workers: int
         ):
         self.model_lib = model_lib
         self.hparams_config = hparams_config
+        self.stride = self.hparams_config['rolling_windows']['out_size'] # Output size = stride
+        self.num_steps = num_steps
         self.max_workers = max_workers if max_workers > 0 else max(1, os.cpu_count() - 1)
         
         self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
@@ -85,14 +89,11 @@ class TradModelsTrainer:
             for name, weights in self.all_alloc_weights.items()
         }
     
-    @staticmethod
-    def _build_dataset(
-        in_sample_idx: tuple[int, int], # (Start, End)
-        out_sample_idx: tuple[int, int],
-        returns_train: pd.DataFrame, 
-        returns_val: pd.DataFrame,
-        returns_test: pd.DataFrame | None = None
-    ) -> dict[str, pd.DataFrame]:
+    def _build_walk_slices(
+        self,
+        init_rets_train: pd.DataFrame, 
+        init_rets_split: pd.DataFrame,
+    ) -> tuple[str, pd.DataFrame]:
         """
         Dataset builder function for covariance based models (tradional).
         Combines and slices to create in-sample and out-of-sample datasets.
@@ -100,52 +101,42 @@ class TradModelsTrainer:
         
         #### If train data must be sliced or shifted, it must be implmented here 
         # after grabbing index from dataset.py
-        if returns_test is None:
-            returns_is = pd.concat(
-                [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]]]
-            )
+
+        prepared_slices = []
+        for step in range(1, self.num_steps+1):
+            current_start, _ = calc_current_idxs(step, self.stride)
+
+            if current_start > 0:
+                rets_train_slice = pd.concat(
+                    [init_rets_train, init_rets_split[:current_start]]
+                )
+            else: # First step
+                rets_train_slice = init_rets_train
+
+            prepared_slices.append((step - 1, rets_train_slice)) # -1 to make step into index
+
+        return prepared_slices
             
-            # iloc[200:250] gives rows 200-249 (Exactly 50 rows)
-            returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]]
-        
-        elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
-            returns_is = pd.concat(
-                [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]]]
-            )
-            returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]]
-        else:
-            raise ValueError('Incorrect type for test returns.')
-
-        # Sorting in alphabetical order
-        return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
-
     def train_all(
             self,
-            in_sample_indexes: list[tuple],
-            out_sample_indexes: list[tuple],
-            returns_train: pd.DataFrame,
-            returns_val: pd.DataFrame,
-            returns_test: pd.DataFrame | None = None
+            init_rets_train: pd.DataFrame,
+            init_rets_split: pd.DataFrame,
         ) -> dict[str, np.ndarray]:
         
-        num_slices = len(in_sample_indexes)
+        # Prepare dataset
         
         # 1. Slice-First
         # Prepare small data packets in the main thread to minimize IPC overhead
-        prepared_slices = []
-        for i in range(num_slices):
-            returns_is, _ = self._build_dataset(
-                in_sample_indexes[i],
-                out_sample_indexes[i],
-                returns_train,
-                returns_val,
-                returns_test
-            )
-            prepared_slices.append((i, returns_is))
+        
+        prepared_slices = self._build_walk_slices(
+            init_rets_train,
+            init_rets_split
+        )
+            # prepared_slices.append((i, returns_is))
 
         # 2. Parallel Execution
         # Pre-allocate to guarantee chronological order
-        ordered_results = [None] * num_slices
+        ordered_results = [None] * self.num_steps
         
 
         with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
@@ -157,8 +148,8 @@ class TradModelsTrainer:
 
             for future in tqdm(
                 as_completed(futures),
-                total=num_slices,
-                desc=f'Training tradional models on {num_slices} slices', unit='slice'
+                total=self.num_steps,
+                desc=f'Training tradional models on {self.num_steps} walk steps', unit='step'
             ):
                 idx = futures[future]
                 try:
