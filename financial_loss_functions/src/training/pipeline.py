@@ -124,7 +124,9 @@ def _load_sp500_rets(paths_config: dict):
 
 #     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
-def _print_evaludation_info(out_win_date_cols, in_win_date_cols: list|None=None, **kwargs):
+def _print_evaludation_info(
+        out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
+    ):
     if in_win_date_cols:
         eval_dates_info = {
             'Input Window Start': [],
@@ -322,13 +324,6 @@ def run_tuning_pipeline(
                 model_name, X_train, y_train, X_val, y_val, None, None, None
             )
             results_sufix = model_name
-        
-        elif grid_mode == 'one_loss' and loss_name is not None:
-            nn_alloc_weights = candidates_grid.train_eval_one_loss(
-                loss_name, X_train, y_train, X_val, y_val
-            )
-
-            results_sufix = loss_name
 
         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one(
