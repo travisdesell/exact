@@ -59,9 +59,59 @@ def train_val_losses_plot(
     plt.clf()
     plt.cla()
 
+def wfv_losses_plot(
+        wfv_train: list[list[float]],
+        wfv_eval_losses: list[float],
+        title: str,
+        output_path: str,
+        plot: bool = False,
+        figsize: tuple = (14, 5)
+    ):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    for i, step_trains in enumerate(wfv_train):
+        epochs = range(len(step_trains))
+        ax1.plot(epochs, step_trains, label=f'Step {i}', linewidth=2)
+
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Training Loss Curves (Loss vs Epoch)')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+
+    # --- Right: Column Chart (Window-based) ---
+    num_windows = len(wfv_eval_losses)
+    window_labels = [f'Step {i}' for i in range(num_windows)]
+    
+    bars = ax2.bar(window_labels, wfv_eval_losses)
+    
+    # Add value labels on top of the bars
+    for bar in bars:
+        height = bar.get_height()
+        ax2.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.4f}', ha='center', va='bottom' if height > 0 else 'top', fontsize=10)
+
+    ax2.set_ylabel('Loss')
+    ax2.set_title(f'Evaluation Performance (N={num_windows} Walk Steps)')
+    ax2.grid(axis='y', linestyle='--', alpha=0.7)
+
+    # Overall title
+    fig.suptitle(title, fontsize=16)
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+    # Save and show
+    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    if plot:
+        plt.show()
+    plt.close('all')
+    plt.clf()
+    plt.cla()
+
 def plot_windowed_comparison(
     all_daily_returns: dict,
     window_dates: list,  # Add this parameter (list of DatetimeIndex)
+    windows_per_row: int,
     output_path: str,
     plot: bool = False
 ):
@@ -69,7 +119,7 @@ def plot_windowed_comparison(
     
     # Get number of windows from the first portfolio type
     n_windows = next(iter(all_daily_returns.values())).shape[0]
-    n_cols = min(3, n_windows)
+    n_cols = min(windows_per_row, n_windows)
     n_rows = (n_windows + n_cols - 1) // n_cols
     
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))

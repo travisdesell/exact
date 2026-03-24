@@ -1624,13 +1624,13 @@ class WalkForwardValidator(GridUtilities):
         # Take steps
         steps_alloc_weights = []
         steps_train_infer_losses = []
-        for step in range(1, self.num_steps+1):
+        for step in range(self.num_steps):
             print(
                 '\n', '='*10,
-                f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps}',
+                f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps-1}',
                 '='*10
             )
-            current_start, current_end = calc_current_idxs(step, self.stride)
+            current_start, current_end = calc_current_idxs(step+1, self.stride)
 
             if current_start > 0:
                 walk_train = pd.concat([walk_train, walk_val], axis=0)
@@ -1729,3 +1729,19 @@ class WalkForwardValidator(GridUtilities):
             self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
 
         return self.all_alloc_weights
+
+    def get_train_infer_losses(self) -> dict[str, list]:
+        reformatted_dict = {}
+        for model_loss, step_losses in self.train_infer_losses.items():
+            train_losses = []
+            eval_losses = []
+            for step in step_losses:
+                train_losses.append(step['train'])
+                eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+            
+            reformatted_dict[model_loss] = {
+                'train': train_losses,
+                'eval': eval_losses
+            }
+        
+        return reformatted_dict

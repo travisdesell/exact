@@ -7,8 +7,10 @@ from pathlib import Path
 from src.utils.device import get_best_device
 from src.utils.formatting import split_combo_names
 from src.training.train_trad import TradModelsTrainer
-from src.visualization.plots import train_val_losses_plot
 from src.data_processing.loading import load_csv_files, find_artifact_files
+from src.visualization.plots import (
+    train_val_losses_plot, wfv_losses_plot, plot_windowed_comparison
+)
 from src.utils.io import (
     create_directory, save_to_csv, save_to_json, load_json, raise_file_not_found
 )
@@ -576,6 +578,17 @@ def run_wfv_pipeline(
             init_train, init_rets_train, init_val, init_rets_val
         )
     
+
+    nn_train_infer_losses = grid_validator.get_train_infer_losses()
+    for model_loss, model_loss_curves in nn_train_infer_losses.items():
+        wfv_plot_name = model_loss + ' WFV Losses'
+        wfv_losses_plot(
+            model_loss_curves['train'],
+            model_loss_curves['eval'],
+            wfv_plot_name,
+            artifacts_paths['plots_dir'] / (wfv_plot_name + '.png')
+        )
+    
     # -------------------- Evaluator Setup -------------------- #
     # Initializing Evaluator
     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
@@ -624,6 +637,13 @@ def run_wfv_pipeline(
 
     # Extract dates index columns for the respective output windows
     out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
+
+    plot_windowed_comparison(
+        evaluator.get_all_daily_returns(),
+        out_win_date_cols,
+        2,
+        artifacts_paths['plots_dir'] / ('WFV Performances' + '.png')
+    )
     
     _print_evaludation_info(
         out_win_date_cols=out_win_date_cols,

@@ -103,8 +103,8 @@ class TradModelsTrainer:
         # after grabbing index from dataset.py
 
         prepared_slices = []
-        for step in range(1, self.num_steps+1):
-            current_start, _ = calc_current_idxs(step, self.stride)
+        for step in range(self.num_steps):
+            current_start, _ = calc_current_idxs(step+1, self.stride)
 
             if current_start > 0:
                 rets_train_slice = pd.concat(
