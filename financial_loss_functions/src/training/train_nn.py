@@ -1560,7 +1560,7 @@ class WalkForwardValidator(GridUtilities):
             best_hparams = self.optimized_hparams.get(model_loss_name)
             median_epochs = best_hparams.get('median_epochs')
             if median_epochs:
-                best_hparams['epochs'] = median_epochs
+                best_hparams['train']['epochs'] = median_epochs
             else:
                 print(
                     f'WARNING: No median epochs found or is 0, {median_epochs}. Using default number of epochs!'
@@ -1662,7 +1662,7 @@ class WalkForwardValidator(GridUtilities):
             steps_alloc_weights.append(alloc_weights)
             steps_train_infer_losses.append(train_infer_losses)
 
-        return np.vstack(steps_alloc_weights), np.vstack(steps_train_infer_losses)
+        return np.vstack(steps_alloc_weights), steps_train_infer_losses
 
     def validate_grid(
             self,
