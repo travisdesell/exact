@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from src.utils.io import check_if_files_exist
+from src.utils.io import check_if_files_exist, load_json
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str
@@ -63,25 +63,133 @@ def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
     macro_data_dict = load_csv_files(macro_files)
     return macro_data_dict
 
-def find_artifact_files(
-        prefix: str, suffixes: list[str], dir_path: str | Path, ext: str
-    ) -> dict[str, str]:
-    paths_temp = []
-    for suff in suffixes:
-        paths_temp.append(
-            (suff, dir_path / f'{prefix}_{suff}{ext}')
-        )
-    
-    avg_perf_paths = {}
-    existence = check_if_files_exist([tup[1] for tup in paths_temp])
-    for path, status in existence.items():
-        for tup in paths_temp:
-            if path == tup[1]:
-                if status:
-                    avg_perf_paths.update(
-                        {tup[0]: path}
-                    )
-                else:
-                    print(f'{prefix.upper()} file for {tup[0]} not found at {tup[0]}. Skipping!')
 
-    return avg_perf_paths
+class ArtifactDataExtractor:
+    def __init__(
+            self,
+            prev_grid_mode: str,
+            artifacts_paths: dict[str, Path|str],
+            model_names: list[str]|None = None,
+
+        ):
+        self.prev_grid_mode = prev_grid_mode
+        self.artifacts_paths = artifacts_paths
+        self.model_names = model_names # Model names are ignored for 'all' mode
+
+        if prev_grid_mode == 'one_model' and not model_names:
+            raise ValueError(
+                'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
+            )
+
+    def find_artifact_files(
+        self, prefix: str, suffixes: list[str], dir_path: str | Path, ext: str
+    ) -> dict[str, str]:
+        paths_temp = []
+        for suff in suffixes:
+            paths_temp.append(
+                (suff, dir_path / f'{prefix}_{suff}{ext}')
+            )
+        
+        avg_perf_paths = {}
+        existence = check_if_files_exist([tup[1] for tup in paths_temp])
+        for path, status in existence.items():
+            for tup in paths_temp:
+                if path == tup[1]:
+                    if status:
+                        avg_perf_paths.update(
+                            {tup[0]: path}
+                        )
+                    else:
+                        print(f'{prefix.upper()} file for {tup[0]} not found at {tup[0]}. Skipping!')
+
+        return avg_perf_paths
+    
+    def _build_avg_perf_paths(
+            self, prefix: str, suffixes: list[str]
+        ) -> dict[str, Path|str]:
+        # Average Performance files
+        avg_perf_paths = self.find_artifact_files(
+            prefix,
+            suffixes,
+            self.artifacts_paths['avg_perf_dir'],
+            '.csv' # Average Performance files at csv
+        )
+        if len(avg_perf_paths) == 0:
+            raise RuntimeError(
+                'No average Performance files found. Run training and tuning first.'
+            )
+        
+        return avg_perf_paths
+    
+    def _build_opti_hparams_paths(
+            self, prefix: str, suffixes: list[str]
+        ) -> dict[str, Path|str] | None:
+        # Optimized Hyperparameter files
+        opti_paths = self.find_artifact_files(
+            prefix,
+            suffixes,
+            self.artifacts_paths['hparams_dir'],
+            '.json' # Optimized Hyperparameter files are json
+        )
+
+        if len(opti_paths) == 0:
+            print(
+                'WARNING: Models not tuned! Using default hyperparameters.',
+                'Tune models using `python -m scripts.run_training`'
+            )
+            opti_paths = None
+        
+        return opti_paths
+    
+    def aggregate_avg_perf(self, avg_perf_prefix: str):
+        if self.prev_grid_mode == 'all':
+            print('!Mode not implemented yet!')
+            exit()
+        
+        elif self.prev_grid_mode == 'one_model':
+
+            # Build paths and load files
+            avg_perf_paths = self._build_avg_perf_paths(
+                avg_perf_prefix, self.model_names
+            )
+            avg_perf_dfs = load_csv_files(avg_perf_paths)
+
+            # Combine all files into one dataframe
+            all_avg_perf = pd.concat(avg_perf_dfs.values(), axis=0)
+            all_avg_perf = all_avg_perf[~all_avg_perf.index.duplicated(keep='first')]
+
+        elif self.prev_grid_mode == 'one':
+            print('!Mode not implemented yet!')
+            exit()
+        else:
+            raise RuntimeError('Incorrect mode arguments while running at entry point.')
+        
+        return all_avg_perf
+    
+    def aggregate_optimized_hparams(self, opti_hparams_prefix: str):
+        if self.prev_grid_mode == 'all':
+            print('!Mode not implemented yet!')
+            exit()
+        
+        elif self.prev_grid_mode == 'one_model':
+            
+            # Build paths and load files
+            opti_paths = self._build_opti_hparams_paths(
+                opti_hparams_prefix, self.model_names
+            )
+            
+            if opti_paths:
+                optimized_hparams = {}
+                for path in opti_paths.values():
+                    optimized_hparams.update(load_json(path))
+            else:
+                optimized_hparams = None
+
+
+        elif self.prev_grid_mode == 'one':
+            print('!Mode not implemented yet!')
+            exit()
+        else:
+            raise RuntimeError('Incorrect mode arguments while running at entry point.')
+        
+        return optimized_hparams

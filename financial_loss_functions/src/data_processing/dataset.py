@@ -349,7 +349,7 @@ class WFAdjustment:
 
         print(
             f'Evaluation dataset contains {self.num_steps} steps.',
-            f'{self.extra_days} from evaluation dataset moved to training dataset.'
+            f'{self.extra_days} days from evaluation dataset moved to training dataset.'
         )
     
     def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
