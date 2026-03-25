@@ -1862,8 +1862,35 @@ class WalkForwardValidator(GridUtilities):
             init_val: pd.DataFrame,
             init_rets_val: pd.DataFrame
         ):
-        print('Single model combo mode, not implmented yet!')
-        exit()
+        
+        model_class = self._search_model(model_name)
+        if model_class is None:
+            raise KeyError(f'Model {model_name} not found.')
+        
+        loss_func = self._search_loss_func(loss_name)
+        if loss_func is None:
+            raise KeyError(f'Loss Function {loss_name} not found.')
+        
+        try:
+            steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                init_train,
+                init_rets_train,
+                init_val,
+                init_rets_val,
+                model_name,
+                model_class,
+                loss_name,
+                loss_func
+            )
+
+            self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+            self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+       
+        except Exception as e:
+            print(f'DEBUG: Error while walk-forward validating {model_name}. Not Validating.', e)
+            traceback.print_exc()
+        
+        return self.all_alloc_weights
 
     def get_train_infer_losses(self) -> dict[str, list]:
         reformatted_dict = {}

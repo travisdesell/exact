@@ -594,14 +594,12 @@ def run_wfv_pipeline(
             results_suffix = 'All'
 
         elif grid_mode == 'one':
-            # TODO: # Implement Walk forward for single model
-            grid_validator.validate_one(
+            nn_alloc_weights = grid_validator.validate_one(
                 model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
             )
 
             results_suffix = f'{model_name}-{loss_name}'
     
-
     nn_train_infer_losses = grid_validator.get_train_infer_losses()
     for model_loss, model_loss_curves in nn_train_infer_losses.items():
         wfv_plot_name = model_loss + ' WFV Losses'
