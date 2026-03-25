@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-from src.utils.formatting import reformat_hparams
+from src.utils.formatting import reformat_hparams, split_combo_names
 from src.data_processing.dataset import WindowDataset, Reshaper, calc_current_idxs
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
@@ -25,7 +25,6 @@ from typing import Callable, Dict, Literal
 from scipy import stats
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
-import warnings # Temporary
 
 class Trainer:
     """
@@ -859,6 +858,10 @@ class GridUtilities(ABC):
     def _train_eval_helper(self):
         pass
 
+    @abstractmethod
+    def _merge_all_results(self):
+        pass
+
 
 class CandidatesGrid(GridUtilities):
 
@@ -1389,14 +1392,14 @@ class CandidatesGrid(GridUtilities):
                     traceback.print_exc()
                     continue
             
-            temps_wt_prefix = f'{model_name}_temp_alloc_wts'
+            temp_wts_prefix = f'{model_name}_temp_alloc_wts'
             temp_losses_prefix = f'{model_name}_temp_losses'
             temp_hparams_prefix = f'{model_name}_temp_hparams'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
                 local_alloc_weights,
-                self.temp_dir / f'{temps_wt_prefix}_{global_rank}.pkl'
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
             )
             save_pickle_temp(
                 local_train_val_losses,
@@ -1414,7 +1417,7 @@ class CandidatesGrid(GridUtilities):
             if global_rank == 0:
                 self._merge_all_results(
                     size,
-                    temps_wt_prefix,
+                    temp_wts_prefix,
                     temp_losses_prefix,
                     temp_hparams_prefix
                 )
@@ -1485,7 +1488,7 @@ class WalkForwardValidator(GridUtilities):
             common_features: list[str],
             torch_device: torch.device | str,
             num_steps: int,
-            filtered_models: list[tuple[str, str]] | None = None,
+            filtered_models: list[str] | None = None,
             mpi: bool = False,
             temp_dir: str | None = None,
             optimized_hparams = None
@@ -1495,7 +1498,12 @@ class WalkForwardValidator(GridUtilities):
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
         )
         self.num_steps = num_steps
-        self.filtered_models = filtered_models
+        if filtered_models:
+            self.filtered_models = split_combo_names(filtered_models, '-')
+            # self.filtered_models = [self.filtered_models[0]] #### SLICE FOR TESTING ####
+        else:
+            self.filtered_models = filtered_models
+        
         self.optimized_hparams = optimized_hparams # Optimized
 
         self.in_size = self.hparams_config['rolling_windows']['in_size']
@@ -1515,7 +1523,7 @@ class WalkForwardValidator(GridUtilities):
     def update_stride(self, stride: int):
         self.stride = stride
     
-    def _collected_combos(self):
+    def _collected_combos(self) -> list[tuple[str, Callable, str, Type]]:
         relevant_temp = {'models': {}, 'losses': {}}
         all_combos = []
         for model_loss in self.filtered_models:
@@ -1530,10 +1538,10 @@ class WalkForwardValidator(GridUtilities):
 
             all_combos.append(
                 (
-                    model_name,
-                    relevant_temp['models'][model_name],
                     loss_name,
-                    relevant_temp['losses'][loss_name]
+                    relevant_temp['losses'][loss_name],
+                    model_name,
+                    relevant_temp['models'][model_name]
                 )
             )
         return all_combos
@@ -1587,7 +1595,7 @@ class WalkForwardValidator(GridUtilities):
 
             best_hparams = reformat_hparams(model_cfg, loss_cfg)
 
-        ### FOR TESTING ####
+        #### FOR TESTING ####
         # best_hparams['train']['epochs'] = 5
         ####################
         trainer = Trainer(
@@ -1704,12 +1712,39 @@ class WalkForwardValidator(GridUtilities):
                 f'got {len(init_train)} days.'
             )
 
+    def _merge_all_results(
+            self,
+            size,
+            temp_wts_prefix,
+            temp_losses_prefix
+        ):
+        """Merge all results into one dict if rank is 0, i.e., main process."""
+        self.all_alloc_weights = {}
+        self.train_infer_losses = {}
+                
+        for r in range(size):
+            # Load all temp alloc wt files
+            rank_alloc_weights = load_pickle_temp(
+                self.temp_dir / f'{temp_wts_prefix}_{r}.pkl'
+            )
+            # Merge into self.all_alloc_weights
+            for model_loss, models_dict in rank_alloc_weights.items():
+                self.all_alloc_weights[model_loss] = models_dict
+            
+            rank_losses = load_pickle_temp(
+                self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
+            )
+            # Merge into self.train_val_losses
+            for model_loss, losses_dict in rank_losses.items():
+                self.train_infer_losses[model_loss] = losses_dict
+            
     def validate_grid(
             self,
             init_train: pd.DataFrame,
             init_rets_train: pd.DataFrame,
             init_val: pd.DataFrame,
-            init_rets_val: pd.DataFrame
+            init_rets_val: pd.DataFrame,
+            comm = None, global_rank = None, size = None
         ) -> dict[str, np.ndarray]:
 
         self._data_check(init_train, init_rets_val)
@@ -1723,27 +1758,112 @@ class WalkForwardValidator(GridUtilities):
         )
         all_combos = self._collected_combos()
         
-        for idx, (model_name, model_cls, loss_name, loss_func) in enumerate(all_combos, 1):
-            print(
-                '\n', '-'*20,
-                f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
-                '-'*20
-            )
-            steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
-                init_train,
-                init_rets_train,
-                init_val,
-                init_rets_val,
-                model_name,
-                model_cls,
-                loss_name,
-                loss_func
-            )
+        if self.mpi == False:
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
+                print(
+                    '\n', '-'*20,
+                    f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
+                    '-'*20
+                )
+                try:
+                    steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                        init_train,
+                        init_rets_train,
+                        init_val,
+                        init_rets_val,
+                        model_name,
+                        model_class,
+                        loss_name,
+                        loss_func
+                    )
 
-            self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
-            self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+                    self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while walk-forward validating {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    traceback.print_exc()
+                    continue
 
-        return self.all_alloc_weights
+            return self.all_alloc_weights
+        
+        else:
+            self._mpi_setup_check([comm, global_rank, size])
+
+            this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
+
+            # Print summary on each rank
+            print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
+            sys.stdout.flush()
+
+            # Local results dictionary
+            local_alloc_weights = {}
+            local_train_infer_losses = {}
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+
+                try:
+                    steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                        init_train,
+                        init_rets_train,
+                        init_val,
+                        init_rets_val,
+                        model_name,
+                        model_class,
+                        loss_name,
+                        loss_func
+                    )
+
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+                    local_train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                
+                except Exception as e:
+                    print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
+                    continue
+            
+            temp_wts_prefix = f'all_wf_temp_alloc_wts'
+            temp_losses_prefix = f'all_wf_temp_losses'
+
+            # Save local results to a rank‑specific file
+            save_pickle_temp(
+                local_alloc_weights,
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
+            )
+            save_pickle_temp(
+                local_train_infer_losses,
+                self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
+            )
+            
+            # Wait for all ranks to finish
+            comm.Barrier()
+
+            # Rank 0 collects and merges all files
+            if global_rank == 0:
+                self._merge_all_results(
+                    size,
+                    temp_wts_prefix,
+                    temp_losses_prefix
+                )
+                
+                return self.all_alloc_weights
+            else:
+                return None
+
+    def validate_one(
+            self,
+            model_name: str, 
+            loss_name: str,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame
+        ):
+        print('Single model combo mode, not implmented yet!')
+        exit()
 
     def get_train_infer_losses(self) -> dict[str, list]:
         reformatted_dict = {}

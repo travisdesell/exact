@@ -5,7 +5,6 @@ import torch
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
-from src.utils.formatting import split_combo_names
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, find_artifact_files
 from src.visualization.plots import (
@@ -526,8 +525,6 @@ def run_wfv_pipeline(
     print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
     print('Filtered Avg. Performance Metrics: \n', filtered_perf)
 
-    split_model_combos = split_combo_names(filtered_models, '-')
-
     # -------------------- Prepare Datasets -------------------- #
     data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
     data_adjuster.init_datasets(train_data, returns_train, val_data, returns_val)
@@ -547,15 +544,30 @@ def run_wfv_pipeline(
             common_features = features_config['common_features'],
             torch_device = torch_device,
             num_steps = num_steps,
-            filtered_models = split_model_combos,
+            filtered_models = filtered_models,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
             optimized_hparams = optimized_hparams
         )
 
-        #### MPI Verions here ####
-        print('MPI Version of WFV not yet implmented! Exiting.')
-        exit()
+        if grid_mode in ['all', 'one_model']:
+            nn_alloc_weights = grid_validator.validate_grid(
+                init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
+            )
+            results_suffix = 'All'
+        else:
+            raise RuntimeError(
+                'Incorrect mode arguments while running at entry point.',
+                'If mpi, grid mode must be `all` or `one_model`.'
+            )
+        
+        # Stop all non zero ranks
+        if global_rank != 0:
+            print(f'Rank {global_rank}: Work complete. Shutting down.')
+            sys.exit(0) # This stops the process for this rank only
+        
+        if nn_alloc_weights is None:
+            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
     
     else:
         # Using default MPS or CUDA
@@ -568,15 +580,26 @@ def run_wfv_pipeline(
             common_features = features_config['common_features'],
             torch_device = torch_device,
             num_steps = num_steps,
-            filtered_models = split_model_combos, #### SLICE FOR TESTING
+            filtered_models = filtered_models,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
             optimized_hparams = optimized_hparams
         )
 
-        nn_alloc_weights = grid_validator.validate_grid(
-            init_train, init_rets_train, init_val, init_rets_val
-        )
+        if grid_mode in ['all', 'one_model']:
+            nn_alloc_weights = grid_validator.validate_grid(
+                init_train, init_rets_train, init_val, init_rets_val, None, None, None
+            )
+            
+            results_suffix = 'All'
+
+        elif grid_mode == 'one':
+            # TODO: # Implement Walk forward for single model
+            grid_validator.validate_one(
+                model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
+            )
+
+            results_suffix = f'{model_name}-{loss_name}'
     
 
     nn_train_infer_losses = grid_validator.get_train_infer_losses()
@@ -633,13 +656,7 @@ def run_wfv_pipeline(
     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
 
-    # Suffix for saving files depending on the mode used
-    # This is just for saving files and wont be used to load files later
-    if grid_mode in ['all', 'one_model']:
-        results_suffix = 'All'
-    elif grid_mode == 'one':
-        results_suffix = f'{model_name}-{loss_name}'
-    
+        
     avg_perf_metrics = evaluator.calc_avg_performance()
     # TODO: SAVE RESULTS
 
