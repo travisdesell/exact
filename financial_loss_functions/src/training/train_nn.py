@@ -791,6 +791,7 @@ class GridUtilities(ABC):
     def set_temp_directory(self, temp_dir: str):
         self.temp_dir = temp_dir
     
+    # -------------------- Library Searches -------------------- #
     def _search_model(self, model_name: str) -> Type | None:
         """Search for required model"""
         for _, models_dict in self.model_lib.items():
@@ -835,12 +836,25 @@ class GridUtilities(ABC):
         if trainer_count > 0:
             print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
     
+    # -------------------- MPI Methods -------------------- #
     @staticmethod
     def _mpi_setup_check(mpi_items: list):
         for i in mpi_items:
             if i is None:
                 raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
+    
+    @staticmethod
+    def _select_ranks_combos(all_combos: list, global_rank, size):
+        # Distribute combos evenly across ranks
+        chunk_size = len(all_combos) // size
+        remainder = len(all_combos) % size
+        start = global_rank * chunk_size + min(global_rank, remainder)
+        end = start + chunk_size + (1 if global_rank < remainder else 0)
+        this_ranks_combos = all_combos[start:end]
 
+        return this_ranks_combos
+    
+    # -------------------- Abstract Methods -------------------- #
     @abstractmethod
     def _train_eval_helper(self):
         pass
@@ -1062,17 +1076,6 @@ class CandidatesGrid(GridUtilities):
                     continue
         
         return losses_to_use
-
-    @staticmethod
-    def _select_ranks_combos(all_combos: list, global_rank, size):
-        # Distribute combos evenly across ranks
-        chunk_size = len(all_combos) // size
-        remainder = len(all_combos) % size
-        start = global_rank * chunk_size + min(global_rank, remainder)
-        end = start + chunk_size + (1 if global_rank < remainder else 0)
-        this_ranks_combos = all_combos[start:end]
-
-        return this_ranks_combos
     
     def _merge_all_results(
             self,
@@ -1115,6 +1118,34 @@ class CandidatesGrid(GridUtilities):
             delete_file(self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl')
 
         print('All temp files merged and then deleted.')
+    
+    def _build_combos(
+            self, 
+            losses_to_use: dict[str, Callable], 
+            grid_mode: str,
+            model_name: str | None = None,
+            model_class: Type | None = None
+        ) -> list[tuple[str, Callable, str, Type]]:
+        
+        all_combos = []
+        if grid_mode == 'all':
+            for loss_name, loss_func in losses_to_use.items():
+                for category, models_dict in self.model_lib.items():
+                    for model_name, model_class in models_dict.items():
+                        all_combos.append((loss_name, loss_func, model_name, model_class))
+        
+        elif grid_mode == 'one_model' and model_name and model_class:
+            for loss_name, loss_func in losses_to_use.items():
+                all_combos.append((loss_name, loss_func, model_name, model_class))
+
+        else:
+            raise ValueError(
+                'Incorrect grid mode provided to build combos.',
+                'Must be `all` or `one_model`.',
+                '`model_name` and `model_class` must be provided for `one_model`.'
+            )
+
+        return all_combos
 
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
@@ -1141,59 +1172,47 @@ class CandidatesGrid(GridUtilities):
             f'\nTraining {total_train_count} models.',
             f'Running all models with {self.loss_mode} losses.'
         )
+
+        all_combos = self._build_combos(losses_to_use, 'all')
         
         # Not using MPI for distributed computing
         if self.mpi == False:
-            progress_count = 1
-            # Loop over loss functions
-            for loss_name, loss_func in losses_to_use.items():
-
-                for category, models_dict in self.model_lib.items():
-                    # Loop over models
-                    for model_name, model_class in models_dict.items():
-                        print(
-                            '\n', '-'*10,
-                            f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                            '-'*10
-                        )
-                        try: 
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
+                print(
+                    '\n', '-'*10,
+                    f' Training {model_name} - {loss_name}, {idx}/{total_train_count}',
+                    '-'*10
+                )
+                try: 
                             
-                            alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
-                                model_name,
-                                model_class, 
-                                loss_name,
-                                loss_func,
-                                train_ds,
-                                val_ds,
-                                X_train_shape,
-                                y_train_shape,
-                                y_val
-                            )
-                            self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-                            self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                            self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                        model_name,
+                        model_class, 
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape,
+                        y_val
+                    )
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
+                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
-                        except Exception as error:
-                            print(
-                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
-                            )
-                            traceback.print_exc()
-                            continue
-                        finally:
-                            progress_count += 1
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                    )
+                    traceback.print_exc()
+                    continue
             
             return self.all_alloc_weights
         
         # If MPI is true for distributed computing
         else:
             self._mpi_setup_check([comm, global_rank, size])
-
-            all_combos = []
-            for loss_name, loss_func in losses_to_use.items():
-                for category, models_dict in self.model_lib.items():
-                    for model_name, model_class in models_dict.items():
-                        all_combos.append((loss_name, loss_func, model_name, model_class))
-
+            
             this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
 
             # Print summary on each rank
@@ -1204,8 +1223,8 @@ class CandidatesGrid(GridUtilities):
             local_alloc_weights = {}
             local_train_val_losses = {}
             local_optimized_hparams = {}
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
-                print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
                     alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                         model_name,
@@ -1228,14 +1247,14 @@ class CandidatesGrid(GridUtilities):
                     traceback.print_exc()
                     continue
             
-            temps_wts_prefix = 'all_temp_alloc_wts'
+            temp_wts_prefix = 'all_temp_alloc_wts'
             temp_losses_prefix = 'all_temp_losses'
             temp_hparams_prefix = 'all_temp_hparams'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
                 local_alloc_weights,
-                self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
             )
             save_pickle_temp(
                 local_train_val_losses,
@@ -1253,7 +1272,7 @@ class CandidatesGrid(GridUtilities):
             if global_rank == 0:
                 self._merge_all_results(
                     size,
-                    temps_wts_prefix,
+                    temp_wts_prefix,
                     temp_losses_prefix,
                     temp_hparams_prefix
                 )
@@ -1261,7 +1280,7 @@ class CandidatesGrid(GridUtilities):
                 return self.all_alloc_weights
             else:
                 return None    
-                
+
     def train_eval_one_model(
             self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
             X_val: np.ndarray, y_val: np.ndarray,
@@ -1293,15 +1312,17 @@ class CandidatesGrid(GridUtilities):
             f'Running all models with {self.loss_mode} losses.'
         )
 
+        all_combos = self._build_combos(
+            losses_to_use, 'one_model', model_name, model_class
+        )
+
         # Not using MPI for distributed computing
         if self.mpi == False:
-            progress_count = 1
-            # Loop over loss functions
-            for loss_name, loss_func in losses_to_use.items():
-
+            
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
                 print(
                     '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                    f' Training {model_name} - {loss_name}, {idx}/{total_train_count}',
                     '-'*10
                 )
                 try:        
@@ -1327,18 +1348,12 @@ class CandidatesGrid(GridUtilities):
                     )
                     traceback.print_exc()
                     continue
-                finally:
-                    progress_count += 1
 
             return self.all_alloc_weights
         
         # If MPI is true for distributed computing
         else:
             self._mpi_setup_check([comm, global_rank, size])
-
-            all_combos = []
-            for loss_name, loss_func in losses_to_use.items():
-                all_combos.append((loss_name, loss_func, model_name, model_class))
 
             this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
 
@@ -1350,8 +1365,8 @@ class CandidatesGrid(GridUtilities):
             local_alloc_weights = {}
             local_train_val_losses = {}
             local_optimized_hparams = {}
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
-                print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
                     alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                         model_name,
@@ -1374,14 +1389,14 @@ class CandidatesGrid(GridUtilities):
                     traceback.print_exc()
                     continue
             
-            temps_wts_prefix = f'{model_name}_temp_alloc_wts'
+            temps_wt_prefix = f'{model_name}_temp_alloc_wts'
             temp_losses_prefix = f'{model_name}_temp_losses'
             temp_hparams_prefix = f'{model_name}_temp_hparams'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
                 local_alloc_weights,
-                self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+                self.temp_dir / f'{temps_wt_prefix}_{global_rank}.pkl'
             )
             save_pickle_temp(
                 local_train_val_losses,
@@ -1399,7 +1414,7 @@ class CandidatesGrid(GridUtilities):
             if global_rank == 0:
                 self._merge_all_results(
                     size,
-                    temps_wts_prefix,
+                    temps_wt_prefix,
                     temp_losses_prefix,
                     temp_hparams_prefix
                 )
