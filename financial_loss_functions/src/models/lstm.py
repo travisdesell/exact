@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
-from src.models.layers.relational import FeatureAttention
+from src.models.layers.relational import FeatureAttention, VariableSelectionLayer
 from src.models.layers.temporal import (
     TemporalAttention,
     ContextualGate,
@@ -375,4 +375,86 @@ class BiAttentionLSTM(nn.Module):
         
         return torch.softmax(logits, dim=-1)
 
-        
+@NNModelLibrary.register(category='lstm')
+class VLSTM(nn.Module):
+    """
+    Variable Selection Network + LSTM (VLSTM) for portfolio weight generation.
+    - First, a variable selection layer learns per-feature importance.
+    - Then an LSTM processes the weighted features.
+    - Optional temporal attention aggregates over time.
+    - Finally, a linear layer outputs portfolio weights.
+    """
+    def __init__(
+        self,
+        input_size: int,
+        hidden_size: int,
+        num_layers: int,
+        num_stocks: int,
+        nheads: int,
+        dropout: float = 0.2,
+        equal_prior: bool = False,
+        vsn_hidden_size: int | None = None,          # new parameter
+        **kwargs
+    ):
+        super().__init__()
+        self.equal_prior = equal_prior
+
+        if nheads != 0:
+            self.use_attention = True
+        else:
+            self.use_attention = False
+
+        # Set default vsn_hidden_dim to hidden_size // 2 if not provided
+        if vsn_hidden_size is None:
+            vsn_hidden_size = hidden_size // 2
+
+        # Variable selection layer
+        self.vsn = VariableSelectionLayer(
+            input_size=input_size,
+            hidden_size=vsn_hidden_size,
+            dropout=dropout
+        )
+
+        # LSTM backbone
+        self.lstm = nn.LSTM(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=dropout if num_layers > 1 else 0
+        )
+
+        if self.use_attention:
+            self.t_attn = TemporalAttention(hidden_size, nheads, dropout)
+
+        self.ln_lstm = nn.LayerNorm(hidden_size)
+        self.dropout = nn.Dropout(dropout)
+
+        # Output layer
+        self.fc = nn.Linear(hidden_size, num_stocks)
+
+        if equal_prior:
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3)
+            nn.init.constant_(self.fc.bias, 0.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Step 1: Variable selection (feature weighting)
+        x = self.vsn(x)                     # (B, T, F)
+
+        # Step 2: LSTM
+        out, _ = self.lstm(x)               # (B, T, hidden)
+
+        # Step 3: Layer norm and activation
+        out = self.ln_lstm(out)
+        out = nn.functional.gelu(out)
+        out = self.dropout(out)
+
+        if self.use_attention:
+            out = self.t_attn(out)       # (B, T, hidden)         
+
+        # Step 5: Pooling (mean over time)
+        context = out.mean(dim=1)           # (B, hidden)
+
+        # Step 6: Final linear layer
+        logits = self.fc(context)           # (B, num_stocks)
+        return torch.softmax(logits, dim=-1)

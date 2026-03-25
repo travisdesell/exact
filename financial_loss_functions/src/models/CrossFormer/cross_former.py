@@ -10,7 +10,7 @@ from math import ceil
 
 from src.models.registry import NNModelLibrary
 
-@NNModelLibrary.register(category='transformer', name='CrossFormer')
+# @NNModelLibrary.register(category='transformer', name='CrossFormer')
 class CrossFormerWrapper(nn.Module):
     """
     Wrapper that adapts CrossFormer for portfolio weight generation.

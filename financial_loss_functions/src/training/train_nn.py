@@ -453,6 +453,7 @@ class Tuner:
     direction = 'maximize'
     max_seed = 1000000
     n_startup_perc = 0.3
+    min_n_startup = 20
 
     def __init__(
             self,
@@ -477,6 +478,8 @@ class Tuner:
         self.torch_device = torch_device
 
         self.n_startup_trials = int(self.n_trials * self.n_startup_perc)
+        if self.n_startup_trials < self.min_n_startup:
+            self.n_startup_trials = self.min_n_startup
 
         self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
