@@ -34,22 +34,26 @@ from src.models.registry import NNModelLibrary, TradModelLibrary
 EQ_WT_NAME = 'Equal_Weight'
 SP500_NAME = 'S&P500'
 
-def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
-    # set_seed(seed_value) # Global seed for reproducibility
-    # Create all artifact directorie if they doen't exist
-    artifacts_paths = {}
-    for name, path in paths_config['artifacts'].items():
-        dir_path = Path(path)
+
+def _create_dirs(artifacts_paths: dict[str, Path|str]):
+    """
+    Create directories if they dont exist in artifacts directory.
+    """
+    for dir_path in artifacts_paths.values():
         create_directory(dir_path)
-        artifacts_paths[name] = dir_path
 
+def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
     models_module = paths_config['models_module']
-
     # Registering all Traditional models to the library
     TradModelLibrary.autodiscover(models_module)
     # Registering all NN models to the library
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
+
+    artifacts_paths = {}
+    for name, path in paths_config['artifacts'].items():
+        dir_path = Path(path)
+        artifacts_paths[name] = dir_path
     
     return artifacts_paths
 
@@ -258,6 +262,11 @@ def run_tuning_pipeline(
         comm, global_rank, size, gpu_id = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
+        # Create artifact directories if the don't exist
+        # Only rank 0 can create if directories don't exist
+        if global_rank == 0:
+            _create_dirs(artifacts_paths)
+
         candidates_grid = CandidatesGrid(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
@@ -298,6 +307,8 @@ def run_tuning_pipeline(
         
 
     else:
+        _create_dirs(artifacts_paths)
+        
         # Default cuda or mps device
         torch_device = get_best_device()
 
@@ -537,6 +548,9 @@ def run_wfv_pipeline(
         comm, global_rank, size, gpu_id = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
+        if global_rank == 0:
+            _create_dirs(artifacts_paths)
+
         grid_validator = WalkForwardValidator(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
@@ -570,6 +584,8 @@ def run_wfv_pipeline(
             print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
     
     else:
+        _create_dirs(artifacts_paths)
+
         # Using default MPS or CUDA
         torch_device = get_best_device()
 
