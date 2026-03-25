@@ -465,44 +465,6 @@ def run_wfv_pipeline(
     all_avg_perf = artifacts_extrator.aggregate_avg_perf('avg_perf')
     optimized_hparams = artifacts_extrator.aggregate_optimized_hparams('optimized')
     
-    # if grid_mode == 'all':
-    #     avg_perf_paths = find_artifact_files(
-    #         'avg_perf',
-    #         ['all'],
-    #         artifacts_paths['avg_perf_dir'],
-    #         '.csv'
-    #     )
-
-    #     num_files = len(avg_perf_paths)
-    #     if num_files == 0:
-    #         raise RuntimeError(
-    #             'No average Performance files found. Run training and tuning first.'
-    #         )
-    #     elif num_files > 1:
-    #         raise RuntimeError('More than 1 file found for all mode.')
-
-    #     # Optimized Hyperparameter files
-    #     opti_paths = find_artifact_files(
-    #         'optimized',
-    #         ['all'],
-    #         artifacts_paths['hparams_dir'],
-    #         '.json'
-    #     )
-
-    #     if len(opti_paths) == 0:
-    #         print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
-    #         optimized_hparams = None
-    #     else:
-    #         optimized_hparams = {}
-    #         for path in opti_paths:
-    #             optimized_hparams.update(load_json(path))
-
-    # elif grid_mode == 'one_model':
-    #     pass
-
-    # else:
-    #     raise RuntimeError('Incorrect mode arguments while running at entry point.')
-    
     all_benches = TradModelLibrary.list_models()
     all_benches.extend([EQ_WT_NAME, SP500_NAME])
 

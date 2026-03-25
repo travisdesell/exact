@@ -90,19 +90,19 @@ class ArtifactDataExtractor:
                 (suff, dir_path / f'{prefix}_{suff}{ext}')
             )
         
-        avg_perf_paths = {}
+        arti_paths = {}
         existence = check_if_files_exist([tup[1] for tup in paths_temp])
         for path, status in existence.items():
             for tup in paths_temp:
                 if path == tup[1]:
                     if status:
-                        avg_perf_paths.update(
+                        arti_paths.update(
                             {tup[0]: path}
                         )
                     else:
                         print(f'{prefix.upper()} file for {tup[0]} not found at {tup[0]}. Skipping!')
 
-        return avg_perf_paths
+        return arti_paths
     
     def _build_avg_perf_paths(
             self, prefix: str, suffixes: list[str]
@@ -143,8 +143,15 @@ class ArtifactDataExtractor:
     
     def aggregate_avg_perf(self, avg_perf_prefix: str):
         if self.prev_grid_mode == 'all':
-            print('!Mode not implemented yet!')
-            exit()
+            avg_perf_paths = self._build_avg_perf_paths(
+                avg_perf_prefix, ['all']
+            )
+            if len(avg_perf_paths) > 1:
+                raise RuntimeError('More than 1 file found for `all` mode.')
+            
+            avg_perf_dfs = load_csv_files(avg_perf_paths)
+
+            all_avg_perf = avg_perf_dfs.values()[0] # There should be only 1 file
         
         elif self.prev_grid_mode == 'one_model':
 
@@ -168,8 +175,16 @@ class ArtifactDataExtractor:
     
     def aggregate_optimized_hparams(self, opti_hparams_prefix: str):
         if self.prev_grid_mode == 'all':
-            print('!Mode not implemented yet!')
-            exit()
+            opti_paths = self._build_opti_hparams_paths(
+                opti_hparams_prefix, ['all']
+            )
+            
+            if opti_paths:
+                optimized_hparams = {}
+                for path in opti_paths.values():
+                    optimized_hparams.update(load_json(path))
+            else:
+                optimized_hparams = None
         
         elif self.prev_grid_mode == 'one_model':
             
