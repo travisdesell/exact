@@ -5,13 +5,14 @@ import torch
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
+from src.utils.formatting import serialize_np_dict
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, ArtifactDataExtractor
 from src.visualization.plots import (
     train_val_losses_plot, wfv_losses_plot, plot_windowed_comparison
 )
 from src.utils.io import (
-    create_directory, save_to_csv, save_to_json, load_json, raise_file_not_found
+    create_directory, save_to_csv, save_to_json, raise_file_not_found
 )
 from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.evaluation.evaluator import (
@@ -283,13 +284,13 @@ def run_tuning_pipeline(
             nn_alloc_weights = candidates_grid.train_eval_grid(
                 X_train, y_train, X_val, y_val, comm, global_rank, size
             )
-            results_sufix = grid_mode
+            results_suffix = grid_mode
         
         elif grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
                 model_name, X_train, y_train, X_val, y_val, comm, global_rank, size
             )
-            results_sufix = model_name
+            results_suffix = model_name
         
         else:
             raise RuntimeError(
@@ -329,27 +330,27 @@ def run_tuning_pipeline(
                 X_train, y_train, X_val, y_val, None, None, None
             )
             
-            results_sufix = grid_mode
+            results_suffix = grid_mode
         
         elif grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
                 model_name, X_train, y_train, X_val, y_val, None, None, None
             )
-            results_sufix = model_name
+            results_suffix = model_name
 
         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one(
                 model_name, loss_name, X_train, y_train, X_val, y_val
             )
 
-            results_sufix = f'{model_name}-{loss_name}'
+            results_suffix = f'{model_name}-{loss_name}'
         
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
     if tune:
         opti_file_name = artifacts_paths['hparams_dir'] \
-            / f'optimized_{results_sufix}.json'
+            / f'optimized_{results_suffix}.json'
         optimized_hparams = candidates_grid.get_optimized_hparams()
         save_to_json(
             optimized_hparams,
@@ -403,7 +404,7 @@ def run_tuning_pipeline(
     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
     
     perf_file_name = artifacts_paths['avg_perf_dir'] \
-        / f'avg_perf_{results_sufix}.csv'
+        / f'avg_perf_{results_suffix}.csv'
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
@@ -508,7 +509,7 @@ def run_wfv_pipeline(
             nn_alloc_weights = grid_validator.validate_grid(
                 init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
             )
-            results_suffix = 'All'
+            results_suffix = 'ALL'
         else:
             raise RuntimeError(
                 'Incorrect mode arguments while running at entry point.',
@@ -612,13 +613,24 @@ def run_wfv_pipeline(
 
         
     avg_perf_metrics = evaluator.calc_avg_performance()
-    # TODO: SAVE RESULTS
+    perf_file_name = artifacts_paths['wfv_perf_dir'] \
+        / f'wfv_avg_perf_{results_suffix}.csv'
+    save_to_csv(avg_perf_metrics, perf_file_name)
 
     # Extract dates index columns for the respective output windows
     out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
 
+
+    all_daily_returns = evaluator.get_all_daily_returns()
+    all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
+        / f'wfv_all_rets_{results_suffix}.json'
+    save_to_json(
+        serialize_np_dict(all_daily_returns),
+        all_rets_file_name
+    )
+    
     plot_windowed_comparison(
-        evaluator.get_all_daily_returns(),
+        all_daily_returns,
         out_win_date_cols,
         2,
         artifacts_paths['wfv_plots_dir'] / \

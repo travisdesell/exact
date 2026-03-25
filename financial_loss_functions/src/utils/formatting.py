@@ -1,4 +1,5 @@
 import copy
+import numpy as np
 
 def extract_req_cols(columns_list: list, suffix: str) -> list:
     """
@@ -49,3 +50,15 @@ def split_combo_names(
         split_combos.append((parts[0], parts[1]))
 
     return split_combos
+
+def serialize_np_dict(obj: dict):
+    """
+    Convert numpy arrays in a dict to lists
+    """
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: serialize_np_dict(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [serialize_np_dict(i) for i in obj]
+    return obj

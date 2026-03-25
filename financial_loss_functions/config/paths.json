@@ -33,6 +33,7 @@
         "plots_dir": "artifacts/results/plots/",
         "tuned_plots_dir": "artifacts/results/plots/tuned_plots/",
         "wfv_plots_dir": "artifacts/results/plots/wfv_plots/",
+        "wfv_perf_dir": "artifacts/results/wfv_performance/",
         "temp_dir": "artifacts/temp/"
     },
     "models_module": "src.models"
