@@ -509,7 +509,7 @@ def run_wfv_pipeline(
             nn_alloc_weights = grid_validator.validate_grid(
                 init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
             )
-            results_suffix = 'ALL'
+            results_suffix = 'All'
         else:
             raise RuntimeError(
                 'Incorrect mode arguments while running at entry point.',
