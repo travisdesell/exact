@@ -4,6 +4,7 @@
         "raw_dir": "data/raw/",
         "processed_dir": "data/processed/",
         "raw_macro_dir": "data/raw/macro/",
+        "sec_filings_dir": "data/raw/sec_filings/",
         "crsp_dir": ""
     },
     "raw_files": {
@@ -28,6 +29,7 @@
     "artifacts": {
         "artifact_dir": "artifacts/",
         "results": "artifacts/results/",
-        "plots": "artifacts/results/plots/"
+        "plots": "artifacts/results/plots/",
+        "pyfolio_output": "artifacts/results/plots/pyfolio/"
     }
 }

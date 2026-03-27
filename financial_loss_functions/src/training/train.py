@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Optional
 from src.data_processing.dataset import WindowDataset
 
 if torch.mps.is_available():
@@ -31,7 +31,9 @@ class Trainer:
         optimizer_hparams: Dict,  # Specific to optimizer
         train_hparams: Dict,      # Generic training params (epochs, batch_size, etc.)
         in_size: int,
-        num_stocks: int
+        num_stocks: int,
+        fundamentals_train: Optional[np.ndarray] = None,
+        fundamentals_val: Optional[np.ndarray] = None,
     ):
         """
         Initialize Trainer instance to train given model.
@@ -41,7 +43,7 @@ class Trainer:
         @param optimizer torch.optim
             Pytorch optimization class to be used to loss optimization
         @param loss Callable
-            Custom loss function
+            Custom loss function (2-arg legacy or 4-arg CompositeSRLoss)
         @param model_hparams Dict
             Dictionary containing hyperparameters required for model initialization
         @param optimizer_hparams Dict
@@ -51,7 +53,11 @@ class Trainer:
         @param in_size int
             Size of input window
         @param num_stocks int
-            Number of stocks, i.e, number of output nodes 
+            Number of stocks, i.e, number of output nodes
+        @param fundamentals_train np.ndarray (num_windows, N) optional
+            Pre-computed per-ticker fundamental scores for training windows
+        @param fundamentals_val np.ndarray (num_windows, N) optional
+            Pre-computed per-ticker fundamental scores for validation windows
         """
         self.device = DEVICE
         print('Model hyperparameters:\n', model_hparams)
@@ -66,13 +72,25 @@ class Trainer:
         ).to(self.device)
         
         # Initialize optimizer with its specific hyperparameters
+        all_params = list(self.model.parameters())
+        if hasattr(loss, 'parameters'):
+            all_params += list(loss.parameters())
         self.optimizer = optimizer(
-            self.model.parameters(),
+            all_params,
             **optimizer_hparams
         )
         self.loss = loss
 
         self.train_hparams = train_hparams
+
+        self.fundamentals_train = (
+            torch.tensor(fundamentals_train, dtype=torch.float32)
+            if fundamentals_train is not None else None
+        )
+        self.fundamentals_val = (
+            torch.tensor(fundamentals_val, dtype=torch.float32)
+            if fundamentals_val is not None else None
+        )
         
         self.train_losses = []
         self.val_losses = []
@@ -81,6 +99,22 @@ class Trainer:
 
         self.val_alloc_weights = []
     
+    def _call_loss(self, weights, yb, xb, sample_indices=None, fundamentals_source=None):
+        """
+        Invoke the loss function with the correct signature.
+
+        Legacy losses accept (weights, returns).
+        CompositeSRLoss accepts (weights, returns, features, fundamentals).
+        """
+        fund_batch = None
+        if fundamentals_source is not None and sample_indices is not None:
+            fund_batch = fundamentals_source[sample_indices].to(self.device)
+
+        try:
+            return self.loss(weights, yb, xb, fund_batch)
+        except TypeError:
+            return self.loss(weights, yb)
+
     def train(self, train_ds: WindowDataset):
         """
         Train inistalized model using a train data split.
@@ -100,13 +134,25 @@ class Trainer:
             self.model.train()
             total_loss_sum = 0.0
             total_samples = 0
+            sample_offset = 0
 
             for xb, yb in train_loader:
                 xb = xb.to(self.device)
                 yb = yb.to(self.device)
+                batch_size = xb.size(0)
+
+                indices = None
+                if self.fundamentals_train is not None:
+                    indices = torch.arange(
+                        sample_offset, sample_offset + batch_size
+                    )
 
                 weights = self.model(xb)  # (B, N)
-                loss = self.loss(weights, yb)
+                loss = self._call_loss(
+                    weights, yb, xb,
+                    sample_indices=indices,
+                    fundamentals_source=self.fundamentals_train,
+                )
 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -116,10 +162,9 @@ class Trainer:
                 )
                 self.optimizer.step()
 
-                batch_size = xb.size(0)
-
                 total_loss_sum += loss.item() * batch_size
                 total_samples += batch_size
+                sample_offset += batch_size
 
             epoch_end = time.time()
             epoch_time = round(epoch_end - epoch_start, 3)
@@ -153,12 +198,22 @@ class Trainer:
         with torch.no_grad():
             self.val_losses = []
             total_loss, total_samples = 0.0, 0
+            sample_offset = 0
 
             for xb, yb in val_loader:
                 b = xb.size(0)
                 xb, yb = xb.to(self.device), yb.to(self.device)
+
+                indices = None
+                if self.fundamentals_val is not None:
+                    indices = torch.arange(sample_offset, sample_offset + b)
+
                 weights = self.model(xb)
-                loss = self.loss(weights, yb)
+                loss = self._call_loss(
+                    weights, yb, xb,
+                    sample_indices=indices,
+                    fundamentals_source=self.fundamentals_val,
+                )
 
                 # detach & move to CPU BEFORE appending
                 self.val_alloc_weights.append(weights.detach().cpu()) 
@@ -169,6 +224,7 @@ class Trainer:
                 # --- accumulate weighted sum for overall avg ---
                 total_loss += loss.item() * b
                 total_samples += b
+                sample_offset += b
 
             # --- weighted average over all samples ---
             self.avg_val_loss = total_loss / total_samples
