@@ -1,4 +1,5 @@
-from torch import nn
+import torch.nn as nn
+from torch import Tensor
 
 class FeatureAttention(nn.Module):
     """Calculates dependencies between different stocks (Neural Covariance)."""
@@ -28,3 +29,46 @@ class FeatureAttention(nn.Module):
         # 4. Now shapes match: (B, T, H) + (B, T, H)
         # rel_x = x + self.dropout(attn_out) 
         return self.dropout(attn_out)
+
+
+class VariableSelectionLayer(nn.Module):
+    """
+    Gating mechanism that learns per-feature importance based on the input.
+    - Aggregates input over time (mean) to produce a global context.
+    - Passes the context through a small MLP to generate feature weights (sigmoid).
+    - Applies weights to each feature channel across all time steps.
+    """
+    def __init__(self, input_size: int, hidden_size: int = 32, dropout: float = 0.1):
+        """
+        Args:
+            feature_dim (int): Number of input features (F).
+            hidden_dim (int): Hidden dimension for the gating MLP.
+            dropout (float): Dropout rate.
+        """
+        super().__init__()
+        self.feature_dim = input_size
+        # MLP to produce feature weights
+        self.gate_net = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size, input_size),
+            nn.Sigmoid()
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x: (batch_size, seq_len, feature_dim)
+        Returns:
+            weighted_x: same shape as x, with features scaled by learned importance.
+        """
+        # Aggregate over time to get a global context per batch
+        context = x.mean(dim=1)                # (B, F)
+        # Compute feature‑wise weights
+        weights = self.gate_net(context)       # (B, F)
+        weights = weights.unsqueeze(1)         # (B, 1, F)
+        # Apply weights to all time steps
+        weighted_x = x * weights
+        return self.dropout(weighted_x)

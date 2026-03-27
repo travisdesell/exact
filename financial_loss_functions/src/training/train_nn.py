@@ -6,13 +6,17 @@ import copy
 import torch
 import optuna
 import psutil
+import random
+import traceback
 import numpy as np
+import pandas as pd
 from torch import Tensor
+from abc import ABC, abstractmethod
+from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-from src.utils.formatting import reformat_hparams
-from src.data_processing.dataset import WindowDataset
-from src.utils.device import set_seed
+from src.utils.formatting import reformat_hparams, split_combo_names
+from src.data_processing.dataset import WindowDataset, Reshaper, calc_current_idxs
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -21,7 +25,6 @@ from typing import Callable, Dict, Literal
 from scipy import stats
 
 optuna.logging.set_verbosity(optuna.logging.INFO)
-
 
 class Trainer:
     """
@@ -108,6 +111,7 @@ class Trainer:
         # For Early Stopping
         self.best_val_loss = float('inf')
         self.best_train_loss = float('inf')
+        self.best_epoch = 0
         self.best_model_state = None
         self.patience_counter = 0
     
@@ -189,7 +193,7 @@ class Trainer:
         min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
         early_stopping = self.train_hparams.get('early_stopping', True)
         clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
-
+        
         # Initialize optimizer and scheduler
         optimizer = self._init_optimizer()
         scheduler = self._init_scheduler(optimizer)
@@ -232,7 +236,7 @@ class Trainer:
 
             epoch_avg_loss = total_loss_sum / total_samples
             self.train_losses.append(epoch_avg_loss)
-            status_msg = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}'
+            status_msg = f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.5f}'
             self.avg_train_loss = epoch_avg_loss
 
             # --- Validation & Early Stopping Logic ---
@@ -257,6 +261,7 @@ class Trainer:
                 if is_improving:
                     self.best_val_loss = avg_val_loss
                     self.best_train_loss = epoch_avg_loss
+                    self.best_epoch = epoch
                     self.best_model_state = copy.deepcopy(self.model.state_dict())
                     
                     self.patience_counter = 0 
@@ -268,30 +273,34 @@ class Trainer:
                 # 2. THE EARLY STOPPING
                 if early_stopping and is_past_warmup and self.patience_counter >= patience:
                     status_msg = status_msg + \
-                        f' | Val Loss: {avg_val_loss:.4f}'
+                        f' | Val Loss: {avg_val_loss:.5f}'
                     print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
                     print(f'----- Early Stopping Triggered at Epoch {epoch} -----\n')
                     break
                         
                 else:
-                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.4f}'
+                    status_msg = status_msg + f' | Val Loss: {avg_val_loss:.5f}'
             
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
         
         # After the training loop
-        if self.best_model_state is None:
+        if self.best_model_state is not None:
+            self.model.load_state_dict(self.best_model_state)
+        else:
             # No improvement ever after warm-up; fall back to final model
-            self.best_val_loss = avg_val_loss
+            if val_ds is not None:
+                self.best_val_loss = avg_val_loss
+
+            # Save bests
+            self.best_epoch = epoch
             self.best_train_loss = self.avg_train_loss  # from the last epoch
             self.best_model_state = copy.deepcopy(self.model.state_dict())
-        else:
-            self.model.load_state_dict(self.best_model_state)
             
-        print(f'Training Complete. Best Val Loss: {self.best_val_loss:.4f}')
+        print(f'Training Complete. Best Val Loss: {self.best_val_loss:.5f}')
             
         end_time = time.time()
         time_taken = round(end_time - start_time, 3)
-        print(f'Best Train Loss: {self.best_train_loss:.4f}, Time Taken: {time_taken}s')
+        print(f'Best Train Loss: {self.best_train_loss:.5f}, Time Taken: {time_taken}s')
 
     def validate(self, val_ds: WindowDataset) -> float:
         """
@@ -392,7 +401,7 @@ class Trainer:
         
         end_time = time.time()
         time_taken = round(end_time-start_time, 3)
-        print(f'Average Eval Loss: {self.avg_eval_loss:.4f}, Time Taken: {time_taken}')
+        print(f'Average Eval Loss: {self.avg_eval_loss:.5f}, Time Taken: {time_taken}')
 
     def get_eval_alloc_weights(self) -> np.ndarray:
         """
@@ -410,6 +419,12 @@ class Trainer:
         else:
             print('Model must be trained and validated.')
             return None
+    
+    def get_best_losses(self) -> tuple[float, float]:
+        return self.best_train_loss, self.best_val_loss
+    
+    def get_best_epoch(self) -> int:
+        return self.best_epoch
     
     def device_cleanup(self):
         if self.device.type == 'mps':
@@ -436,12 +451,16 @@ class MetricModel(BaseModel):
 
 class Tuner:
     direction = 'maximize'
+    max_seed = 1000000
+    n_startup_perc = 0.3
+    min_n_startup = 20
 
     def __init__(
             self,
             tune_metric: dict[str, MetricModel],
-            seed_list: list[int],
-            n_trails: int,
+            n_seeds: int,
+            n_trials: int,
+            n_warmup_steps: int, 
             n_jobs: int,
             torch_device: torch.device | str
         ):
@@ -452,12 +471,15 @@ class Tuner:
         else:
             self.tune_metric = tune_metric
         
-        self.seed_list = seed_list
-        self.n_trials = n_trails
+        self.n_seeds = n_seeds
+        self.n_trials = n_trials
+        self.n_warmup_steps = n_warmup_steps
         self.n_jobs = n_jobs
         self.torch_device = torch_device
 
-        self.n_seeds = len(self.seed_list)
+        self.n_startup_trials = int(self.n_trials * self.n_startup_perc)
+        if self.n_startup_trials < self.min_n_startup:
+            self.n_startup_trials = self.min_n_startup
 
         self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
@@ -479,10 +501,9 @@ class Tuner:
         return model_rets - self.benchmark_rets
 
     def _calc_composite_score(
-            self,model_name: str, loss_name: str,
+            self, model_loss_name,
             alloc_weights: np.ndarray, y_val: np.ndarray
         ) -> float:
-        model_loss_name = f'{model_name}-{loss_name}'
         
         evaluator = Evaluator(y_val, None)
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
@@ -569,6 +590,8 @@ class Tuner:
             model_cfg: dict,
             loss_cfg: dict
         ):
+        
+        model_loss_name = f'{model_name}-{loss_name}'
 
         # # Calculate equal weight portfolio & its returns as benchmark
         if self.benchmark_rets is None:
@@ -624,7 +647,17 @@ class Tuner:
             composite_scores = []
             seed_train_losses = []
             seed_val_losses = []
-            for i, seed in enumerate(self.seed_list):
+            seed_best_epochs = []
+
+            # loop over list of random seeds
+            rng = random.Random(trial.number) # To avoid global random state and for reproducibilty
+            rnd_seeds = [rng.randint(0, self.max_seed) for _ in range(self.n_seeds)]
+            print(
+                '+'*20,
+                f'Trial {trial.number}, seeds: {rnd_seeds}',
+                '+'*20
+            )
+            for i, seed in enumerate(rnd_seeds):
                 # IMPORTANT: Reset the world to this specific seed
                 print(
                     '='*20,
@@ -650,8 +683,11 @@ class Tuner:
                 trainer.train(train_ds, val_ds)
 
                 # We grab the losses from the trainer's "Best" epoch
-                seed_train_losses.append(trainer.best_train_loss)
-                seed_val_losses.append(trainer.best_val_loss)
+                best_train_loss, best_val_loss = trainer.get_best_losses()
+                seed_train_losses.append(best_train_loss)
+                seed_val_losses.append(best_val_loss)
+
+                seed_best_epochs.append(trainer.get_best_epoch())
 
                 # Evaluate the get all the portfolio weights for eah window
                 trainer.evaluate(val_ds)
@@ -659,8 +695,7 @@ class Tuner:
                 
                 # Calculate composite scores from allocation weights
                 composite_score = self._calc_composite_score(
-                    model_name,
-                    loss_name,
+                    model_loss_name,
                     alloc_weights,
                     y_val
                 )
@@ -683,6 +718,9 @@ class Tuner:
                 trainer.device_cleanup()
                 del trainer
             
+            # Inside _objective, after the seed loop
+            trial.set_user_attr('best_epochs', seed_best_epochs)
+            
             final_objective = self._calc_tuning_objective(
                 composite_scores, seed_train_losses, seed_val_losses
             )
@@ -690,9 +728,16 @@ class Tuner:
             return final_objective
         
         if model_tuning_space and y_val is not None:
-            pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=2)
+            pruner = optuna.pruners.MedianPruner(
+                n_startup_trials=self.n_startup_trials,
+                n_warmup_steps=self.n_warmup_steps
+            )
 
-            study = optuna.create_study(direction=self.direction, pruner=pruner)
+            study = optuna.create_study(
+                direction=self.direction,
+                pruner=pruner,
+                study_name=model_loss_name
+            )
             study.optimize(
                 _objective,
                 n_trials=self.n_trials,
@@ -715,10 +760,114 @@ class Tuner:
     def set_tuning_direction(self, direction: str):
         self.direction = direction
 
-class CandidatesGrid:
-    models_hparams = 'nn_models'
-    losses_hparams = 'losses'
+
+class GridUtilities(ABC):
+    mdls_hparams_name = 'nn_models'
+    ls_hparams_name = 'losses'
+
+    def __init__(
+            self,
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
+            torch_device: torch.device | str,
+            mpi: bool = False,
+            temp_dir: str | None = None
+        ):
+        self.model_lib = model_lib
+        self.loss_lib = loss_lib
+        self.hparams_config = hparams_config # Default config. Not optimized
+        self.torch_device = torch_device
+        self.mpi = mpi
+        self.temp_dir = temp_dir
+        
+        self._temp_dir_check()
+
+    def _temp_dir_check(self):
+        if self.mpi:
+            if not self.temp_dir or not os.path.exists(self.temp_dir):
+                raise FileNotFoundError(
+                    f'Temp directory not found: {self.temp_dir}'
+                )
     
+    def set_temp_directory(self, temp_dir: str):
+        self.temp_dir = temp_dir
+    
+    # -------------------- Library Searches -------------------- #
+    def _search_model(self, model_name: str) -> Type | None:
+        """Search for required model"""
+        for _, models_dict in self.model_lib.items():
+            if model_name in models_dict:
+                return models_dict[model_name]
+        return None
+    
+    def _search_loss_func(self, loss_name: str) -> Callable | None:
+        """Search for required loss function"""
+        for _, cat_dict in self.loss_lib.items():
+            for _, sub_cat_dict in cat_dict.items():
+                if loss_name in sub_cat_dict:
+                    return sub_cat_dict[loss_name]
+        
+        # objectives = self.loss_lib['objectives']['__default__']
+        # if loss_name in objectives:
+        #     return objectives[loss_name]
+        
+        # custom_combos = self.loss_lib['custom']['__default__']
+        # if loss_name in custom_combos:
+        #     return custom_combos[loss_name]
+        
+        return None
+    
+    def _memory_diagnostics(self):
+        """Print memory usage diagnostics"""
+        process = psutil.Process(os.getpid())
+        mem_gb = process.memory_info().rss / 1024 ** 3
+        
+        print(f"  Process memory: {mem_gb:.2f} GB")
+        
+        # if DEVICE == 'cuda':
+        #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+        #     print(f"  GPU cached: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
+        
+        # Count Trainer instances
+        trainer_count = 0
+        for obj in gc.get_objects():
+            if type(obj).__name__ == 'Trainer':
+                trainer_count += 1
+        
+        if trainer_count > 0:
+            print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
+    
+    # -------------------- MPI Methods -------------------- #
+    @staticmethod
+    def _mpi_setup_check(mpi_items: list):
+        for i in mpi_items:
+            if i is None:
+                raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
+    
+    @staticmethod
+    def _select_ranks_combos(all_combos: list, global_rank, size):
+        # Distribute combos evenly across ranks
+        chunk_size = len(all_combos) // size
+        remainder = len(all_combos) % size
+        start = global_rank * chunk_size + min(global_rank, remainder)
+        end = start + chunk_size + (1 if global_rank < remainder else 0)
+        this_ranks_combos = all_combos[start:end]
+
+        return this_ranks_combos
+    
+    # -------------------- Abstract Methods -------------------- #
+    @abstractmethod
+    def _train_eval_helper(self):
+        pass
+
+    @abstractmethod
+    def _merge_all_results(self):
+        pass
+
+
+class CandidatesGrid(GridUtilities):
+
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
@@ -739,10 +888,10 @@ class CandidatesGrid:
 
         train_eval_* methods can be run only once with each instance
         """
-        self.model_lib = model_lib
-        self.loss_lib = loss_lib
-        self.hparams_config = hparams_config
-        self.torch_device = torch_device
+
+        super().__init__(
+            model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
+        )
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -750,24 +899,24 @@ class CandidatesGrid:
             self.loss_mode = loss_mode
         
         self.tune = tune
-        self.mpi = mpi
-        self._temp_dir_check()
         
         # Tuner configuration
-        self.seed_list = self.hparams_config.get('seed_list')
         if self.tune and tune_metric:
             tuner_config = self.hparams_config.get('tuner', {})
             print('Tuner Config:\n', tuner_config)
             
-            n_trails = tuner_config.get('n_tuning_trials', 20)
+            n_seeds = tuner_config.get('n_seeds', 5)
+            n_trials = tuner_config.get('n_tuning_trials', 30)
+            n_warmup_steps = tuner_config.get('n_warmup_steps', 2)
             n_jobs = tuner_config.get('n_jobs', 1)
             print(
-                f'Tuning all models with {n_trails} trials, across seeds: {self.seed_list}.'
+                f'Tuning all models with {n_trials} trials, across {n_seeds} seeds.'
             )
             self.tuner = Tuner(
                 tune_metric,
-                self.seed_list,
-                n_trails,
+                n_seeds,
+                n_trials,
+                n_warmup_steps,
                 n_jobs,
                 self.torch_device
             )
@@ -782,20 +931,27 @@ class CandidatesGrid:
             self.tuner = None
         
         self.enable_diagnostics = enable_diagnostics
-        self.temp_dir = temp_dir
 
-        self.all_alloc_weights: dict[str, dict[str, np.ndarray]] = {}
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
         self.train_val_losses: dict[str, dict[str, list[float]]] = {}
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def _temp_dir_check(self):
-        if self.mpi:
-            if not self.temp_dir or not os.path.exists(self.temp_dir):
-                raise FileNotFoundError(
-                    f'Temp directory not found: {self.temp_dir}'
-                )
+    def _map_new_params(self, best_config: dict, new_hparams: dict) -> dict:
+        
+        # Map the best Optuna parameters into our new dictionary
+        for k, v in new_hparams.items():
+            if k in best_config['model']: best_config['model'][k] = v
+            elif k in best_config['optimizer']: best_config['optimizer'][k] = v
+            elif k in best_config['loss']: best_config['loss'][k] = v
+
+        return best_config
     
+    def _add_median_epoch(self, best_config: dict, best_epochs: list[int]):
+        best_config['train']['median_epochs'] = int(np.median(best_epochs)) + 1
+        # 1 is added because the epoch saved starts from 0 in the training loop
+        return best_config
+
     def _train_eval_helper(
         self,
         model_name: str,
@@ -809,8 +965,8 @@ class CandidatesGrid:
         y_val: np.ndarray | None = None
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         # Extract base configs
-        model_cfg = self.hparams_config[self.models_hparams][model_name]
-        loss_cfg = self.hparams_config[self.losses_hparams].get(loss_name, {})
+        model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
+        loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
         
         if self.enable_diagnostics:
             print(f'\n[Before training {model_name} with {loss_name}]')
@@ -837,16 +993,17 @@ class CandidatesGrid:
                 loss_cfg,
             )
             best_found_params = study.best_params
-            # Map the best Optuna parameters into our new dictionary
-            for k, v in best_found_params.items():
-                if k in best_config['model']: best_config['model'][k] = v
-                elif k in best_config['optimizer']: best_config['optimizer'][k] = v
-                elif k in best_config['loss']: best_config['loss'][k] = v
+            best_epochs = study.best_trial.user_attrs.get('best_epochs')
+            
+            best_config = self._map_new_params(best_config, best_found_params)
+            best_config = self._add_median_epoch(best_config, best_epochs)
             
             del study
         else:
             # If not tuning, we just use the original values and use the first seed in the seed list
-            set_seed(self.seed_list[0])
+            # set_seed(self.seed_list[0])
+            # No set seed
+            pass
         
         if self.tune:
             optimized_hparams = best_config
@@ -888,26 +1045,6 @@ class CandidatesGrid:
             self._memory_diagnostics()
 
         return alloc_weights, train_val_losses, optimized_hparams
-    
-    def _memory_diagnostics(self):
-        """Print memory usage diagnostics"""
-        process = psutil.Process(os.getpid())
-        mem_gb = process.memory_info().rss / 1024 ** 3
-        
-        print(f"  Process memory: {mem_gb:.2f} GB")
-        
-        # if DEVICE == 'cuda':
-        #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
-        #     print(f"  GPU cached: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
-        
-        # Count Trainer instances
-        trainer_count = 0
-        for obj in gc.get_objects():
-            if type(obj).__name__ == 'Trainer':
-                trainer_count += 1
-        
-        if trainer_count > 0:
-            print(f'  WARNING: {trainer_count} Trainer instances still in memory!')
 
     def _trained_check(self):
         """
@@ -945,22 +1082,6 @@ class CandidatesGrid:
                     continue
         
         return losses_to_use
-
-    def _mpi_setup_check(mpi_items: list):
-        for i in mpi_items:
-            if i is None:
-                raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
-
-    @staticmethod
-    def _select_ranks_combos(all_combos: list, global_rank, size):
-        # Distribute combos evenly across ranks
-        chunk_size = len(all_combos) // size
-        remainder = len(all_combos) % size
-        start = global_rank * chunk_size + min(global_rank, remainder)
-        end = start + chunk_size + (1 if global_rank < remainder else 0)
-        this_ranks_combos = all_combos[start:end]
-
-        return this_ranks_combos
     
     def _merge_all_results(
             self,
@@ -978,9 +1099,8 @@ class CandidatesGrid:
                 self.temp_dir / f'{temps_wts_prefix}_{r}.pkl'
             )
             # Merge into self.all_alloc_weights
-            for loss_name, models_dict in rank_alloc_weights.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-                self.all_alloc_weights[loss_name].update(models_dict)
+            for model_loss, models_dict in rank_alloc_weights.items():
+                self.all_alloc_weights[model_loss] = models_dict
             
             rank_losses = load_pickle_temp(
                 self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
@@ -993,7 +1113,7 @@ class CandidatesGrid:
                 self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
             )
             # Merge into self.optimized_hparams
-            for model_loss, hparms_dict, in rank_hparams.items():
+            for model_loss, hparms_dict in rank_hparams.items():
                 self.optimized_hparams[model_loss] = hparms_dict
 
         
@@ -1002,6 +1122,36 @@ class CandidatesGrid:
             delete_file(self.temp_dir / f'{temps_wts_prefix}_{r}.pkl')
             delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
             delete_file(self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl')
+
+        print('All temp files merged and then deleted.')
+    
+    def _build_combos(
+            self, 
+            losses_to_use: dict[str, Callable], 
+            grid_mode: str,
+            model_name: str | None = None,
+            model_class: Type | None = None
+        ) -> list[tuple[str, Callable, str, Type]]:
+        
+        all_combos = []
+        if grid_mode == 'all':
+            for loss_name, loss_func in losses_to_use.items():
+                for category, models_dict in self.model_lib.items():
+                    for model_name, model_class in models_dict.items():
+                        all_combos.append((loss_name, loss_func, model_name, model_class))
+        
+        elif grid_mode == 'one_model' and model_name and model_class:
+            for loss_name, loss_func in losses_to_use.items():
+                all_combos.append((loss_name, loss_func, model_name, model_class))
+
+        else:
+            raise ValueError(
+                'Incorrect grid mode provided to build combos.',
+                'Must be `all` or `one_model`.',
+                '`model_name` and `model_class` must be provided for `one_model`.'
+            )
+
+        return all_combos
 
     def train_eval_grid(
             self, X_train: np.ndarray, y_train: np.ndarray, 
@@ -1028,59 +1178,47 @@ class CandidatesGrid:
             f'\nTraining {total_train_count} models.',
             f'Running all models with {self.loss_mode} losses.'
         )
+
+        all_combos = self._build_combos(losses_to_use, 'all')
         
         # Not using MPI for distributed computing
         if self.mpi == False:
-            progress_count = 1
-            # Loop over loss functions
-            for loss_name, loss_func in losses_to_use.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-
-                for category, models_dict in self.model_lib.items():
-                    # Loop over models
-                    for model_name, model_class in models_dict.items():
-                        print(
-                            '\n', '-'*10,
-                            f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                            '-'*10
-                        )
-                        try: 
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
+                print(
+                    '\n', '-'*10,
+                    f' Training {model_name} - {loss_name}, {idx}/{total_train_count}',
+                    '-'*10
+                )
+                try: 
                             
-                            alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
-                                model_name,
-                                model_class, 
-                                loss_name,
-                                loss_func,
-                                train_ds,
-                                val_ds,
-                                X_train_shape,
-                                y_train_shape,
-                                y_val
-                            )
-                            self.all_alloc_weights[loss_name][model_name] = alloc_weights
-                            self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                            self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                        model_name,
+                        model_class, 
+                        loss_name,
+                        loss_func,
+                        train_ds,
+                        val_ds,
+                        X_train_shape,
+                        y_train_shape,
+                        y_val
+                    )
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
+                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
+                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
-                        except Exception as error:
-                            print(
-                                f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
-                            )
-                            continue
-                        finally:
-                            progress_count += 1
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
+                    )
+                    traceback.print_exc()
+                    continue
             
             return self.all_alloc_weights
         
         # If MPI is true for distributed computing
         else:
             self._mpi_setup_check([comm, global_rank, size])
-
-            all_combos = []
-            for loss_name, loss_func in losses_to_use.items():
-                for category, models_dict in self.model_lib.items():
-                    for model_name, model_class in models_dict.items():
-                        all_combos.append((loss_name, loss_func, model_name, model_class))
-
+            
             this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
 
             # Print summary on each rank
@@ -1091,8 +1229,8 @@ class CandidatesGrid:
             local_alloc_weights = {}
             local_train_val_losses = {}
             local_optimized_hparams = {}
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
-                print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
                     alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                         model_name,
@@ -1105,26 +1243,24 @@ class CandidatesGrid:
                         y_train_shape,
                         y_val
                     )
-                    # Store in local dict
-                    if loss_name not in local_alloc_weights:
-                        local_alloc_weights[loss_name] = {}
                     
-                    local_alloc_weights[loss_name][model_name] = alloc_weights
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
                     continue
             
-            temps_wts_prefix = 'all_temp_alloc_wts'
+            temp_wts_prefix = 'all_temp_alloc_wts'
             temp_losses_prefix = 'all_temp_losses'
             temp_hparams_prefix = 'all_temp_hparams'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
                 local_alloc_weights,
-                self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
             )
             save_pickle_temp(
                 local_train_val_losses,
@@ -1142,7 +1278,7 @@ class CandidatesGrid:
             if global_rank == 0:
                 self._merge_all_results(
                     size,
-                    temps_wts_prefix,
+                    temp_wts_prefix,
                     temp_losses_prefix,
                     temp_hparams_prefix
                 )
@@ -1150,13 +1286,6 @@ class CandidatesGrid:
                 return self.all_alloc_weights
             else:
                 return None    
-                
-    def _search_model(self, model_name: str) -> Type | None:
-        """Search for required model"""
-        for _, models_dict in self.model_lib.items():
-            if model_name in models_dict:
-                return models_dict[model_name]
-        return None
 
     def train_eval_one_model(
             self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
@@ -1189,16 +1318,17 @@ class CandidatesGrid:
             f'Running all models with {self.loss_mode} losses.'
         )
 
+        all_combos = self._build_combos(
+            losses_to_use, 'one_model', model_name, model_class
+        )
+
         # Not using MPI for distributed computing
         if self.mpi == False:
-            progress_count = 1
-            # Loop over loss functions
-            for loss_name, loss_func in losses_to_use.items():
-                self.all_alloc_weights.setdefault(loss_name, {})
-
+            
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
                 print(
                     '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
+                    f' Training {model_name} - {loss_name}, {idx}/{total_train_count}',
                     '-'*10
                 )
                 try:        
@@ -1213,7 +1343,7 @@ class CandidatesGrid:
                         y_train_shape,
                         y_val
                     )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
@@ -1222,19 +1352,14 @@ class CandidatesGrid:
                         f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
                         error
                     )
+                    traceback.print_exc()
                     continue
-                finally:
-                    progress_count += 1
 
             return self.all_alloc_weights
         
         # If MPI is true for distributed computing
         else:
             self._mpi_setup_check([comm, global_rank, size])
-
-            all_combos = []
-            for loss_name, loss_func in losses_to_use.items():
-                all_combos.append((loss_name, loss_func, model_name, model_class))
 
             this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
 
@@ -1246,8 +1371,8 @@ class CandidatesGrid:
             local_alloc_weights = {}
             local_train_val_losses = {}
             local_optimized_hparams = {}
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos):
-                print(f'\nRank {global_rank}: {idx+1}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
                     alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
                         model_name,
@@ -1260,26 +1385,24 @@ class CandidatesGrid:
                         y_train_shape,
                         y_val
                     )
-                    # Store in local dict
-                    if loss_name not in local_alloc_weights:
-                        local_alloc_weights[loss_name] = {}
                     
-                    local_alloc_weights[loss_name][model_name] = alloc_weights
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
                     local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
                     local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
                     continue
             
-            temps_wts_prefix = f'{model_name}_temp_alloc_wts'
+            temp_wts_prefix = f'{model_name}_temp_alloc_wts'
             temp_losses_prefix = f'{model_name}_temp_losses'
             temp_hparams_prefix = f'{model_name}_temp_hparams'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
                 local_alloc_weights,
-                self.temp_dir / f'{temps_wts_prefix}_{global_rank}.pkl'
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
             )
             save_pickle_temp(
                 local_train_val_losses,
@@ -1297,7 +1420,7 @@ class CandidatesGrid:
             if global_rank == 0:
                 self._merge_all_results(
                     size,
-                    temps_wts_prefix,
+                    temp_wts_prefix,
                     temp_losses_prefix,
                     temp_hparams_prefix
                 )
@@ -1305,86 +1428,6 @@ class CandidatesGrid:
                 return self.all_alloc_weights
             else:
                 return None
-
-    def _search_loss_func(self, loss_name: str) -> Callable | None:
-        """Search for required loss function"""
-        for _, cat_dict in self.loss_lib.items():
-            for _, sub_cat_dict in cat_dict.items():
-                if loss_name in sub_cat_dict:
-                    return sub_cat_dict[loss_name]
-        
-        # objectives = self.loss_lib['objectives']['__default__']
-        # if loss_name in objectives:
-        #     return objectives[loss_name]
-        
-        # custom_combos = self.loss_lib['custom']['__default__']
-        # if loss_name in custom_combos:
-        #     return custom_combos[loss_name]
-        
-        return None
-
-    def train_eval_one_loss(
-            self, loss_name: str, X_train: np.ndarray, y_train: np.ndarray, 
-            X_val: np.ndarray, y_val: np.ndarray
-        ) -> dict[str, dict[str, np.ndarray]]:
-        
-        self._trained_check()
-
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
-    
-        loss_func = self._search_loss_func(loss_name)
-        
-        if not loss_func: # loss function not found
-            raise RuntimeError(f'{loss_name} LOSS FUNCTION NOT FOUND IN LIBRARY!')
-
-        self.all_alloc_weights.setdefault(loss_name, {})
-
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
-
-        # Calculate number of models to train (model + loss combinations)
-        total_train_count = self._count_only_models()
-        print(
-            f'\nTraining {total_train_count} models.',
-        )
-        progress_count = 1
-        
-        for category, models_dict in self.model_lib.items():
-            # Loop over models
-            for model_name, model_class in models_dict.items():
-                print(
-                    '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {progress_count}/{total_train_count}',
-                    '-'*10
-                )
-                try: 
-                    
-                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
-                        model_name,
-                        model_class, 
-                        loss_name,
-                        loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
-                    )
-                    self.all_alloc_weights[loss_name][model_name] = alloc_weights
-                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
-
-                except Exception as error:
-                    print(
-                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.',
-                        error
-                    )
-                    continue
-                finally:
-                    progress_count += 1
-
-        return self.all_alloc_weights
 
     def train_eval_one(
             self,
@@ -1410,8 +1453,6 @@ class CandidatesGrid:
         
         X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
-        self.all_alloc_weights.setdefault(loss_name, {})
-
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
             alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
@@ -1425,20 +1466,447 @@ class CandidatesGrid:
                 y_train_shape,
                 y_val
             )
-            self.all_alloc_weights[loss_name][model_name] = alloc_weights
+            self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
             self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
             self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
 
         except Exception as e:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
+            traceback.print_exc()
         
         return self.all_alloc_weights
-    
-    def set_temp_directory(self, temp_dir: str):
-        self.temp_dir = temp_dir
 
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
         return self.train_val_losses
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
+    
+class WalkForwardValidator(GridUtilities):
+    def __init__(
+            self,
+            model_lib: dict[str, dict[str, Type]],
+            loss_lib: dict[str, dict[str, dict[str, Callable]]],
+            hparams_config: dict[str, dict[str, Any]],
+            common_features: list[str],
+            torch_device: torch.device | str,
+            num_steps: int,
+            filtered_models: list[str] | None = None,
+            mpi: bool = False,
+            temp_dir: str | None = None,
+            optimized_hparams = None
+        ):
+
+        super().__init__(
+            model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
+        )
+        self.num_steps = num_steps
+        if filtered_models:
+            self.filtered_models = split_combo_names(filtered_models, '-')
+            # self.filtered_models = [self.filtered_models[0]] #### SLICE FOR TESTING ####
+        else:
+            self.filtered_models = filtered_models
+        
+        self.optimized_hparams = optimized_hparams # Optimized
+
+        self.in_size = self.hparams_config['rolling_windows']['in_size']
+        out_size = self.hparams_config['rolling_windows']['out_size']
+        self.stride =  out_size # Output size by default
+
+        self.reshaper = Reshaper(
+            self.in_size,
+            out_size,
+            self.hparams_config['rolling_windows']['stride'],
+            common_features
+        )
+
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
+        self.train_infer_losses: dict[str, list[dict[str, list[float]]]] = {}
+
+    def update_stride(self, stride: int):
+        self.stride = stride
+    
+    def _collected_combos(self) -> list[tuple[str, Callable, str, Type]]:
+        relevant_temp = {'models': {}, 'losses': {}}
+        all_combos = []
+        for model_loss in self.filtered_models:
+            model_name = model_loss[0]
+            loss_name = model_loss[1]
+
+            if model_name not in relevant_temp['models']:
+                relevant_temp['models'][model_name] = self._search_model(model_name)
+            
+            if loss_name not in relevant_temp['losses']:
+                relevant_temp['losses'][loss_name] = self._search_loss_func(loss_name)
+
+            all_combos.append(
+                (
+                    loss_name,
+                    relevant_temp['losses'][loss_name],
+                    model_name,
+                    relevant_temp['models'][model_name]
+                )
+            )
+        return all_combos
+
+    def _reshape_step_data(
+            self,
+            walk_train: pd.DataFrame,
+            walk_rets_train: pd.DataFrame,
+            walk_rets_val: pd.DataFrame    
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        # Reshaping entire training data
+        X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
+
+        # Reshaping only last window
+        infer_in = self.reshaper.transform_one_window(walk_train.iloc[-self.in_size:])
+        infer_in = infer_in.reshape(1, infer_in.shape[0], infer_in.shape[1])
+
+        infer_out = walk_rets_val.values
+        infer_out = infer_out.reshape(1, infer_out.shape[0], infer_out.shape[1])
+
+        return X_train, y_train, infer_in, infer_out
+
+    def _train_eval_helper(
+            self,
+            model_name: str,
+            model_cls: Type,
+            loss_name: str,
+            loss_func: Callable, 
+            train_ds: 'WindowDataset',
+            infer_ds: 'WindowDataset',
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size
+        ):
+        model_loss_name = f'{model_name}-{loss_name}'
+        
+        # Gather best hyperparameters or use defaults
+        if isinstance(self.optimized_hparams, dict) and model_loss_name in \
+            self.optimized_hparams:
+            best_hparams = self.optimized_hparams.get(model_loss_name)
+            median_epochs = best_hparams.get('median_epochs')
+            if median_epochs:
+                best_hparams['train']['epochs'] = median_epochs
+            else:
+                print(
+                    f'WARNING: No median epochs found or is 0, {median_epochs}. Using default number of epochs!'
+                )
+        else:
+            print('!No optimized hyperparameters provided, using defaults!')
+            model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
+            loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
+
+            best_hparams = reformat_hparams(model_cfg, loss_cfg)
+
+        #### FOR TESTING ####
+        # best_hparams['train']['epochs'] = 5
+        ####################
+        trainer = Trainer(
+            model=model_cls,
+            loss=loss_func,
+            model_hparams=best_hparams['model'],
+            optimizer_hparams=best_hparams['optimizer'],
+            train_hparams=best_hparams['train'],
+            in_size=X_train_shape[2],
+            num_stocks=y_train_shape[2],
+            max_seq_len=X_train_shape[1],
+            scheduler_hparams=best_hparams['scheduler'],
+            loss_hparams=best_hparams['loss'],
+            device=self.torch_device
+        )
+        
+        trainer.train(train_ds)
+        trainer.evaluate(infer_ds)
+
+        # Logging and Diagnostics
+        train_infer_losses = {
+            'train': trainer.train_losses,
+            'eval': trainer.eval_losses
+        }
+
+        alloc_weights = trainer.get_eval_alloc_weights()
+
+        trainer.device_cleanup()
+        del trainer
+
+        return alloc_weights, train_infer_losses
+
+    def _walk_1_model(
+            self,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame,
+            model_name: str,
+            model_cls: Type,
+            loss_name: str,
+            loss_func: Callable
+        ) -> tuple[list[np.ndarray], list[dict[str, list[float]]]]:
+        walk_train = init_train.copy()
+        walk_rets_train = init_rets_train.copy()
+        walk_val = None
+        walk_rets_val = None
+        
+        # Take steps
+        steps_alloc_weights = []
+        steps_train_infer_losses = []
+        for step in range(self.num_steps):
+            print(
+                '\n', '='*10,
+                f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps-1}',
+                '='*10
+            )
+            current_start, current_end = calc_current_idxs(step+1, self.stride)
+
+            if current_start > 0:
+                walk_train = pd.concat([walk_train, walk_val], axis=0)
+                walk_rets_train = pd.concat([walk_rets_train, walk_rets_val], axis=0)
+            
+            # Save walk_val and returns val at every step
+            walk_val = init_val.iloc[current_start : current_end] # To be added to train data later
+            walk_rets_val = init_rets_val.iloc[current_start : current_end]
+
+            X_train, y_train, infer_in, infer_out = self._reshape_step_data(
+                walk_train, walk_rets_train, walk_rets_val
+            )
+
+            train_ds = WindowDataset(X_train, y_train)
+            infer_ds = WindowDataset(infer_in, infer_out)
+            X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+            
+            alloc_weights, train_infer_losses = self._train_eval_helper(
+                model_name,
+                model_cls,
+                loss_name,
+                loss_func,
+                train_ds,
+                infer_ds,
+                X_train_shape,
+                y_train_shape
+            )
+
+            steps_alloc_weights.append(alloc_weights)
+            steps_train_infer_losses.append(train_infer_losses)
+
+        return np.vstack(steps_alloc_weights), steps_train_infer_losses
+
+    def _data_check(self, init_train: pd.DataFrame, init_rets_val: pd.DataFrame):
+        """
+        Checks data consistency to ensure number of steps in the 
+        walk forward is correctly divides given evaluation data.
+        """
+        total_val_days = len(init_rets_val)
+        expected_steps = total_val_days // self.stride
+        if expected_steps != self.num_steps:
+            raise ValueError(
+                f'Provided num_steps ({self.num_steps}) does not match actual '
+                f'number of full windows of length {self.stride} in validation set '
+                f'({expected_steps}). Adjust num_steps or data.'
+            )
+        if total_val_days < self.stride:
+            raise ValueError(
+                f'Validation set too short: need at least {self.stride} days, '
+                f'got {total_val_days}.'
+            )
+        # Eensure initial training set has at least in_size days for first inference
+        if len(init_train) < self.in_size:
+            raise ValueError(
+                f'Initial training set must have at least {self.in_size} days to form the first inference window, '
+                f'got {len(init_train)} days.'
+            )
+
+    def _merge_all_results(
+            self,
+            size,
+            temp_wts_prefix,
+            temp_losses_prefix
+        ):
+        """Merge all results into one dict if rank is 0, i.e., main process."""
+        self.all_alloc_weights = {}
+        self.train_infer_losses = {}
+                
+        for r in range(size):
+            # Load all temp alloc wt files
+            rank_alloc_weights = load_pickle_temp(
+                self.temp_dir / f'{temp_wts_prefix}_{r}.pkl'
+            )
+            # Merge into self.all_alloc_weights
+            for model_loss, models_dict in rank_alloc_weights.items():
+                self.all_alloc_weights[model_loss] = models_dict
+            
+            rank_losses = load_pickle_temp(
+                self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
+            )
+            # Merge into self.train_val_losses
+            for model_loss, losses_dict in rank_losses.items():
+                self.train_infer_losses[model_loss] = losses_dict
+            
+    def validate_grid(
+            self,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame,
+            comm = None, global_rank = None, size = None
+        ) -> dict[str, np.ndarray]:
+
+        self._data_check(init_train, init_rets_val)
+
+        self.reshaper.extract_features(init_train.columns)
+        
+        # Search and prepare models combos
+        validate_count = len(self.filtered_models)
+        print(
+            f'\nWalk-forward validating {validate_count} models, over {self.num_steps} steps.'
+        )
+        all_combos = self._collected_combos()
+        
+        if self.mpi == False:
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
+                print(
+                    '\n', '-'*20,
+                    f' WFV: {model_name} - {loss_name}, Model: {idx}/{validate_count}',
+                    '-'*20
+                )
+                try:
+                    steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                        init_train,
+                        init_rets_train,
+                        init_val,
+                        init_rets_val,
+                        model_name,
+                        model_class,
+                        loss_name,
+                        loss_func
+                    )
+
+                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+                    self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while walk-forward validating {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    traceback.print_exc()
+                    continue
+
+            return self.all_alloc_weights
+        
+        else:
+            self._mpi_setup_check([comm, global_rank, size])
+
+            this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
+
+            # Print summary on each rank
+            print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
+            sys.stdout.flush()
+
+            # Local results dictionary
+            local_alloc_weights = {}
+            local_train_infer_losses = {}
+            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+
+                try:
+                    steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                        init_train,
+                        init_rets_train,
+                        init_val,
+                        init_rets_val,
+                        model_name,
+                        model_class,
+                        loss_name,
+                        loss_func
+                    )
+
+                    local_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+                    local_train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                
+                except Exception as e:
+                    print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
+                    traceback.print_exc()
+                    continue
+            
+            temp_wts_prefix = f'all_wf_temp_alloc_wts'
+            temp_losses_prefix = f'all_wf_temp_losses'
+
+            # Save local results to a rank‑specific file
+            save_pickle_temp(
+                local_alloc_weights,
+                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
+            )
+            save_pickle_temp(
+                local_train_infer_losses,
+                self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
+            )
+            
+            # Wait for all ranks to finish
+            comm.Barrier()
+
+            # Rank 0 collects and merges all files
+            if global_rank == 0:
+                self._merge_all_results(
+                    size,
+                    temp_wts_prefix,
+                    temp_losses_prefix
+                )
+                
+                return self.all_alloc_weights
+            else:
+                return None
+
+    def validate_one(
+            self,
+            model_name: str, 
+            loss_name: str,
+            init_train: pd.DataFrame,
+            init_rets_train: pd.DataFrame,
+            init_val: pd.DataFrame,
+            init_rets_val: pd.DataFrame
+        ):
+        
+        model_class = self._search_model(model_name)
+        if model_class is None:
+            raise KeyError(f'Model {model_name} not found.')
+        
+        loss_func = self._search_loss_func(loss_name)
+        if loss_func is None:
+            raise KeyError(f'Loss Function {loss_name} not found.')
+        
+        try:
+            steps_alloc_weights, steps_train_infer_losses = self._walk_1_model(
+                init_train,
+                init_rets_train,
+                init_val,
+                init_rets_val,
+                model_name,
+                model_class,
+                loss_name,
+                loss_func
+            )
+
+            self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
+            self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+       
+        except Exception as e:
+            print(f'DEBUG: Error while walk-forward validating {model_name}. Not Validating.', e)
+            traceback.print_exc()
+        
+        return self.all_alloc_weights
+
+    def get_train_infer_losses(self) -> dict[str, list]:
+        reformatted_dict = {}
+        for model_loss, step_losses in self.train_infer_losses.items():
+            train_losses = []
+            eval_losses = []
+            for step in step_losses:
+                train_losses.append(step['train'])
+                eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+            
+            reformatted_dict[model_loss] = {
+                'train': train_losses,
+                'eval': eval_losses
+            }
+        
+        return reformatted_dict

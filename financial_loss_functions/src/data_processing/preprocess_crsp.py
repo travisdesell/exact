@@ -3,8 +3,8 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.linalg import svd
 from scipy.linalg import hankel
-from sklearn.preprocessing import PowerTransformer, RobustScaler
 from src.utils.formatting import extract_req_cols, split_col
+from sklearn.preprocessing import PowerTransformer, RobustScaler
 
 
 def _handle_missing_data(df: pd.DataFrame, col_suffix: str, limit: int = 1):

@@ -9,28 +9,31 @@ def create_directory(path: str | Path) -> None:
     """
     Create a directory if it doesn't exist
 
-    @param path str Path to directory
+    Args:
+        path (str | Path) Path to directory
     """
     if not os.path.exists(path): 
         os.makedirs(path)
         print(f'{path} Directory Created!')
 
-def delete_file(file_path: str) -> None:
+def delete_file(file_path: str | Path) -> None:
     """
     Delete file at given path
 
-    @param file_path str Path to file to be deleted
+    Args:
+        file_path (str | Path): Path to file to be deleted
     """
     if os.path.exists(file_path):
         os.remove(file_path)
     else:
         print(f'WARNING: File at {file_path} not found.')
 
-def delete_directory(dir_path: str) -> None:
+def delete_directory(dir_path: str | Path) -> None:
     """
-    Delete folder at given path
+    Delete folder at given path.
 
-    @param dir_path str Path to directory to be deleted
+    Args:
+        dir_path (str | Path): Path to directory to be deleted
     """
     try:
         shutil.rmtree(dir_path)  # Delete the folder and all its contents
@@ -40,18 +43,41 @@ def delete_directory(dir_path: str) -> None:
     except Exception as e:
         print(f'An error occurred: {e}')
 
-def check_if_files_exist(paths_list: list[str]) -> None:
+def check_if_files_exist(
+        paths_list: list[str | Path]
+    ) -> dict[str | Path, bool]:
     """
-    Check if all files exist
+    Check if all files exist.
     
-    @param paths_list List[str] List of file path strings to be checked for existance
+    Args:
+        paths_list (List[str | Path]): List of file path strings to be checked for existence.
     """
+    existence = {}
     for path in paths_list:
-        if not os.path.exists(path):
+        if os.path.exists(path):
+            existence[path] = True
+        else:
+            existence[path] = False
+    
+    return existence
+
+def raise_file_not_found(paths_list: list[str | Path]):
+    """
+    Raise a FileNotFoundError if any provided file doesn't exist.
+    
+    Args:
+        paths_list (List[str | Path]): List of file path strings to be checked for existence.
+    
+    Raises:
+        FileNotFoundError: Raised if any file in the provided list doesn't exist.
+    """
+    existence = check_if_files_exist(paths_list)
+    for path, status in existence.items():
+        if not status:
             raise FileNotFoundError(
                 f'Required file not found: {path}'
             )
-        
+
 def data_dir_check(path: str) -> bool:
     run_permission = False
     if os.path.exists(path):
@@ -71,6 +97,13 @@ def data_dir_check(path: str) -> bool:
     return run_permission
 
 def save_to_csv(data: pd.DataFrame, output_path: str | Path) -> None:
+    """
+    Save dataframe to csv file.
+
+    Args:
+        data (pd.DataFrame): DataFrame to be saved as csv.
+        output_path (str | Path): Output path where the file should be saved.
+    """
     data.to_csv(output_path, sep=',')
 
 def save_to_json(data: dict, output_file: str) -> None:
@@ -111,11 +144,12 @@ def load_pickle_temp(file_path: str | Path) -> dict:
     
     return pkl_data
 
-def reset_data_stage(dir_path: str) -> None:
+def reset_data_stage(dir_path: str | Path) -> None:
     """
     Docstring for reset_data_stage
     
-    @param dir_path str Directory path string which contains data for the particular stage
+    Args:
+        dir_path (str): Directory path string which contains data for the particular stage
     """
     if os.path.exists(dir_path):
         print(dir_path, ', Directory exists. Overwriting.')
@@ -126,24 +160,32 @@ def reset_data_stage(dir_path: str) -> None:
         create_directory(dir_path)
         print(dir_path, ', Directory created.')
 
+def load_json(path: str | Path) -> dict:
+    """
+    Load a single json file.
+
+    Args:
+        path (str | Path): Path to json file that should be loaded as a dict.
+    
+    Returns:
+        config (dict): Loaded json file as dict.
+    """
+    with open(path, 'r') as f:
+        config = json.load(f)
+    return config
+
 def load_path_config(path: str, crsp_data_dir: str | None = None) -> dict:
     """
     Loads config.json and adds name of the CRSP data directory if needed.
 
-    Parameters
-    ----------
-    path: str
-        Path to config file
-    crsp_data_dir: str
-        Name of the directory where the CRSP data is stored
+    Args:
+        path (str): Path to config file
+        crsp_data_dir (str): Name of the directory where the CRSP data is stored
 
-    Returns
-    -------
-    config: Dict
-        Config dictionary containg paths to files and directories
+    Returns:
+        config (dict): Config dictionary containg paths to files and directories.
     """
-    with open(path, 'r') as f:
-        config = json.load(f)
+    config = load_json(path)
 
     config_path = Path(path).resolve()
     repo_root = config_path.parent.parent
@@ -188,9 +230,4 @@ def load_path_config(path: str, crsp_data_dir: str | None = None) -> dict:
         processed_paths[key] = str(p)
     config['processed_paths'] = processed_paths
 
-    return config
-
-def load_json(path: str) -> dict:
-    with open(path, 'r') as f:
-        config = json.load(f)
     return config

@@ -5,18 +5,25 @@ import torch
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
+from src.utils.formatting import serialize_np_dict
 from src.training.train_trad import TradModelsTrainer
-from src.data_processing.loading import load_csv_files
-from src.visualization.plots import train_val_losses_plot
-from src.training.train_nn import CandidatesGrid, MetricModel
-from src.utils.io import create_directory, save_to_csv, save_to_json, load_json
+from src.data_processing.loading import load_csv_files, ArtifactDataExtractor
+from src.visualization.plots import (
+    train_val_losses_plot, wfv_losses_plot, plot_windowed_comparison
+)
+from src.utils.io import (
+    create_directory, save_to_csv, save_to_json, raise_file_not_found
+)
+from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
 )
 from src.data_processing.dataset import (
     Reshaper,
+    WFAdjustment,
     calc_in_out_idx,
     extract_oos_dates,
+    get_date_index_col,
     extract_sp500_winds
 )
 
@@ -25,25 +32,29 @@ from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-# TODO:
-# Unit test NCO
+EQ_WT_NAME = 'Equal_Weight'
+SP500_NAME = 'S&P500'
+
+
+def _create_dirs(artifacts_paths: dict[str, Path|str]):
+    """
+    Create directories if they dont exist in artifacts directory.
+    """
+    for dir_path in artifacts_paths.values():
+        create_directory(dir_path)
 
 def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
-    # set_seed(seed_value) # Global seed for reproducibility
-    # Create all artifact directorie if they doen't exist
-    artifacts_paths = {}
-    for name, path in paths_config['artifacts'].items():
-        dir_path = Path(path)
-        create_directory(dir_path)
-        artifacts_paths[name] = dir_path
-
     models_module = paths_config['models_module']
-
     # Registering all Traditional models to the library
     TradModelLibrary.autodiscover(models_module)
     # Registering all NN models to the library
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
     # No auto discovery needed for Loss library as all functions are in one file
+
+    artifacts_paths = {}
+    for name, path in paths_config['artifacts'].items():
+        dir_path = Path(path)
+        artifacts_paths[name] = dir_path
     
     return artifacts_paths
 
@@ -56,7 +67,10 @@ def _load_processed_data(paths_config: dict) -> tuple:
         'returns_val': Path(paths_config['processed_paths']['returns_val'])
     }
 
-    processed_dfs = load_csv_files(processed_files)
+    # Check if all files exist
+    raise_file_not_found(list(processed_files.values()))
+
+    processed_dfs = load_csv_files(processed_files, index_dt=True)
     train_data = processed_dfs['processed_train']
     returns_train = processed_dfs['returns_train']
 
@@ -69,64 +83,78 @@ def _load_processed_data(paths_config: dict) -> tuple:
     return train_data, returns_train, val_data, returns_val
 
 def _load_sp500_rets(paths_config: dict):
-
+    sp500_path = Path(paths_config['processed_paths']['benchmark_val'])
+    raise_file_not_found([sp500_path])
+    
     # Loading only S&P500 from validation split
     benches = load_csv_files(
-        {'benchmark_val': Path(paths_config['processed_paths']['benchmark_val'])}
+        {'benchmark_val': sp500_path},
+        index_dt=True
     )
 
     return benches['benchmark_val']
     
-def _preprocess(
-        train_data: pd.DataFrame,
-        returns_train: pd.DataFrame,
-        val_data: pd.DataFrame,
-        returns_val: pd.DataFrame,
-        windows_config: dict,
-        common_features: list
-    ) -> tuple:
-    reshaper = Reshaper(
-        windows_config['in_size'],
-        windows_config['out_size'],
-        windows_config['stride'],
-        common_features
-    )
-    reshaper.extract_features(train_data.columns)
+# def rolling_reshape(
+#         train_data: pd.DataFrame,
+#         returns_train: pd.DataFrame,
+#         val_data: pd.DataFrame,
+#         returns_val: pd.DataFrame,
+#         windows_config: dict,
+#         common_features: list,
+#     ) -> tuple:
+#     reshaper = Reshaper(
+#         windows_config['in_size'],
+#         windows_config['out_size'],
+#         windows_config['stride'],
+#         common_features
+#     )
+#     reshaper.extract_features(train_data.columns)
     
-    X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    # print('-'*10, ' train shapes ', '-'*10)
-    # print('X_train shpe:', X_train.shape)
-    # print('y_train shape:', y_train.shape)
+#     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
+#     # print('-'*10, ' train shapes ', '-'*10)
+#     # print('X_train shpe:', X_train.shape)
+#     # print('y_train shape:', y_train.shape)
 
-    X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    # print('-'*10, ' val shapes ', '-'*10)
-    # print('X_val shape', X_val.shape)
-    # print('y_val shape:', y_val.shape)
+#     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
+#     # print('-'*10, ' val shapes ', '-'*10)
+#     # print('X_val shape', X_val.shape)
+#     # print('y_val shape:', y_val.shape)
 
-    # Calculate indexes for input and output windows on split data
-    in_wind_indexes, out_wind_indexes = calc_in_out_idx(
-        returns_val,
-        windows_config['in_size'],
-        windows_config['out_size'],
-        windows_config['stride']
-    ) 
+#     # Calculate indexes for input and output windows on split data
+#     in_wind_indexes, out_wind_indexes = calc_in_out_idx(
+#         returns_val,
+#         windows_config['in_size'],
+#         windows_config['out_size'],
+#         reshaper.stride
+#     ) 
 
-    return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
+#     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
-def _print_evaludation_info(in_win_date_cols, out_win_date_cols, **kwargs):
-    eval_dates_info = {
-        'Input Window Start': [],
-        'Input Window End': [],
-        'Out Window Start': [],
-        'Out Window End': []
-    }
-    
-    for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
-        eval_dates_info['Input Window Start'].append(in_date[0])
-        eval_dates_info['Input Window End'].append(in_date[-1])
-        eval_dates_info['Out Window Start'].append(out_date[0])
-        eval_dates_info['Out Window End'].append(out_date[-1])
-    
+def _print_evaludation_info(
+        out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
+    ):
+    if in_win_date_cols:
+        eval_dates_info = {
+            'Input Window Start': [],
+            'Input Window End': [],
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        
+        for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
+            eval_dates_info['Input Window Start'].append(in_date[0])
+            eval_dates_info['Input Window End'].append(in_date[-1])
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+    else:
+        eval_dates_info = {
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        for out_date in out_win_date_cols:
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+        
     print('\nModels evaluated on:')
     print(pd.DataFrame(eval_dates_info))
 
@@ -191,14 +219,23 @@ def run_tuning_pipeline(
     )
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
-        train_data,
-        returns_train,
-        val_data,
-        returns_val,
-        hparams_config['rolling_windows'],
+    reshaper = Reshaper(
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride'],
         features_config['common_features']
     )
+    reshaper.extract_features(train_data.columns)
+    
+    X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
+    # print('-'*10, ' train shapes ', '-'*10)
+    # print('X_train shpe:', X_train.shape)
+    # print('y_train shape:', y_train.shape)
+
+    X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
+    # print('-'*10, ' val shapes ', '-'*10)
+    # print('X_val shape', X_val.shape)
+    # print('y_val shape:', y_val.shape)
 
     # -------------------- Evaluator Setup -------------------- #
 
@@ -226,6 +263,11 @@ def run_tuning_pipeline(
         comm, global_rank, size, gpu_id = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
+        # Create artifact directories if the don't exist
+        # Only rank 0 can create if directories don't exist
+        if global_rank == 0:
+            _create_dirs(artifacts_paths)
+
         candidates_grid = CandidatesGrid(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
@@ -242,13 +284,13 @@ def run_tuning_pipeline(
             nn_alloc_weights = candidates_grid.train_eval_grid(
                 X_train, y_train, X_val, y_val, comm, global_rank, size
             )
-            results_sufix = grid_mode
+            results_suffix = grid_mode
         
         elif grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
                 model_name, X_train, y_train, X_val, y_val, comm, global_rank, size
             )
-            results_sufix = model_name
+            results_suffix = model_name
         
         else:
             raise RuntimeError(
@@ -266,6 +308,8 @@ def run_tuning_pipeline(
         
 
     else:
+        _create_dirs(artifacts_paths)
+        
         # Default cuda or mps device
         torch_device = get_best_device()
 
@@ -286,34 +330,27 @@ def run_tuning_pipeline(
                 X_train, y_train, X_val, y_val, None, None, None
             )
             
-            results_sufix = grid_mode
+            results_suffix = grid_mode
         
         elif grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
                 model_name, X_train, y_train, X_val, y_val, None, None, None
             )
-            results_sufix = model_name
-        
-        elif grid_mode == 'one_loss' and loss_name is not None:
-            nn_alloc_weights = candidates_grid.train_eval_one_loss(
-                loss_name, X_train, y_train, X_val, y_val
-            )
-
-            results_sufix = loss_name
+            results_suffix = model_name
 
         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one(
                 model_name, loss_name, X_train, y_train, X_val, y_val
             )
 
-            results_sufix = f'{model_name}-{loss_name}'
+            results_suffix = f'{model_name}-{loss_name}'
         
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
     
     if tune:
         opti_file_name = artifacts_paths['hparams_dir'] \
-            / f'optimized_{results_sufix}.json'
+            / f'optimized_{results_suffix}.json'
         optimized_hparams = candidates_grid.get_optimized_hparams()
         save_to_json(
             optimized_hparams,
@@ -329,26 +366,25 @@ def run_tuning_pipeline(
             model_loss_curves['val'],
             model_loss_curves['eval'],
             loss_plot_name,
-            artifacts_paths['plots_dir'] / (loss_plot_name + '.png')
+            artifacts_paths['tuned_plots_dir'] / (loss_plot_name + '.png')
         )
 
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
-    for loss_name, models_dict in nn_alloc_weights.items():
-        for nn_model_name, alloc_weights in models_dict.items():
-            evaluator.calc_pf_daily_rets(alloc_weights, f'{nn_model_name}-{loss_name}')
+    for model_loss, alloc_weights in nn_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
     
     del candidates_grid
-    
-    # -------------------- Evaluation on Out-of-Sample data -------------------- #
 
-    # Extract dates index columns for the rrespective output windows
-    in_win_date_cols, out_win_date_cols = extract_oos_dates(
-        val_data,
-        in_wind_idxs,
-        out_wind_idxs
-    )
-    
+    # -------------------- Evaluation on Out-of-Sample data -------------------- #
+    # Calculate indexes for input and output windows on split data
+    in_wind_idxs, out_wind_idxs = calc_in_out_idx(
+        returns_val,
+        hparams_config['rolling_windows']['in_size'],
+        hparams_config['rolling_windows']['out_size'],
+        hparams_config['rolling_windows']['stride']
+    ) 
+
     # Loading S&P 500 for benchmarking
     sp500_rets = _load_sp500_rets(paths_config)
 
@@ -364,19 +400,24 @@ def run_tuning_pipeline(
     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
-    eq_wt_name = 'Equal_Weight'
-    sp500_name = 'S&P500'
-    evaluator.add_benchmark_rets(eq_wt_name, eq_wt_rets)
-    evaluator.add_benchmark_rets(sp500_name, sp500_rets_winds)
+    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
     
     perf_file_name = artifacts_paths['avg_perf_dir'] \
-        / f'avg_perf_{results_sufix}.csv'
+        / f'avg_perf_{results_suffix}.csv'
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
+    # Extract dates index columns for the rrespective output windows
+    in_win_date_cols, out_win_date_cols = extract_oos_dates(
+        val_data,
+        in_wind_idxs,
+        out_wind_idxs
+    )
+
     _print_evaludation_info(
-        in_win_date_cols,
         out_win_date_cols,
+        in_win_date_cols,
         avgerage_performance_metrics=avg_perf_metrics,
     )
 
@@ -387,8 +428,13 @@ def run_tuning_pipeline(
 def run_wfv_pipeline(
     paths_config: dict,
     hparams_config: dict,
-    features_config: dict
+    features_config: dict,
+    grid_mode: str,
+    model_name: str | None,
+    loss_name: str | None,
+    mpi: bool = False
 ): 
+    
     """
     Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
     
@@ -396,6 +442,8 @@ def run_wfv_pipeline(
         paths_config (dict): Dictionary containing paths
         hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
     """
+    print('\n', '=' * 40, ' Walk-Forward Validation Grid Pipeline ', '=' * 40)
+    start_time = time.time()
 
     artifacts_paths = _common_setup(paths_config)
     
@@ -403,33 +451,136 @@ def run_wfv_pipeline(
     train_data, returns_train, val_data, returns_val = _load_processed_data(
         paths_config
     )
+
+    # -------------------- Loading Relevant Training Artifacts -------------------- #
+    # Get all models from library
+    all_models = []
+    for cat in NNModelLibrary.list_categories():
+        all_models.extend(NNModelLibrary.list_models(cat))
     
-    # -------------------- Preprocessing (Reshaping) -------------------- #
-    X_train, y_train, X_val, y_val, in_wind_idxs, out_wind_idxs = _preprocess(
-        train_data,
-        returns_train,
-        val_data,
-        returns_val,
-        hparams_config['rolling_windows'],
-        features_config['common_features']
+    artifacts_extrator = ArtifactDataExtractor(
+        grid_mode,
+        artifacts_paths,
+        all_models
+    )
+    all_avg_perf = artifacts_extrator.aggregate_avg_perf('avg_perf')
+    optimized_hparams = artifacts_extrator.aggregate_optimized_hparams('optimized')
+    
+    all_benches = TradModelLibrary.list_models()
+    all_benches.extend([EQ_WT_NAME, SP500_NAME])
+
+    # Filter models that beat Equal Weight Portfolio
+    filtered_perf, filtered_models = filter_models(
+        all_avg_perf, EQ_WT_NAME, 'sharpe', all_benches
     )
 
-    # -------------------- Evaluator Setup -------------------- #
-    # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
+    print('Filtered Avg. Performance Metrics: \n', filtered_perf)
 
+    # -------------------- Prepare Datasets -------------------- #
+    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
+    data_adjuster.init_datasets(train_data, returns_train, val_data, returns_val)
+    init_train, init_rets_train, init_val, init_rets_val = data_adjuster.get_data()
+    num_steps = data_adjuster.get_num_steps()
+    eval_windows, out_wind_idxs = data_adjuster.get_eval_windows()
+
+    # -------------------- Walk-Forward Training & Validation -------------------- #
+    if mpi:
+        comm, global_rank, size, gpu_id = mpi_setup()
+        torch_device = get_best_device(gpu_id)
+
+        if global_rank == 0:
+            _create_dirs(artifacts_paths)
+
+        grid_validator = WalkForwardValidator(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            common_features = features_config['common_features'],
+            torch_device = torch_device,
+            num_steps = num_steps,
+            filtered_models = filtered_models,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = optimized_hparams
+        )
+
+        if grid_mode in ['all', 'one_model']:
+            nn_alloc_weights = grid_validator.validate_grid(
+                init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
+            )
+            results_suffix = 'All'
+        else:
+            raise RuntimeError(
+                'Incorrect mode arguments while running at entry point.',
+                'If mpi, grid mode must be `all` or `one_model`.'
+            )
+        
+        # Stop all non zero ranks
+        if global_rank != 0:
+            print(f'Rank {global_rank}: Work complete. Shutting down.')
+            sys.exit(0) # This stops the process for this rank only
+        
+        if nn_alloc_weights is None:
+            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+    
+    else:
+        _create_dirs(artifacts_paths)
+
+        # Using default MPS or CUDA
+        torch_device = get_best_device()
+
+        grid_validator = WalkForwardValidator(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            common_features = features_config['common_features'],
+            torch_device = torch_device,
+            num_steps = num_steps,
+            filtered_models = filtered_models,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = optimized_hparams
+        )
+
+        if grid_mode in ['all', 'one_model']:
+            nn_alloc_weights = grid_validator.validate_grid(
+                init_train, init_rets_train, init_val, init_rets_val, None, None, None
+            )
+            
+            results_suffix = 'All'
+
+        elif grid_mode == 'one':
+            nn_alloc_weights = grid_validator.validate_one(
+                model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
+            )
+
+            results_suffix = f'{model_name}-{loss_name}'
+    
+    nn_train_infer_losses = grid_validator.get_train_infer_losses()
+    for model_loss, model_loss_curves in nn_train_infer_losses.items():
+        wfv_plot_name = model_loss + ' WFV Losses'
+        wfv_losses_plot(
+            model_loss_curves['train'],
+            model_loss_curves['eval'],
+            wfv_plot_name,
+            artifacts_paths['wfv_plots_dir'] / (wfv_plot_name + '.png')
+        )
+    
+    # -------------------- Evaluator Setup -------------------- #
+    # Initializing Evaluator
+    evaluator = Evaluator(eval_windows, MetricLibrary.items())  
+    
     # -------------------- Training Tradional Models -------------------- #
-    max_workers = os.cpu_count() - 1
     trad_grid = TradModelsTrainer(
         TradModelLibrary.items(),
         hparams_config,
-        max_workers
+        num_steps,
+        max_workers = os.cpu_count() - 1
     )
     trad_alloc_weights = trad_grid.train_all(
-        in_wind_idxs,
-        out_wind_idxs,
-        returns_train,
-        returns_val
+        init_rets_train=init_rets_train,
+        init_rets_split=init_rets_val
     )
 
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
@@ -437,21 +588,59 @@ def run_wfv_pipeline(
     
     del trad_grid
 
-    
-    # avg_perf_metrics = load_csv_files(
-    #     {'avg_perf_metrics': Path(paths_config['artifacts']['avg_perf_metrics'])}
-    # )['avg_perf_metrics']
-    
-    # opti_hparams_path = Path(paths_config['artifacts']['optimized_hparams'])
-    # if os.path.exists(opti_hparams_path):
-    #     optimized_hparams = load_json(opti_hparams_path)
-    # else:
-    #     print('WARNING: Models not tuned! Using default hyperparameters. Tune models using `python -m scripts.run_training`')
+    # -------------------- Out-of-Sample Evaluation -------------------- #
 
-    # # Filter models that beat Equal Weight Portfolio
-    # all_benchs = TradModelLibrary.list_models().extend([eq_wt_name, sp500_name])
-    # filtered_perf, filtered_models = filter_models(
-    #     avg_perf_metrics, eq_wt_name, 'sharpe', all_benchs
-    # )
+    for model_loss, alloc_weights in nn_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
 
-    # print(filtered_models)
+    # Loading S&P 500 for benchmarking
+    sp500_rets = _load_sp500_rets(paths_config)
+
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
+        out_wind_idxs
+    )  
+    
+    # Calculate Equal Weight Portfolio's weeights
+    eq_wt_calc = EqualWeightCalculator(eval_windows)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+
+    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
+    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
+
+        
+    avg_perf_metrics = evaluator.calc_avg_performance()
+    perf_file_name = artifacts_paths['wfv_perf_dir'] \
+        / f'wfv_avg_perf_{results_suffix}.csv'
+    save_to_csv(avg_perf_metrics, perf_file_name)
+
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
+
+
+    all_daily_returns = evaluator.get_all_daily_returns()
+    all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
+        / f'wfv_all_rets_{results_suffix}.json'
+    save_to_json(
+        serialize_np_dict(all_daily_returns),
+        all_rets_file_name
+    )
+    
+    plot_windowed_comparison(
+        all_daily_returns,
+        out_win_date_cols,
+        2,
+        artifacts_paths['wfv_plots_dir'] / \
+            (f'WFV Performances_{results_suffix}' + '.png')
+    )
+    
+    _print_evaludation_info(
+        out_win_date_cols=out_win_date_cols,
+        avgerage_performance_metrics=avg_perf_metrics
+    )
+    
+    time_taken = round((time.time() - start_time) / 60, 3)
+    print(f'Time taken for pipeline = {time_taken} mins')

@@ -82,7 +82,7 @@ class Reshaper:
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
-    def _transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
+    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
         all_data_value = df_window.values
@@ -174,7 +174,7 @@ class Reshaper:
             if y_df.isna().any().any():
                 raise ValueError('Window has missing data. Fix before training.')
         
-            X_list.append(self._transform_one_window(X_df))
+            X_list.append(self.transform_one_window(X_df))
             y_list.append(y_df.values)
             good_starts.append(s)
         
@@ -195,6 +195,9 @@ class Reshaper:
             return None
         else:
             return self.features
+    
+    def update_stride(self, stride: int):
+        self.stride = stride
 
 class WindowDataset(Dataset):
     def __init__(self, X: np.ndarray, y: np.ndarray):
@@ -233,11 +236,7 @@ class WindowDataset(Dataset):
         # Return one sample
         return self.X[idx], self.y[idx]
 
-# class DatasetSampler:
-#     def __init__(self, in_size: int, out_size: int, stride: int):
-#         self.in_size = in_size
-#         self.out_size = out_size
-#         self.stride = stride
+
 def calc_in_out_idx(
         split_data: pd.DataFrame, in_size: int, out_size: int, stride: int
     ) -> tuple[list[tuple], list[tuple]]:
@@ -269,41 +268,6 @@ def calc_in_out_idx(
 
     return in_sample_indexes, out_sample_indexes
 
-def build_dataset(
-        in_sample_idx: tuple[int, int], # (Start, End)
-        out_sample_idx: tuple[int, int],
-        returns_train: pd.DataFrame, 
-        returns_val: pd.DataFrame,
-        returns_test: pd.DataFrame | None = None
-    ) -> dict[str, pd.DataFrame]:
-    """
-    Dataset builder function for covariance based models (tradional).
-    Combines and slices to create in-sample and out-of-sample datasets.
-    """
-    
-    #### If train data must be sliced or shifted, it must be implmented here 
-    # after grabbing index from dataset.py
-    if returns_test is None:
-        returns_is = pd.concat(
-            [returns_train, returns_val.iloc[in_sample_idx[0]: in_sample_idx[1]]]
-        )
-        
-        # iloc[200:250] gives rows 200-249 (Exactly 50 rows)
-        returns_oos = returns_val.iloc[out_sample_idx[0]: out_sample_idx[1]]
-    
-    elif returns_test is not None and isinstance(returns_test, pd.DataFrame):
-        returns_is = pd.concat(
-            [returns_train, returns_val, returns_test.iloc[in_sample_idx[0]: in_sample_idx[1]]]
-        )
-        returns_oos = returns_test.iloc[out_sample_idx[0]: out_sample_idx[1]]
-    else:
-        raise ValueError('Incorrect type for test returns.')
-
-    # Sorting in alphabetical order
-    return returns_is.sort_index(axis=1), returns_oos.sort_index(axis=1)
-
-
-
 def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
     """
     Get the datetime index columns from the provided dataframe using the 
@@ -333,3 +297,82 @@ def extract_sp500_winds(
         sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
     
     return np.vstack(sp500_windows)
+
+def calc_current_idxs(step: int, stride: int):
+    if step == 0:
+        raise ValueError('Got step 0. Must be > 0')
+    
+    current_end = step * stride
+    current_start = current_end - stride
+
+    return current_start, current_end
+
+class WFAdjustment:
+    def __init__(self, stride: int):
+        self.stride = stride
+        self.num_steps = 0
+        self.extra_days = 0
+    
+    def _calc_walk_steps(self, rets_val: pd.DataFrame) -> tuple[int, int]:
+        total_val_days = len(rets_val)
+        self.extra_days = total_val_days % self.stride
+        self.num_steps = (total_val_days - self.extra_days) // self.stride
+
+        return self.num_steps
+    
+    def init_datasets(
+            self,
+            train: pd.DataFrame, rets_train: pd.DataFrame,
+            split: pd.DataFrame, rets_split: pd.DataFrame
+        ):
+        """
+        Create initial datasets by adjusting for the extra days.
+        This method adds the first 'extra' days to the training data.
+        """
+        self._calc_walk_steps(rets_split)
+        
+        init_train = pd.concat(
+            [train, split.iloc[:self.extra_days]],
+            axis=0
+        )
+        init_rets_train = pd.concat(
+            [rets_train, rets_split.iloc[:self.extra_days]],
+            axis=0
+        )
+        init_val = split.iloc[self.extra_days:]
+        init_rets_val = rets_split.iloc[self.extra_days:]
+
+        self.init_train = init_train
+        self.init_rets_train = init_rets_train
+        self.init_val = init_val
+        self.init_rets_val = init_rets_val
+
+        print(
+            f'Evaluation dataset contains {self.num_steps} steps.',
+            f'{self.extra_days} days from evaluation dataset moved to training dataset.'
+        )
+    
+    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
+        eval_windows = []
+        out_wind_idxs = []
+        for step in range(1, self.num_steps+1):
+            current_start, current_end = calc_current_idxs(step, self.stride)
+
+            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
+
+            eval_windows.append(walk_rets_val.values)
+
+            out_wind_idxs.append((current_start, current_end))
+        
+        return np.stack(eval_windows), out_wind_idxs
+    
+    def get_data(
+            self
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        return self.init_train, self.init_rets_train, self.init_val, self.init_rets_val
+    
+    def get_num_steps(self) -> int:
+        return self.num_steps
+    
+    def get_extra_days(self) -> int:
+        return self.extra_days

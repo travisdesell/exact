@@ -1,8 +1,8 @@
 {   
-    "seed_list": [50, 42, 67, 313, 3],
-
     "tuner": {
-        "n_tuning_trials": 50,
+        "n_seeds": 5,
+        "n_tuning_trials": 100,
+        "n_warmup_steps": 2,
         "n_jobs": 1
     },
     "rolling_windows": {
@@ -27,10 +27,10 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -65,7 +65,7 @@
                 "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -99,10 +99,10 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -137,10 +137,10 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -151,7 +151,7 @@
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "lstm_layers": {"type": "categorical", "choices": [1, 2, 4]},
                 "trans_layers": {"type": "categorical", "choices": [1, 2]},
-                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "nheads":{"type": "categorical", "choices":[2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},
@@ -175,10 +175,10 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -188,7 +188,7 @@
             "tuning": {
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
-                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8, 16]},
+                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
@@ -217,7 +217,7 @@
                 "epochs": 500,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -260,10 +260,10 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "min_epochs": 10,
+                "min_epochs": 0,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -294,7 +294,7 @@
                 "epochs": 500,
                 "early_stopping": true,
                 "early_stop_patience": 20,
-                "early_stop_min_delta": 1e-5
+                "early_stop_min_delta": 1e-4
             },
             "scheduler": {
                 "factor": 0.5,
@@ -310,6 +310,44 @@
                 "seg_len": {"type": "categorical", "choices": [4, 6, 8, 12]},
                 "win_size": {"type": "categorical", "choices": [2, 4]},
                 "factor": {"type": "categorical", "choices": [5, 10, 20]}
+            }
+        },
+        "VLSTM": {
+            "model": {
+                "hidden_size": 16,
+                "num_layers": 4,
+                "vsn_hidden_size": 16,
+                "nheads": 2,
+                "dropout": 0.2,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-2
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 500,
+                "min_epochs": 0,
+                "early_stopping": true,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-4
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-6
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "vsn_hidden_size": {"type": "categorical", "choices": [8, 16, 32, 64]},
+                "nheads":{"type": "categorical", "choices":[0, 1, 2, 4, 8]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
             }
         }
 

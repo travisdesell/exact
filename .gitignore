@@ -31,6 +31,7 @@ financial_loss_functions/data/processed/
 # Artifacts & Results
 financial_loss_functions/artifacts
 financial_loss_functions/docs/docs_out/latex
+financial_loss_functions/cluster_out/
 
 # Local secrets
 financial_loss_functions/data_collectors/fred_config.py

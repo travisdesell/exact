@@ -13,7 +13,7 @@ python -m scripts.run_training_grid [--grid_mode MODE] [OPTIONS]
 #### Arguments Reference
 | Flag | Long Flag | Choices / Type | Default | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `-gm` | `--grid_mode` | `all`, `one_model`, `one_loss`, `one` | `all` | The scope of the grid search. |
+| `-gm` | `--grid_mode` | `all`, `one_model`, `one` | `all` | The scope of the grid search. |
 | `-lm` | `--loss_mode` | `all`, `custom` | `custom` |  Use all available loss functions or only custom combinations |
 | `-m`| `--model` | *string* | None | **Required** if grid mode is `one_model` or `one`. Name of model.|
 | `-l` | `--loss` | *string* | None | **Required** if grid mode is `one_loss` or `one`. Name of loss function.|
@@ -30,17 +30,12 @@ python -m scripts.run_training
 python -m scripts.run_training --grid_mode one_model --model '<Model Name>' --loss_mode all
 ```
 
-3. Run specific loss function with all available models
-```bash
-python -m scripts.run_training --grid_mode one_loss --loss '<Loss Name>'
-```
-
-4. Run one model with one loss function
+3. Run one model with one loss function
 ```bash
 python -m scripts.run_training --grid_mode one --model '<Model Name>' --loss '<Loss Name>'
 ```
 
-5. Run everything with tuning
+4. Run everything with tuning
 ```bash
 python -m scripts.run_training --tune
 ```
