@@ -764,6 +764,7 @@ class Tuner:
 class GridUtilities(ABC):
     mdls_hparams_name = 'nn_models'
     ls_hparams_name = 'losses'
+    model_loss_sep = '-'
 
     def __init__(
             self,
@@ -792,6 +793,15 @@ class GridUtilities(ABC):
     
     def set_temp_directory(self, temp_dir: str):
         self.temp_dir = temp_dir
+    
+    def update_model_loss_sep(self, model_loss_sep: str):
+        """
+        Update the string separator between model name and loss name.
+
+        Args:
+            model_loss_sep (str): string separator like '-'.
+        """
+        self.model_loss_sep = model_loss_sep
     
     # -------------------- Library Searches -------------------- #
     def _search_model(self, model_name: str) -> Type | None:
@@ -1202,9 +1212,15 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    self.all_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = alloc_weights
+                    self.train_val_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = train_val_losses
+                    self.optimized_hparams[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = optimized_hparams
 
                 except Exception as error:
                     print(
@@ -1244,9 +1260,15 @@ class CandidatesGrid(GridUtilities):
                         y_val
                     )
                     
-                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-                    local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                    local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    local_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = alloc_weights
+                    local_train_val_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = train_val_losses
+                    local_optimized_hparams[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = optimized_hparams
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
@@ -1343,9 +1365,15 @@ class CandidatesGrid(GridUtilities):
                         y_train_shape,
                         y_val
                     )
-                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-                    self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                    self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    self.all_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = alloc_weights
+                    self.train_val_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = train_val_losses
+                    self.optimized_hparams[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = optimized_hparams
 
                 except Exception as error:
                     print(
@@ -1386,9 +1414,15 @@ class CandidatesGrid(GridUtilities):
                         y_val
                     )
                     
-                    local_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-                    local_train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-                    local_optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+                    local_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = alloc_weights
+                    local_train_val_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = train_val_losses
+                    local_optimized_hparams[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = optimized_hparams
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
@@ -1466,9 +1500,15 @@ class CandidatesGrid(GridUtilities):
                 y_train_shape,
                 y_val
             )
-            self.all_alloc_weights[f'{model_name}-{loss_name}'] = alloc_weights
-            self.train_val_losses[f'{model_name}-{loss_name}'] = train_val_losses
-            self.optimized_hparams[f'{model_name}-{loss_name}'] = optimized_hparams
+            self.all_alloc_weights[
+                f'{model_name}{self.model_loss_sep}{loss_name}'
+            ] = alloc_weights
+            self.train_val_losses[
+                f'{model_name}{self.model_loss_sep}{loss_name}'
+            ] = train_val_losses
+            self.optimized_hparams[
+                f'{model_name}{self.model_loss_sep}{loss_name}'
+            ] = optimized_hparams
 
         except Exception as e:
             print(f'DEBUG: Error while training {model_name}. Not training.', e)
@@ -1567,6 +1607,26 @@ class WalkForwardValidator(GridUtilities):
 
         return X_train, y_train, infer_in, infer_out
 
+    def _replace_epochs(self, model_name: str, loss_name: str):
+        """
+        Replace number of epochs with median number of epochs if it exists.
+
+        Args:
+            model_loss_name (str): Name of the model loss combination in the format: <Model>-<Loss>.
+        """
+        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
+        if self.optimized_hparams and model_loss_name in self.optimized_hparams:
+            median_epochs = self.optimized_hparams[
+                model_loss_name
+            ]['train'].get('median_epochs')
+            if median_epochs:
+                self.optimized_hparams['train']['epochs'] = median_epochs
+            else:
+                print(
+                    f'WARNING: No median epochs found or is 0, {median_epochs}.',
+                    f'Using default number of epochs for {model_loss_name}!'
+                )
+
     def _train_eval_helper(
             self,
             model_name: str,
@@ -1578,19 +1638,12 @@ class WalkForwardValidator(GridUtilities):
             X_train_shape: torch.Size,
             y_train_shape: torch.Size
         ):
-        model_loss_name = f'{model_name}-{loss_name}'
+        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
         
         # Gather best hyperparameters or use defaults
-        if isinstance(self.optimized_hparams, dict) and model_loss_name in \
-            self.optimized_hparams:
-            best_hparams = self.optimized_hparams.get(model_loss_name)
-            median_epochs = best_hparams['train'].get('median_epochs')
-            if median_epochs:
-                best_hparams['train']['epochs'] = median_epochs
-            else:
-                print(
-                    f'WARNING: No median epochs found or is 0, {median_epochs}. Using default number of epochs!'
-                )
+        if self.optimized_hparams and model_loss_name in self.optimized_hparams:
+            best_hparams = self.optimized_hparams[model_loss_name]
+            
         else:
             print('!No optimized hyperparameters provided, using defaults!')
             model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
@@ -1656,6 +1709,7 @@ class WalkForwardValidator(GridUtilities):
                 f' WFV: {model_name} - {loss_name}, Step: {step}/{self.num_steps-1}',
                 '='*10
             )
+
             current_start, current_end = calc_current_idxs(step+1, self.stride)
 
             if current_start > 0:
@@ -1673,6 +1727,8 @@ class WalkForwardValidator(GridUtilities):
             train_ds = WindowDataset(X_train, y_train)
             infer_ds = WindowDataset(infer_in, infer_out)
             X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+
+            self._replace_epochs(model_name, loss_name)
             
             alloc_weights, train_infer_losses = self._train_eval_helper(
                 model_name,
@@ -1780,8 +1836,12 @@ class WalkForwardValidator(GridUtilities):
                         loss_func
                     )
 
-                    self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
-                    self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                    self.all_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = steps_alloc_weights
+                    self.train_infer_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = steps_train_infer_losses
                 
                 except Exception as error:
                     print(
@@ -1820,8 +1880,12 @@ class WalkForwardValidator(GridUtilities):
                         loss_func
                     )
 
-                    local_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
-                    local_train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+                    local_alloc_weights[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = steps_alloc_weights
+                    local_train_infer_losses[
+                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    ] = steps_train_infer_losses
                 
                 except Exception as e:
                     print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
@@ -1886,8 +1950,12 @@ class WalkForwardValidator(GridUtilities):
                 loss_func
             )
 
-            self.all_alloc_weights[f'{model_name}-{loss_name}'] = steps_alloc_weights
-            self.train_infer_losses[f'{model_name}-{loss_name}'] = steps_train_infer_losses
+            self.all_alloc_weights[
+                f'{model_name}{self.model_loss_sep}{loss_name}'
+            ] = steps_alloc_weights
+            self.train_infer_losses[
+                f'{model_name}{self.model_loss_sep}{loss_name}'
+            ] = steps_train_infer_losses
        
         except Exception as e:
             print(f'DEBUG: Error while walk-forward validating {model_name}. Not Validating.', e)
