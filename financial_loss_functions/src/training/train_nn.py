@@ -1584,7 +1584,7 @@ class WalkForwardValidator(GridUtilities):
         if isinstance(self.optimized_hparams, dict) and model_loss_name in \
             self.optimized_hparams:
             best_hparams = self.optimized_hparams.get(model_loss_name)
-            median_epochs = best_hparams.get('median_epochs')
+            median_epochs = best_hparams['train'].get('median_epochs')
             if median_epochs:
                 best_hparams['train']['epochs'] = median_epochs
             else:
