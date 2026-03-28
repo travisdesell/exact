@@ -1620,7 +1620,7 @@ class WalkForwardValidator(GridUtilities):
                 model_loss_name
             ]['train'].get('median_epochs')
             if median_epochs:
-                self.optimized_hparams['train']['epochs'] = median_epochs
+                self.optimized_hparams[model_loss_name]['train']['epochs'] = median_epochs
             else:
                 print(
                     f'WARNING: No median epochs found or is 0, {median_epochs}.',
