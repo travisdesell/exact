@@ -1936,6 +1936,8 @@ class WalkForwardValidator(GridUtilities):
             init_val: pd.DataFrame,
             init_rets_val: pd.DataFrame
         ):
+
+        self.reshaper.extract_features(init_train.columns)
         
         model_class = self._search_model(model_name)
         if model_class is None:

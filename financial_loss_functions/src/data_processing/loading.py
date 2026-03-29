@@ -68,18 +68,16 @@ class ArtifactDataExtractor:
     def __init__(
             self,
             prev_grid_mode: str,
-            artifacts_paths: dict[str, Path|str],
-            model_names: list[str]|None = None,
+            artifacts_paths: dict[str, Path|str]
 
         ):
         self.prev_grid_mode = prev_grid_mode
         self.artifacts_paths = artifacts_paths
-        self.model_names = model_names # Model names are ignored for 'all' mode
 
-        if prev_grid_mode == 'one_model' and not model_names:
-            raise ValueError(
-                'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
-            )
+        # if prev_grid_mode == 'one_model' and not model_names:
+        #     raise ValueError(
+        #         'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
+        #     )
 
     def find_artifact_files(
         self, prefix: str, suffixes: list[str], dir_path: str | Path, ext: str
@@ -141,7 +139,9 @@ class ArtifactDataExtractor:
         
         return opti_paths
     
-    def aggregate_avg_perf(self, avg_perf_prefix: str):
+    def agg_avg_perf(
+            self, avg_perf_prefix: str, model_names: list[str] | None = None
+        ):
         if self.prev_grid_mode == 'all':
             avg_perf_paths = self._build_avg_perf_paths(
                 avg_perf_prefix, ['all']
@@ -154,10 +154,14 @@ class ArtifactDataExtractor:
             all_avg_perf = avg_perf_dfs.values()[0] # There should be only 1 file
         
         elif self.prev_grid_mode == 'one_model':
+            if not model_names:
+                raise ValueError(
+                    'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
+                )
 
             # Build paths and load files
             avg_perf_paths = self._build_avg_perf_paths(
-                avg_perf_prefix, self.model_names
+                avg_perf_prefix, model_names
             )
             avg_perf_dfs = load_csv_files(avg_perf_paths)
 
@@ -166,14 +170,15 @@ class ArtifactDataExtractor:
             all_avg_perf = all_avg_perf[~all_avg_perf.index.duplicated(keep='first')]
 
         elif self.prev_grid_mode == 'one':
-            print('!Mode not implemented yet!')
-            exit()
+            raise ValueError('`aggregate_avg_perf()`, does not work for `one` mode.')
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
         
         return all_avg_perf
     
-    def aggregate_optimized_hparams(self, opti_hparams_prefix: str):
+    def agg_opti_hparams(
+            self, opti_hparams_prefix: str, model_names: list[str] | None = None
+        ):
         if self.prev_grid_mode == 'all':
             opti_paths = self._build_opti_hparams_paths(
                 opti_hparams_prefix, ['all']
@@ -186,11 +191,11 @@ class ArtifactDataExtractor:
             else:
                 optimized_hparams = None
         
-        elif self.prev_grid_mode == 'one_model':
+        elif self.prev_grid_mode in ['one_model', 'one']:
             
             # Build paths and load files
             opti_paths = self._build_opti_hparams_paths(
-                opti_hparams_prefix, self.model_names
+                opti_hparams_prefix, model_names
             )
             
             if opti_paths:
@@ -200,10 +205,6 @@ class ArtifactDataExtractor:
             else:
                 optimized_hparams = None
 
-
-        elif self.prev_grid_mode == 'one':
-            print('!Mode not implemented yet!')
-            exit()
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
         

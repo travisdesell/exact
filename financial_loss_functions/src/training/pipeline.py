@@ -454,30 +454,37 @@ def run_wfv_pipeline(
     )
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
-    # Get all models from library
-    all_models = []
-    for cat in NNModelLibrary.list_categories():
-        all_models.extend(NNModelLibrary.list_models(cat))
-    
     artifacts_extrator = ArtifactDataExtractor(
         grid_mode,
-        artifacts_paths,
-        all_models
+        artifacts_paths
     )
-    all_avg_perf = artifacts_extrator.aggregate_avg_perf('avg_perf')
-    optimized_hparams = artifacts_extrator.aggregate_optimized_hparams('optimized')
+
+    if grid_mode in ['all', 'one_model']:
+        # Get all models from library
+        all_models = []
+        for cat in NNModelLibrary.list_categories():
+            all_models.extend(NNModelLibrary.list_models(cat))
     
-    all_benches = TradModelLibrary.list_models()
-    all_benches.extend([EQ_WT_NAME, SP500_NAME])
+        all_avg_perf = artifacts_extrator.agg_avg_perf('avg_perf', all_models)
+        opti_hparams = artifacts_extrator.agg_opti_hparams('optimized', all_models)
 
-    # Filter models that beat Equal Weight Portfolio
-    filtered_perf, filtered_models = filter_models(
-        all_avg_perf, EQ_WT_NAME, 'sharpe', all_benches
-    )
+        all_benches = TradModelLibrary.list_models()
+        all_benches.extend([EQ_WT_NAME, SP500_NAME])
 
-    print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
-    print('Filtered Avg. Performance Metrics: \n', filtered_perf)
+        # Filter models that beat Equal Weight Portfolio
+        filtered_perf, filtered_models = filter_models(
+            all_avg_perf, EQ_WT_NAME, 'sharpe', all_benches
+        )
 
+        print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
+        print('Filtered Avg. Performance Metrics: \n', filtered_perf)
+    
+    elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+        opti_hparams = artifacts_extrator.agg_opti_hparams(
+            'optimized', [f'{model_name}-{loss_name}']
+        )
+        filtered_models = None
+    
     # -------------------- Prepare Datasets -------------------- #
     data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
     data_adjuster.init_datasets(train_data, returns_train, val_data, returns_val)
@@ -503,7 +510,7 @@ def run_wfv_pipeline(
             filtered_models = filtered_models,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
-            optimized_hparams = optimized_hparams
+            optimized_hparams = opti_hparams
         )
 
         if grid_mode in ['all', 'one_model']:
@@ -543,7 +550,7 @@ def run_wfv_pipeline(
             filtered_models = filtered_models,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir'],
-            optimized_hparams = optimized_hparams
+            optimized_hparams = opti_hparams
         )
 
         if grid_mode in ['all', 'one_model']:
@@ -553,7 +560,7 @@ def run_wfv_pipeline(
             
             results_suffix = 'All'
 
-        elif grid_mode == 'one':
+        elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = grid_validator.validate_one(
                 model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
             )
