@@ -1796,6 +1796,13 @@ class WalkForwardValidator(GridUtilities):
             # Merge into self.train_val_losses
             for model_loss, losses_dict in rank_losses.items():
                 self.train_infer_losses[model_loss] = losses_dict
+
+        # Delete all temp files
+        for r in range(size):
+            delete_file(self.temp_dir / f'{temp_wts_prefix}_{r}.pkl')
+            delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
+
+        print('All temp files merged and then deleted.')
             
     def validate_grid(
             self,

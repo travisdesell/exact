@@ -572,6 +572,7 @@ def run_wfv_pipeline(
     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
     
     # -------------------- Training Tradional Models -------------------- #
+    print(f'Training {len(all_benches)} Tradional Models.')
     trad_grid = TradModelsTrainer(
         TradModelLibrary.items(),
         hparams_config,
