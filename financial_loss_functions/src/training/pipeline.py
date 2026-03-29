@@ -175,6 +175,7 @@ def mpi_setup() -> tuple:
     size = comm.Get_size()   # Total number of workers
     
     local_rank = int(os.environ.get('SLURM_LOCALID', 0))
+    cpus_per_rank = int(os.environ.get('SLURM_CPUS_PER_TASK', 1))
     
     if torch.cuda.is_available():
         num_gpus = torch.cuda.device_count()
@@ -183,7 +184,7 @@ def mpi_setup() -> tuple:
     
     gpu_id = local_rank % num_gpus
     
-    return comm, global_rank, size, gpu_id
+    return comm, global_rank, size, gpu_id, cpus_per_rank
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -260,7 +261,7 @@ def run_tuning_pipeline(
 
     if mpi:
 
-        comm, global_rank, size, gpu_id = mpi_setup()
+        comm, global_rank, size, gpu_id, _ = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
         # Create artifact directories if the don't exist
@@ -486,7 +487,7 @@ def run_wfv_pipeline(
 
     # -------------------- Walk-Forward Training & Validation -------------------- #
     if mpi:
-        comm, global_rank, size, gpu_id = mpi_setup()
+        comm, global_rank, size, gpu_id, cpus_per_rank = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
         if global_rank == 0:
@@ -523,6 +524,8 @@ def run_wfv_pipeline(
         
         if nn_alloc_weights is None:
             print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+        
+        max_workers = max(1, cpus_per_rank-1) # For tradional models
     
     else:
         _create_dirs(artifacts_paths)
@@ -556,6 +559,8 @@ def run_wfv_pipeline(
             )
 
             results_suffix = f'{model_name}-{loss_name}'
+        
+        max_workers = os.cpu_count() - 1 # For tradional models
     
     nn_train_infer_losses = grid_validator.get_train_infer_losses()
     for model_loss, model_loss_curves in nn_train_infer_losses.items():
@@ -567,17 +572,19 @@ def run_wfv_pipeline(
             artifacts_paths['wfv_plots_dir'] / (wfv_plot_name + '.png')
         )
     
+    print('WFV completed!')
+    
     # -------------------- Evaluator Setup -------------------- #
     # Initializing Evaluator
     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
     
-    # -------------------- Training Tradional Models -------------------- #
-    print(f'Training {len(all_benches)} Tradional Models.')
+    # -------------------- Training Tradional Models -------------------- #        
+    print(f'Training Tradional Models with {max_workers} workers.')
     trad_grid = TradModelsTrainer(
         TradModelLibrary.items(),
         hparams_config,
         num_steps,
-        max_workers = os.cpu_count() - 1
+        max_workers = max_workers
     )
     trad_alloc_weights = trad_grid.train_all(
         init_rets_train=init_rets_train,
