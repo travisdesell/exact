@@ -1861,6 +1861,7 @@ class WalkForwardValidator(GridUtilities):
             return self.all_alloc_weights
         
         else:
+            self._data_check(init_train, init_rets_val)
             self._mpi_setup_check([comm, global_rank, size])
 
             this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
@@ -1936,7 +1937,8 @@ class WalkForwardValidator(GridUtilities):
             init_val: pd.DataFrame,
             init_rets_val: pd.DataFrame
         ):
-
+        self._data_check(init_train, init_rets_val)
+        
         self.reshaper.extract_features(init_train.columns)
         
         model_class = self._search_model(model_name)

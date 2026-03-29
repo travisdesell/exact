@@ -1,12 +1,10 @@
-import os
+import time
 import inspect
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from typing import Type, Any
 from src.data_processing.dataset import calc_current_idxs
 from src.data_processing.preprocess_crsp import preprocessor2
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 class TradModelsTrainer:
     models_hparams = 'trad_models'
@@ -15,14 +13,13 @@ class TradModelsTrainer:
             self,
             model_lib: dict[str, Type],
             hparams_config: dict[str, dict[str, Any]],
-            num_steps: int,
-            max_workers: int
+            num_steps: int
         ):
         self.model_lib = model_lib
         self.hparams_config = hparams_config
         self.stride = self.hparams_config['rolling_windows']['out_size'] # Output size = stride
         self.num_steps = num_steps
-        self.max_workers = max_workers if max_workers > 0 else max(1, os.cpu_count() - 1)
+        # self.max_workers = max_workers if max_workers > 0 else max(1, os.cpu_count() - 1)
         
         self.all_alloc_weights: dict[str, list[pd.Series | np.ndarray]] = {}
 
@@ -38,7 +35,9 @@ class TradModelsTrainer:
         alloc_weights = model_obj.calculate_weights(**filtered_kwargs)
         return alloc_weights
     
-    def _process_train_1_ds(self, returns_is: pd.DataFrame):
+    def _process_train_1_ds(
+            self, returns_is: pd.DataFrame
+        ) -> dict[str, np.ndarray]:
         """
         Preprocess one dataset slice, train all models on it and collect all allocation weights
         """
@@ -89,10 +88,11 @@ class TradModelsTrainer:
             for name, weights in self.all_alloc_weights.items()
         }
     
-    def _build_walk_slices(
+    def _build_walk_slice(
         self,
         init_rets_train: pd.DataFrame, 
         init_rets_split: pd.DataFrame,
+        step: int
     ) -> tuple[str, pd.DataFrame]:
         """
         Dataset builder function for covariance based models (tradional).
@@ -102,68 +102,41 @@ class TradModelsTrainer:
         #### If train data must be sliced or shifted, it must be implmented here 
         # after grabbing index from dataset.py
 
-        prepared_slices = []
-        for step in range(self.num_steps):
-            current_start, _ = calc_current_idxs(step+1, self.stride)
 
-            if current_start > 0:
-                rets_train_slice = pd.concat(
-                    [init_rets_train, init_rets_split[:current_start]]
-                )
-            else: # First step
-                rets_train_slice = init_rets_train
+        current_start, _ = calc_current_idxs(step+1, self.stride)
 
-            prepared_slices.append((step - 1, rets_train_slice)) # -1 to make step into index
+        if current_start > 0:
+            rets_train_slice = pd.concat(
+                [init_rets_train, init_rets_split[:current_start]]
+            )
+        else: # First step
+            rets_train_slice = init_rets_train
+        
+        return rets_train_slice
 
-        return prepared_slices
-            
     def train_all(
             self,
             init_rets_train: pd.DataFrame,
             init_rets_split: pd.DataFrame,
         ) -> dict[str, np.ndarray]:
         
-        # Prepare dataset
-        
-        # 1. Slice-First
-        # Prepare small data packets in the main thread to minimize IPC overhead
-        
-        prepared_slices = self._build_walk_slices(
-            init_rets_train,
-            init_rets_split
-        )
-            # prepared_slices.append((i, returns_is))
+        for step in range(self.num_steps):
+            start_time = time.time()
+            rets_train_slice = self._build_walk_slice(
+                init_rets_train,
+                init_rets_split,
+                step
+            )
 
-        # 2. Parallel Execution
-        # Pre-allocate to guarantee chronological order
-        ordered_results = [None] * self.num_steps
-        
-
-        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
-            # We pass the bound method. Python pickles 'self' automatically.
-            futures = {
-                executor.submit(self._process_train_1_ds, data): idx 
-                for idx, data in prepared_slices
-            }
-
-            for future in tqdm(
-                as_completed(futures),
-                total=self.num_steps,
-                desc=f'Training tradional models on {self.num_steps} walk steps', unit='step'
-            ):
-                idx = futures[future]
-                try:
-                    # Place result in the correct chronological slot
-                    ordered_results[idx] = future.result()
-                except Exception as e:
-                    print(f"Slice {idx} failed with error: {e}")
-
-        # 3. Synchronous State Update
-        # Update self.all_alloc_weights in order
-        for slice_dict in ordered_results:
-            if slice_dict is None: continue
-            for model_name, weights in slice_dict.items():
+            print('\n', '-'*20, f'Training all tradional models on step {step}', '-'*20)
+            walk_weights = self._process_train_1_ds(rets_train_slice)
+            for model_name, weights in walk_weights.items():
                 self.all_alloc_weights.setdefault(model_name, []).append(weights)
-
+            
+            time_taken = time.time() - start_time
+            print(f'Step {step} took {round(time_taken, 3)}s.')
+        
+        
         self._stack_weights()
+        
         return self.all_alloc_weights

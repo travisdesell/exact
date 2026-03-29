@@ -531,8 +531,6 @@ def run_wfv_pipeline(
         
         if nn_alloc_weights is None:
             print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
-        
-        max_workers = max(1, cpus_per_rank-1) # For tradional models
     
     else:
         _create_dirs(artifacts_paths)
@@ -567,7 +565,6 @@ def run_wfv_pipeline(
 
             results_suffix = f'{model_name}-{loss_name}'
         
-        max_workers = os.cpu_count() - 1 # For tradional models
     
     nn_train_infer_losses = grid_validator.get_train_infer_losses()
     for model_loss, model_loss_curves in nn_train_infer_losses.items():
@@ -586,12 +583,11 @@ def run_wfv_pipeline(
     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
     
     # -------------------- Training Tradional Models -------------------- #        
-    print(f'Training Tradional Models with {max_workers} workers.')
+    print(f'Training All Tradional Models workers.')
     trad_grid = TradModelsTrainer(
         TradModelLibrary.items(),
         hparams_config,
-        num_steps,
-        max_workers = max_workers
+        num_steps
     )
     trad_alloc_weights = trad_grid.train_all(
         init_rets_train=init_rets_train,
