@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import torch
 from torch import optim
 from typing import Dict, Optional
 from pathlib import Path
@@ -28,7 +29,96 @@ from src.evaluation.pyfolio_viz import (
 )
 
 
-def _build_composite_loss(reshaper: Reshaper, hparams_config: Dict) -> CompositeSRLoss:
+def _load_sector_ids(
+    paths_config: Dict, tickers: list,
+) -> Optional[list]:
+    """
+    Load sector assignments and return integer sector IDs aligned to *tickers*.
+    Returns None if the file is missing.
+    """
+    feature_sel_dir = Path(paths_config.get("data", {}).get(
+        "feature_selection_dir", "data/feature_selection"
+    ))
+    sector_path = feature_sel_dir / "sector_assignment_50.csv"
+    if not sector_path.exists():
+        return None
+
+    df = pd.read_csv(sector_path)
+    if "ticker" not in df.columns or "sector" not in df.columns:
+        return None
+
+    sector_map = dict(zip(df["ticker"], df["sector"]))
+    unique_sectors = sorted(set(sector_map.values()))
+    sector_to_id = {s: i for i, s in enumerate(unique_sectors)}
+
+    ids = []
+    for t in tickers:
+        sector = sector_map.get(t)
+        if sector is not None:
+            ids.append(sector_to_id[sector])
+        else:
+            ids.append(0)
+    return ids
+
+
+def _load_macro_sensitivity(
+    paths_config: Dict, tickers: list,
+) -> Optional[torch.Tensor]:
+    """
+    Compute per-ticker macro sensitivity from ticker_macro_rankings.csv.
+    Returns a (N,) tensor normalised to [0, 1], or None if unavailable.
+    """
+    feature_sel_dir = Path(paths_config.get("data", {}).get(
+        "feature_selection_dir", "data/feature_selection"
+    ))
+    rank_path = feature_sel_dir / "ticker_macro_rankings.csv"
+    if not rank_path.exists():
+        return None
+
+    df = pd.read_csv(rank_path)
+    if "ticker" not in df.columns or "composite_score" not in df.columns:
+        return None
+
+    # Average composite score across each ticker's top-ranked features
+    avg_scores = df.groupby("ticker")["composite_score"].mean()
+    scores = []
+    for t in tickers:
+        scores.append(avg_scores.get(t, 0.0))
+    arr = np.array(scores, dtype=np.float32)
+    # Normalise to [0, 1]
+    rng = arr.max() - arr.min()
+    if rng > 0:
+        arr = (arr - arr.min()) / rng
+    return torch.tensor(arr, dtype=torch.float32)
+
+
+def _compute_corr_matrix(
+    returns_df: pd.DataFrame, tickers: list,
+) -> Optional[torch.Tensor]:
+    """
+    Compute a static (N, N) return correlation matrix from training data.
+    Returns None if the data is insufficient.
+    """
+    available = [t for t in tickers if t in returns_df.columns]
+    if len(available) < 2:
+        return None
+    corr = returns_df[available].corr().values.astype(np.float32)
+    # Reindex to match full ticker list (fill missing with identity)
+    N = len(tickers)
+    full_corr = np.eye(N, dtype=np.float32)
+    avail_idx = {t: i for i, t in enumerate(tickers) if t in available}
+    for i, ti in enumerate(available):
+        for j, tj in enumerate(available):
+            full_corr[avail_idx[ti], avail_idx[tj]] = corr[i, j]
+    return torch.tensor(full_corr, dtype=torch.float32)
+
+
+def _build_composite_loss(
+    reshaper: Reshaper,
+    hparams_config: Dict,
+    paths_config: Optional[Dict] = None,
+    returns_train_df: Optional[pd.DataFrame] = None,
+) -> CompositeSRLoss:
     """Instantiate CompositeSRLoss using feature indices from the Reshaper."""
     features = reshaper.get_features()
     tickers = reshaper.get_tickers()
@@ -47,6 +137,18 @@ def _build_composite_loss(reshaper: Reshaper, hparams_config: Dict) -> Composite
 
     loss_cfg = hparams_config.get("CompositeSRLoss", {})
 
+    # ---- Data-driven extras (all optional) ----
+    sector_ids = None
+    ticker_macro_sensitivity = None
+    corr_matrix = None
+
+    if paths_config is not None:
+        sector_ids = _load_sector_ids(paths_config, tickers)
+        ticker_macro_sensitivity = _load_macro_sensitivity(paths_config, tickers)
+
+    if returns_train_df is not None:
+        corr_matrix = _compute_corr_matrix(returns_train_df, tickers)
+
     return CompositeSRLoss(
         num_tickers=len(tickers),
         num_features_per_ticker=len(features),
@@ -62,6 +164,15 @@ def _build_composite_loss(reshaper: Reshaper, hparams_config: Dict) -> Composite
         psych_thresholds=loss_cfg.get("psych_thresholds"),
         psych_sigma=loss_cfg.get("psych_sigma", 0.01),
         ema_span=loss_cfg.get("ema_span", 10),
+        sr_use_multi_timeframe=loss_cfg.get("sr_use_multi_timeframe", False),
+        sr_lookback_windows=loss_cfg.get("sr_lookback_windows"),
+        sr_pivot_threshold=loss_cfg.get("sr_pivot_threshold", 0.02),
+        sr_importance_hidden=loss_cfg.get("sr_importance_hidden", 8),
+        use_macro_override=loss_cfg.get("use_macro_override", False),
+        macro_override_hidden=loss_cfg.get("macro_override_hidden", 8),
+        sector_ids=sector_ids,
+        ticker_macro_sensitivity=ticker_macro_sensitivity,
+        corr_matrix=corr_matrix,
     )
 
 
@@ -200,7 +311,11 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
         print('SEC fundamentals not available -- skipping L_fundamental')
 
     # -------------------- Build Composite Loss -------------------- #
-    composite_loss = _build_composite_loss(reshaper, hparams_config)
+    composite_loss = _build_composite_loss(
+        reshaper, hparams_config,
+        paths_config=paths_config,
+        returns_train_df=returns_train,
+    )
 
     # -------------------- Training Models -------------------- #
     train_ds = WindowDataset(X_train, y_train)

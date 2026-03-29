@@ -16,12 +16,12 @@ def raw_sharpe_loss(
     @param weights torch.tensor (B, N)
     @param returns torch.tensor (B, T_out, N) -- raw returns
 
-    @return batch average Sharpe Ratio. 
+    @return batch average Sharpe Ratio.
         Negative since NN has to maximize Sharpe Ratio but minimize loss
     """
     # portfolio returns per step
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
+
     mean = port.mean(dim=1)          # (B,)
     std = port.std(dim=1) + eps      # (B,)
     sharpe = mean / std              # (B,)
@@ -48,19 +48,19 @@ def raw_sortino_loss(
     @param target float Minimum acceptable return (MAR), often 0 for risk-free rate adjusted.
     @param eps float Epsilon value to avoid divide by zero error
 
-    @return batch average Sortino Ratio. 
+    @return batch average Sortino Ratio.
         Negative since NN has to maximize Sortino but minimize loss
     """
     # Portfolio returns per step
     port = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-    
+
     # Downside deviation: std of negative deviations from target
     downside = clamp(target - port, min=0.0)  # (B, T_out), only positive for downside
     downside_std = downside.std(dim=1) + eps  # (B,)
-    
+
     mean = port.mean(dim=1)  # (B,)
     sortino = mean / downside_std  # (B,)
-    
+
     # Maximize Sortino → minimize negative Sortino
     return -sortino.mean()
 
@@ -79,6 +79,69 @@ def sortino_loss_compat(weights, returns, features=None, fundamentals=None):
 
 
 # ---------------------------------------------------------------------------
+# Learnable modules for multi-timeframe S/R and macro override
+# ---------------------------------------------------------------------------
+
+class TimeframeImportanceFn(nn.Module):
+    """
+    Maps normalised lookback duration in [0, 1] to an importance weight
+    in (0, 1).  Initialised with a monotonic bias so that longer
+    lookbacks produce higher importance by default.
+
+    Architecture: Linear(1, H) -> Softplus -> Linear(H, 1) -> Sigmoid
+    """
+
+    def __init__(self, hidden: int = 8):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(1, hidden),
+            nn.Softplus(),
+            nn.Linear(hidden, 1),
+        )
+        # Monotonic-bias init: positive weights so larger inputs → larger outputs
+        with torch.no_grad():
+            self.net[0].weight.fill_(1.0)
+            self.net[0].bias.fill_(0.0)
+            self.net[2].weight.fill_(1.0)
+            self.net[2].bias.fill_(0.0)
+
+    def forward(self, normed_lookbacks: torch.Tensor) -> torch.Tensor:
+        """
+        @param normed_lookbacks (W,) values in [0, 1]
+        @return (W,) importance weights in (0, 1)
+        """
+        out = self.net(normed_lookbacks.unsqueeze(-1))  # (W, 1)
+        return torch.sigmoid(out.squeeze(-1))            # (W,)
+
+
+class MacroOverrideGate(nn.Module):
+    """
+    Learnable gate that maps macro rate-of-change to an override
+    weight omega in (0, 1).
+
+    omega → 1 : macro signals dominate (extreme macro conditions)
+    omega → 0 : technical/fundamental signals dominate (calm macro)
+    """
+
+    def __init__(self, num_macro_features: int, hidden: int = 8):
+        super().__init__()
+        self.baseline = nn.Parameter(torch.tensor(0.0))
+        self.proj = nn.Sequential(
+            nn.Linear(num_macro_features, hidden),
+            nn.Softplus(),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(self, delta_macro: torch.Tensor) -> torch.Tensor:
+        """
+        @param delta_macro (B, M) macro rate-of-change
+        @return (B,) override weight in (0, 1)
+        """
+        activation = self.proj(delta_macro).squeeze(-1)  # (B,)
+        return torch.sigmoid(self.baseline + activation)
+
+
+# ---------------------------------------------------------------------------
 # Composite S/R Loss
 # ---------------------------------------------------------------------------
 
@@ -93,9 +156,12 @@ class CompositeSRLoss(nn.Module):
               + gamma * L_macro
               + delta * L_fundamental
 
-    The model output (softmax portfolio weights) is unchanged; the loss
-    uses the raw input features ``xb`` and an optional pre-computed
-    fundamentals tensor to compute the penalty terms.
+    Optional enhancements (all backward-compatible, disabled by default):
+    - Multi-timeframe S/R hierarchy via rolling-window pivots
+    - Adaptive macro-override gate that re-weights penalties
+    - Sector-aware penalty scaling
+    - Ticker-specific macro sensitivity
+    - Cross-ticker correlation guard
     """
 
     def __init__(
@@ -114,6 +180,20 @@ class CompositeSRLoss(nn.Module):
         psych_thresholds: Optional[List[float]] = None,
         psych_sigma: float = 0.01,
         ema_span: int = 10,
+        # --- Multi-timeframe S/R ---
+        sr_use_multi_timeframe: bool = False,
+        sr_lookback_windows: Optional[List[int]] = None,
+        sr_pivot_threshold: float = 0.02,
+        sr_importance_hidden: int = 8,
+        # --- Macro override gate ---
+        use_macro_override: bool = False,
+        macro_override_hidden: int = 8,
+        # --- Sector-aware penalty ---
+        sector_ids: Optional[List[int]] = None,
+        # --- Ticker macro sensitivity ---
+        ticker_macro_sensitivity: Optional[torch.Tensor] = None,
+        # --- Correlation guard ---
+        corr_matrix: Optional[torch.Tensor] = None,
     ):
         """
         @param num_tickers int  Number of assets N.
@@ -133,6 +213,15 @@ class CompositeSRLoss(nn.Module):
         @param psych_thresholds list[float]  Return-space thresholds.
         @param psych_sigma float  Gaussian kernel bandwidth.
         @param ema_span int  EMA lookback for return smoothing.
+        @param sr_use_multi_timeframe bool  Enable multi-TF S/R hierarchy.
+        @param sr_lookback_windows list[int]  Lookback periods in days.
+        @param sr_pivot_threshold float  Soft activation threshold for S/R.
+        @param sr_importance_hidden int  Hidden size for importance MLP.
+        @param use_macro_override bool  Enable adaptive macro override gate.
+        @param macro_override_hidden int  Hidden size for gate MLP.
+        @param sector_ids list[int]  Integer sector ID per ticker (len N).
+        @param ticker_macro_sensitivity Tensor  (N,) macro sensitivity per ticker.
+        @param corr_matrix Tensor  (N, N) return correlation matrix.
         """
         super().__init__()
         self.N = num_tickers
@@ -174,6 +263,54 @@ class CompositeSRLoss(nn.Module):
             "ema_alpha", torch.tensor(ema_alpha, dtype=torch.float32)
         )
 
+        # ---- Multi-timeframe S/R hierarchy ----
+        self.use_multi_tf = sr_use_multi_timeframe
+        self.sr_pivot_threshold = sr_pivot_threshold
+        if self.use_multi_tf:
+            windows = sr_lookback_windows or [5, 10, 21, 42, 63, 105]
+            self.sr_windows = sorted(windows)
+            max_w = float(max(self.sr_windows))
+            self.register_buffer(
+                "sr_lookback_normed",
+                torch.tensor([w / max_w for w in self.sr_windows], dtype=torch.float32),
+            )
+            self.importance_fn = TimeframeImportanceFn(sr_importance_hidden)
+        else:
+            self.sr_windows = []
+            self.importance_fn = None
+
+        # ---- Macro override gate ----
+        self.use_macro_override = use_macro_override
+        if use_macro_override and self.macro_idx:
+            self.macro_override = MacroOverrideGate(
+                len(self.macro_idx), macro_override_hidden
+            )
+        else:
+            self.macro_override = None
+
+        # ---- Sector-aware penalty scaling ----
+        if sector_ids is not None:
+            self.register_buffer(
+                "sector_ids",
+                torch.tensor(sector_ids, dtype=torch.long),
+            )
+            self.num_sectors = len(set(sector_ids))
+        else:
+            self.sector_ids = None
+            self.num_sectors = 0
+
+        # ---- Ticker macro sensitivity ----
+        if ticker_macro_sensitivity is not None:
+            self.register_buffer("ticker_macro_sensitivity", ticker_macro_sensitivity)
+        else:
+            self.ticker_macro_sensitivity = None
+
+        # ---- Correlation guard ----
+        if corr_matrix is not None:
+            self.register_buffer("corr_matrix", corr_matrix)
+        else:
+            self.corr_matrix = None
+
     # -- helpers -------------------------------------------------------------
 
     def _extract_ticker_feature(
@@ -211,6 +348,67 @@ class CompositeSRLoss(nn.Module):
         sigma = x.std(dim=dim, keepdim=True) + eps
         return (x - mu) / sigma
 
+    def _compute_delta_macro(
+        self, features: torch.Tensor,
+    ) -> Optional[torch.Tensor]:
+        """
+        Shared helper: macro rate-of-change over the input window.
+
+        @return (B, M) or None if no macro features.
+        """
+        if not self.macro_idx:
+            return None
+        macro_list = []
+        for idx in self.macro_idx:
+            mf = self._extract_ticker_feature(features, idx)  # (B, T, N)
+            macro_list.append(mf.mean(dim=-1))  # average across tickers -> (B, T)
+        macro_stack = torch.stack(macro_list, dim=-1)  # (B, T, M)
+        return macro_stack[:, -1, :] - macro_stack[:, 0, :]  # (B, M)
+
+    def _detect_pivots(
+        self, prices: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Detect support/resistance levels at multiple lookback windows.
+
+        @param prices (B, T, N) cumulative price proxy
+        @return (B, W, N)  normalised position in [-1, +1] per window.
+            +1 = at window high (resistance), -1 = at window low (support).
+        """
+        B, T, N = prices.shape
+        current = prices[:, -1, :]  # (B, N)
+        scores = []
+        for w in self.sr_windows:
+            w_clamped = min(w, T)
+            window_slice = prices[:, -w_clamped:, :]         # (B, w', N)
+            w_high = window_slice.max(dim=1).values           # (B, N)
+            w_low = window_slice.min(dim=1).values            # (B, N)
+            w_range = (w_high - w_low).clamp(min=1e-8)
+            midpoint = (w_high + w_low) / 2.0
+            score = ((current - midpoint) / (w_range / 2.0)).clamp(-1.0, 1.0)
+            scores.append(score)
+        return torch.stack(scores, dim=1)  # (B, W, N)
+
+    def _sector_avg_confidence(
+        self, confidence: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute per-sector average confidence and map back to per-ticker.
+
+        @param confidence (B, N)
+        @return (B, N) sector-average confidence for each ticker's sector.
+        """
+        B, N = confidence.shape
+        sector_avg = torch.zeros(B, self.num_sectors, device=confidence.device)
+        sector_count = torch.zeros(self.num_sectors, device=confidence.device)
+        for s in range(self.num_sectors):
+            mask = (self.sector_ids == s)  # (N,)
+            if mask.any():
+                sector_avg[:, s] = confidence[:, mask].mean(dim=-1)
+                sector_count[s] = mask.float().sum()
+        # Map sector averages back to each ticker
+        return sector_avg[:, self.sector_ids]  # (B, N)
+
     # -- sub-losses ----------------------------------------------------------
 
     def _price_action_penalty(
@@ -222,6 +420,10 @@ class CompositeSRLoss(nn.Module):
         """
         Detect S/R conditions from microstructure features and penalise
         portfolio weights that ignore these signals.
+
+        When multi-timeframe is enabled, rolling-window pivot detection
+        augments the microstructure confidence with S/R level strength
+        weighted by a learnable importance function.
         """
         turnover = self._extract_ticker_feature(features, self.turn_idx)
         illiq = self._extract_ticker_feature(features, self.illiq_idx)
@@ -233,15 +435,57 @@ class CompositeSRLoss(nn.Module):
         spread_z = self._z_score(spread)[:, -1, :]
 
         smoothed = self._ema_smooth(rets)
-        reversal_signal = smoothed[:, -1, :] - smoothed[:, -2, :] if smoothed.shape[1] >= 2 else torch.zeros_like(smoothed[:, -1, :])
 
         confidence = torch.sigmoid(turn_z + illiq_z + spread_z)
         direction = torch.tanh(smoothed[:, -1, :])
 
+        # ---- Multi-timeframe S/R hierarchy ----
+        sr_active = None
+        if self.use_multi_tf and self.importance_fn is not None:
+            cum_prices = (1 + rets).cumprod(dim=1)                  # (B, T, N)
+            pivot_scores = self._detect_pivots(cum_prices)          # (B, W, N)
+            importance = self.importance_fn(self.sr_lookback_normed) # (W,)
+            imp_sum = importance.sum().clamp(min=1e-8)
+
+            # Importance-weighted aggregation
+            imp = importance[None, :, None]                         # (1, W, 1)
+            weighted_strength = (pivot_scores.abs() * imp).sum(dim=1) / imp_sum  # (B, N)
+            weighted_direction = (pivot_scores * imp).sum(dim=1) / imp_sum       # (B, N)
+
+            # Soft gate: activates when aggregate S/R strength exceeds threshold
+            sr_active = torch.sigmoid(
+                (weighted_strength - self.sr_pivot_threshold) / 0.01
+            )  # (B, N)
+
+            # Multiplicative boost to microstructure confidence
+            confidence = confidence * (1.0 + sr_active)
+            # Blend EMA direction with S/R direction
+            sr_dir = torch.tanh(weighted_direction)
+            direction = (1.0 - sr_active) * direction + sr_active * sr_dir
+
+        # ---- Sector-aware scaling ----
+        if self.sector_ids is not None:
+            sec_avg = self._sector_avg_confidence(confidence)
+            confidence = confidence * (1.0 + sec_avg)
+
         equal_w = 1.0 / self.N
         weight_diff = weights - equal_w
 
-        return -(confidence * direction * weight_diff).mean()
+        penalty = -(confidence * direction * weight_diff).mean()
+
+        # ---- Correlation guard (only when multi-TF active) ----
+        if (
+            self.corr_matrix is not None
+            and sr_active is not None
+        ):
+            w_col = weights.unsqueeze(-1)                          # (B, N, 1)
+            port_corr = (
+                w_col * self.corr_matrix.unsqueeze(0) * w_col.transpose(-1, -2)
+            ).sum(dim=(-1, -2))                                    # (B,)
+            sr_corr_penalty = (sr_active.mean(dim=-1) * port_corr).mean()
+            penalty = penalty + sr_corr_penalty
+
+        return penalty
 
     def _psychological_penalty(
         self,
@@ -278,30 +522,35 @@ class CompositeSRLoss(nn.Module):
         weights: torch.Tensor,
         returns: torch.Tensor,
         features: torch.Tensor,
+        delta_macro: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Compute risk-on/risk-off regime from macro features and penalise
         portfolio returns that are misaligned with the regime direction.
+
+        @param delta_macro (B, M) pre-computed macro delta (avoids recomputing).
         """
         if self.regime_weights is None or not self.macro_idx:
             return torch.tensor(0.0, device=weights.device)
 
-        macro_features = []
-        for idx in self.macro_idx:
-            mf = self._extract_ticker_feature(features, idx)  # (B, T, N)
-            macro_features.append(mf.mean(dim=-1))  # average across tickers -> (B, T)
-
-        macro_stack = torch.stack(macro_features, dim=-1)  # (B, T, M)
-
-        # Rate of change over the window
-        delta_macro = macro_stack[:, -1, :] - macro_stack[:, 0, :]  # (B, M)
+        if delta_macro is None:
+            delta_macro = self._compute_delta_macro(features)
 
         regime = torch.tanh(
             (delta_macro * self.regime_weights.unsqueeze(0)).sum(dim=-1)
         )  # (B,)
 
         port_ret = (weights.unsqueeze(1) * returns).sum(dim=-1)  # (B, T_out)
-        mean_port_ret = port_ret.mean(dim=1)  # (B,)
+
+        # ---- Ticker macro sensitivity ----
+        if self.ticker_macro_sensitivity is not None:
+            # Weight individual returns by macro sensitivity before portfolio sum
+            sens = self.ticker_macro_sensitivity.unsqueeze(0)  # (1, N)
+            weighted_port = (weights * sens).sum(dim=-1)       # (B,)
+            # Combine: portfolio return scaled by sensitivity-weighted exposure
+            mean_port_ret = (weighted_port * port_ret.mean(dim=1))
+        else:
+            mean_port_ret = port_ret.mean(dim=1)  # (B,)
 
         return -(regime * mean_port_ret).mean()
 
@@ -338,17 +587,37 @@ class CompositeSRLoss(nn.Module):
         loss = differentiable_sharpe_loss(weights, returns)
 
         if features is not None:
-            loss = loss + self.alpha * self._price_action_penalty(
+            # Pre-compute macro delta (shared by override gate and regime penalty)
+            delta_macro = self._compute_delta_macro(features)
+
+            # ---- Adaptive macro override gate ----
+            if self.macro_override is not None and delta_macro is not None:
+                omega = self.macro_override(delta_macro).mean()  # scalar
+            else:
+                omega = torch.tensor(0.0, device=weights.device)
+
+            # Scale penalty weights: macro boosted, others reduced
+            alpha_eff = self.alpha * (1.0 - omega)
+            beta_eff = self.beta * (1.0 - omega)
+            gamma_eff = self.gamma * (1.0 + omega)
+            delta_eff = self.delta * (1.0 - omega)
+
+            loss = loss + alpha_eff * self._price_action_penalty(
                 weights, features, returns
             )
-            loss = loss + self.beta * self._psychological_penalty(
+            loss = loss + beta_eff * self._psychological_penalty(
                 weights, features
             )
-            loss = loss + self.gamma * self._macro_regime_penalty(
-                weights, returns, features
+            loss = loss + gamma_eff * self._macro_regime_penalty(
+                weights, returns, features, delta_macro
             )
 
-        if fundamentals is not None:
+            if fundamentals is not None:
+                loss = loss + delta_eff * self._fundamental_penalty(
+                    weights, fundamentals
+                )
+        elif fundamentals is not None:
+            # No features but fundamentals provided
             loss = loss + self.delta * self._fundamental_penalty(
                 weights, fundamentals
             )
