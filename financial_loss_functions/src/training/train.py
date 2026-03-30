@@ -79,6 +79,8 @@ class Trainer:
             all_params,
             **optimizer_hparams
         )
+        if hasattr(loss, 'to'):
+            loss = loss.to(self.device)
         self.loss = loss
 
         self.train_hparams = train_hparams
@@ -115,19 +117,69 @@ class Trainer:
         except TypeError:
             return self.loss(weights, yb)
 
-    def train(self, train_ds: WindowDataset):
+    def _validate_epoch(self, val_loader: DataLoader) -> float:
+        """Run one validation pass and return average loss."""
+        self.model.eval()
+        total_loss, total_samples, sample_offset = 0.0, 0, 0
+        with torch.no_grad():
+            for xb, yb in val_loader:
+                b = xb.size(0)
+                xb, yb = xb.to(self.device), yb.to(self.device)
+
+                indices = None
+                if self.fundamentals_val is not None:
+                    indices = torch.arange(sample_offset, sample_offset + b)
+
+                weights = self.model(xb)
+                loss = self._call_loss(
+                    weights, yb, xb,
+                    sample_indices=indices,
+                    fundamentals_source=self.fundamentals_val,
+                )
+                total_loss += loss.item() * b
+                total_samples += b
+                sample_offset += b
+        return total_loss / total_samples
+
+    def train(self, train_ds: WindowDataset, val_ds: Optional[WindowDataset] = None):
         """
         Train inistalized model using a train data split.
 
         @param train_ds WindowDataset
             Training data split converted to windowed dataset tensors
+        @param val_ds Optional[WindowDataset]
+            Validation data split. If provided, enables early stopping and LR scheduling.
         """
+        import copy
+
         start_time = time.time()
         train_loader = DataLoader(
             train_ds,
             batch_size=self.train_hparams['train_batch_size'],
             shuffle=False
         )
+
+        val_loader = None
+        if val_ds is not None:
+            val_loader = DataLoader(
+                val_ds,
+                batch_size=self.train_hparams['val_batch_size'],
+                shuffle=False
+            )
+
+        # Early stopping and LR scheduling setup
+        es_patience = self.train_hparams.get('early_stopping_patience', 15)
+        lr_patience = self.train_hparams.get('lr_scheduler_patience', 7)
+        lr_factor = self.train_hparams.get('lr_scheduler_factor', 0.5)
+
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, mode='min', factor=lr_factor,
+            patience=lr_patience, min_lr=1e-6,
+        )
+
+        best_val_loss = float('inf')
+        best_model_state = None
+        patience_counter = 0
 
         for epoch in range(self.train_hparams['epochs']):
             epoch_start = time.time()
@@ -166,14 +218,36 @@ class Trainer:
                 total_samples += batch_size
                 sample_offset += batch_size
 
-            epoch_end = time.time()
-            epoch_time = round(epoch_end - epoch_start, 3)
-            
             epoch_avg_loss = total_loss_sum / total_samples
             self.train_losses.append(epoch_avg_loss)
-            print(f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f} | Took: {epoch_time}s')
-
             self.avg_train_loss = epoch_avg_loss
+
+            # Validation + early stopping
+            val_msg = ''
+            if val_loader is not None:
+                val_loss = self._validate_epoch(val_loader)
+                self.val_losses.append(val_loss)
+                scheduler.step(val_loss)
+                val_msg = f' | Val Loss: {val_loss:.4f} | LR: {self.optimizer.param_groups[0]["lr"]:.1e}'
+
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    best_model_state = copy.deepcopy(self.model.state_dict())
+                    patience_counter = 0
+                else:
+                    patience_counter += 1
+
+            epoch_time = round(time.time() - epoch_start, 3)
+            print(f'Epoch {epoch} | Train Loss: {epoch_avg_loss:.4f}{val_msg} | Took: {epoch_time}s')
+
+            if val_loader is not None and patience_counter >= es_patience:
+                print(f'Early stopping at epoch {epoch} (no improvement for {es_patience} epochs)')
+                break
+
+        # Restore best model
+        if best_model_state is not None:
+            self.model.load_state_dict(best_model_state)
+            print(f'Restored best model (val loss: {best_val_loss:.4f})')
 
         end_time = time.time()
         time_taken = round(end_time - start_time, 3)

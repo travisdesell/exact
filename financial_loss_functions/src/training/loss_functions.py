@@ -498,7 +498,9 @@ class CompositeSRLoss(nn.Module):
         """
         rets = self._extract_ticker_feature(features, self.ret_idx)  # (B, T, N)
 
-        cum_ret = (1 + rets).prod(dim=1) - 1  # (B, N)
+        # Use cumulative sum (not product) — features are RobustScaler-normalized,
+        # so (1+rets).prod() diverges. Sum over the window is well-behaved.
+        cum_ret = rets.sum(dim=1)  # (B, N)
 
         # Distance to nearest threshold: (B, N, K)
         thresholds = self.psych_thresholds  # (K,)
@@ -565,6 +567,10 @@ class CompositeSRLoss(nn.Module):
         @param fundamentals torch.Tensor (B, N) composite z-scored scores
             (positive = improving, negative = deteriorating).
         """
+        # Skip if fundamentals have no cross-sectional variance (e.g. broken SEC data)
+        if fundamentals.var(dim=-1).mean() < 1e-4:
+            return torch.tensor(0.0, device=weights.device)
+
         equal_w = 1.0 / self.N
         weight_diff = weights - equal_w
         return -(fundamentals * weight_diff).mean()

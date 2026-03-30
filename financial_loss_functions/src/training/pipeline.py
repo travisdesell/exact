@@ -2,13 +2,14 @@ import numpy as np
 import pandas as pd
 import torch
 from torch import optim
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from pathlib import Path
 from src.utils import create_directory
 from src.data_processing.dataset import Reshaper
 from src.data_processing.dataset import WindowDataset
 from src.data_processing.loading import load_csv_files
 from src.models.lstm import BaseLSTM, AttentionLSTM
+from src.models.DeformTime.DeformTime import DeformTime
 from src.models.cvar_benchmark import CVaRBenchmark, CVaRParams
 from src.training.train import (
     Trainer,
@@ -27,6 +28,15 @@ from src.evaluation.pyfolio_viz import (
     generate_comparison_tearsheets,
     comparison_summary,
 )
+
+# Registry of available model keys (used by CLI --models flag)
+ALL_MODELS = {
+    'baseLSTM_sharpe': 'BaseLSTM (Sharpe)',
+    'baseLSTM_composite': 'BaseLSTM (Composite)',
+    'attentionLSTM_composite': 'AttentionLSTM (Composite)',
+    'deformTime_composite': 'DeformTime (Composite)',
+    'cvar': 'CVaR Benchmark',
+}
 
 
 def _load_sector_ids(
@@ -241,17 +251,19 @@ def _load_sec_fundamentals(
     return fund_train, fund_val
 
 
-def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
+def run_training_pipeline(
+    paths_config: Dict,
+    hparams_config: Dict,
+    models: Optional[List[str]] = None,
+):
     """
     All models training pipeline entry point.
 
-    Trains BaseLSTM and AttentionLSTM with both the legacy Sharpe loss
-    and the composite S/R loss, runs a CVaR benchmark, and generates
-    pyfolio tearsheets comparing all strategies.
-
     @param paths_config Dict Dictionary containing paths
     @param hparams_config Dict Dictionary containing hyperparameter information
+    @param models Optional list of model keys to train (see ALL_MODELS). None = all.
     """
+    enabled = set(models) if models else set(ALL_MODELS.keys())
     print('\n', '=' * 20, ' Training Pipeline ', '=' * 20)
     
     # Create plots directory if it doesnt exist
@@ -267,11 +279,11 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     }
 
     processed_dfs = load_csv_files(processed_files)
-    train_data = processed_dfs['processed_train']
-    returns_train = processed_dfs['returns_train']
+    train_data = processed_dfs['processed_train'].fillna(0.0)
+    returns_train = processed_dfs['returns_train'].fillna(0.0)
 
-    val_data = processed_dfs['processed_val']
-    returns_val = processed_dfs['returns_val']
+    val_data = processed_dfs['processed_val'].fillna(0.0)
+    returns_val = processed_dfs['returns_val'].fillna(0.0)
 
     print('Train shape:', train_data.shape)
     print('Val shape:', val_data.shape)
@@ -325,114 +337,149 @@ def run_training_pipeline(paths_config: Dict, hparams_config: Dict):
     all_strategy_weights: Dict[str, np.ndarray] = {}
 
     # ---- BaseLSTM (Sharpe-only, baseline) ----
-    model1_name = 'BaseLSTM'
-    print('\n', '-'*10, f' Training {model1_name} (Sharpe) ', '-'*10)
-    try:
-        trainer = Trainer(
-            model=BaseLSTM,
-            optimizer=optim.AdamW,
-            loss=differentiable_sharpe_loss,
-            model_hparams=hparams_config[model1_name]['model'],
-            optimizer_hparams=hparams_config[model1_name]['optimizer'],
-            train_hparams=hparams_config[model1_name]['train'],
-            in_size=X_train.shape[2],
-            num_stocks=y_train.shape[2]
-        )
-        trainer.train(train_ds)
-        trainer.evaluate(val_ds)
+    if 'baseLSTM_sharpe' in enabled:
+        model1_name = 'BaseLSTM'
+        print('\n', '-'*10, f' Training {model1_name} (Sharpe) ', '-'*10)
+        try:
+            trainer = Trainer(
+                model=BaseLSTM,
+                optimizer=optim.AdamW,
+                loss=differentiable_sharpe_loss,
+                model_hparams=hparams_config[model1_name]['model'],
+                optimizer_hparams=hparams_config[model1_name]['optimizer'],
+                train_hparams=hparams_config[model1_name]['train'],
+                in_size=X_train.shape[2],
+                num_stocks=y_train.shape[2]
+            )
+            trainer.train(train_ds, val_ds)
+            trainer.evaluate(val_ds)
 
-        train_val_losses_plot(
-            trainer.train_losses, trainer.val_losses,
-            model1_name + ' (Sharpe) Loss Curves',
-            plots_dir / (model1_name + '_Sharpe_Loss.png'),
-        )
-        alloc_weights = trainer.get_val_alloc_weights()
-        evaluator.calc_pf_daily_rets(alloc_weights, model1_name + ' (Sharpe)')
-        all_strategy_weights[model1_name + ' (Sharpe)'] = alloc_weights
-    except Exception as error:
-        print(f'DEBUG: Error training {model1_name} (Sharpe). Skipping.', error)
+            train_val_losses_plot(
+                trainer.train_losses, trainer.val_losses,
+                model1_name + ' (Sharpe) Loss Curves',
+                plots_dir / (model1_name + '_Sharpe_Loss.png'),
+            )
+            alloc_weights = trainer.get_val_alloc_weights()
+            evaluator.calc_pf_daily_rets(alloc_weights, model1_name + ' (Sharpe)')
+            all_strategy_weights[model1_name + ' (Sharpe)'] = alloc_weights
+        except Exception as error:
+            print(f'DEBUG: Error training {model1_name} (Sharpe). Skipping.', error)
 
     # ---- BaseLSTM (Composite S/R Loss) ----
-    model1c_name = 'BaseLSTM (Composite)'
-    print('\n', '-'*10, f' Training {model1c_name} ', '-'*10)
-    try:
-        trainer = Trainer(
-            model=BaseLSTM,
-            optimizer=optim.AdamW,
-            loss=composite_loss,
-            model_hparams=hparams_config['BaseLSTM']['model'],
-            optimizer_hparams=hparams_config['BaseLSTM']['optimizer'],
-            train_hparams=hparams_config['BaseLSTM']['train'],
-            in_size=X_train.shape[2],
-            num_stocks=y_train.shape[2],
-            fundamentals_train=fund_train,
-            fundamentals_val=fund_val,
-        )
-        trainer.train(train_ds)
-        trainer.evaluate(val_ds)
+    if 'baseLSTM_composite' in enabled:
+        model1c_name = 'BaseLSTM (Composite)'
+        print('\n', '-'*10, f' Training {model1c_name} ', '-'*10)
+        try:
+            trainer = Trainer(
+                model=BaseLSTM,
+                optimizer=optim.AdamW,
+                loss=composite_loss,
+                model_hparams=hparams_config['BaseLSTM']['model'],
+                optimizer_hparams=hparams_config['BaseLSTM']['optimizer'],
+                train_hparams=hparams_config['BaseLSTM']['train'],
+                in_size=X_train.shape[2],
+                num_stocks=y_train.shape[2],
+                fundamentals_train=fund_train,
+                fundamentals_val=fund_val,
+            )
+            trainer.train(train_ds, val_ds)
+            trainer.evaluate(val_ds)
 
-        train_val_losses_plot(
-            trainer.train_losses, trainer.val_losses,
-            model1c_name + ' Loss Curves',
-            plots_dir / 'BaseLSTM_Composite_Loss.png',
-        )
-        alloc_weights = trainer.get_val_alloc_weights()
-        evaluator.calc_pf_daily_rets(alloc_weights, model1c_name)
-        all_strategy_weights[model1c_name] = alloc_weights
-    except Exception as error:
-        print(f'DEBUG: Error training {model1c_name}. Skipping.', error)
+            train_val_losses_plot(
+                trainer.train_losses, trainer.val_losses,
+                model1c_name + ' Loss Curves',
+                plots_dir / 'BaseLSTM_Composite_Loss.png',
+            )
+            alloc_weights = trainer.get_val_alloc_weights()
+            evaluator.calc_pf_daily_rets(alloc_weights, model1c_name)
+            all_strategy_weights[model1c_name] = alloc_weights
+        except Exception as error:
+            print(f'DEBUG: Error training {model1c_name}. Skipping.', error)
 
     # ---- AttentionLSTM (Composite S/R Loss) ----
-    model2_name = 'AttentionLSTM (Composite)'
-    print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
-    try:
-        trainer = Trainer(
-            model=AttentionLSTM,
-            optimizer=optim.AdamW,
-            loss=composite_loss,
-            model_hparams=hparams_config['AttentionLSTM']['model'],
-            optimizer_hparams=hparams_config['AttentionLSTM']['optimizer'],
-            train_hparams=hparams_config['AttentionLSTM']['train'],
-            in_size=X_train.shape[2],
-            num_stocks=y_train.shape[2],
-            fundamentals_train=fund_train,
-            fundamentals_val=fund_val,
-        )
-        trainer.train(train_ds)
-        trainer.evaluate(val_ds)
+    if 'attentionLSTM_composite' in enabled:
+        model2_name = 'AttentionLSTM (Composite)'
+        print('\n', '-'*10, f' Training {model2_name} ', '-'*10)
+        try:
+            trainer = Trainer(
+                model=AttentionLSTM,
+                optimizer=optim.AdamW,
+                loss=composite_loss,
+                model_hparams=hparams_config['AttentionLSTM']['model'],
+                optimizer_hparams=hparams_config['AttentionLSTM']['optimizer'],
+                train_hparams=hparams_config['AttentionLSTM']['train'],
+                in_size=X_train.shape[2],
+                num_stocks=y_train.shape[2],
+                fundamentals_train=fund_train,
+                fundamentals_val=fund_val,
+            )
+            trainer.train(train_ds, val_ds)
+            trainer.evaluate(val_ds)
 
-        train_val_losses_plot(
-            trainer.train_losses, trainer.val_losses,
-            model2_name + ' Loss Curves',
-            plots_dir / 'AttentionLSTM_Composite_Loss.png',
-        )
-        alloc_weights = trainer.get_val_alloc_weights()
-        evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
-        all_strategy_weights[model2_name] = alloc_weights
-    except Exception as error:
-        print(f'DEBUG: Error training {model2_name}. Skipping.', error)
+            train_val_losses_plot(
+                trainer.train_losses, trainer.val_losses,
+                model2_name + ' Loss Curves',
+                plots_dir / 'AttentionLSTM_Composite_Loss.png',
+            )
+            alloc_weights = trainer.get_val_alloc_weights()
+            evaluator.calc_pf_daily_rets(alloc_weights, model2_name)
+            all_strategy_weights[model2_name] = alloc_weights
+        except Exception as error:
+            print(f'DEBUG: Error training {model2_name}. Skipping.', error)
+
+    # ---- DeformTime (Composite S/R Loss) ----
+    if 'deformTime_composite' in enabled:
+        model3_name = 'DeformTime (Composite)'
+        print('\n', '-'*10, f' Training {model3_name} ', '-'*10)
+        try:
+            trainer = Trainer(
+                model=DeformTime,
+                optimizer=optim.AdamW,
+                loss=composite_loss,
+                model_hparams=hparams_config['DeformTime']['model'],
+                optimizer_hparams=hparams_config['DeformTime']['optimizer'],
+                train_hparams=hparams_config['DeformTime']['train'],
+                in_size=X_train.shape[2],
+                num_stocks=y_train.shape[2],
+                fundamentals_train=fund_train,
+                fundamentals_val=fund_val,
+            )
+            trainer.train(train_ds, val_ds)
+            trainer.evaluate(val_ds)
+
+            train_val_losses_plot(
+                trainer.train_losses, trainer.val_losses,
+                model3_name + ' Loss Curves',
+                plots_dir / 'DeformTime_Composite_Loss.png',
+            )
+            alloc_weights = trainer.get_val_alloc_weights()
+            evaluator.calc_pf_daily_rets(alloc_weights, model3_name)
+            all_strategy_weights[model3_name] = alloc_weights
+        except Exception as error:
+            print(f'DEBUG: Error training {model3_name}. Skipping.', error)
 
     # -------------------- CVaR Benchmark -------------------- #
-    print('\n', '-'*10, ' CVaR Benchmark ', '-'*10)
-    try:
-        cvar_cfg = hparams_config.get('CVaRBenchmark', {})
-        cvar_params = CVaRParams(
-            confidence=cvar_cfg.get('confidence', 0.95),
-            risk_aversion=cvar_cfg.get('risk_aversion', 1.0),
-            w_min=cvar_cfg.get('w_min', 0.0),
-            w_max=cvar_cfg.get('w_max', 0.30),
-            L_tar=cvar_cfg.get('L_tar', 1.6),
-        )
-        cvar_bench = CVaRBenchmark(params=cvar_params)
+    if 'cvar' in enabled:
+        print('\n', '-'*10, ' CVaR Benchmark ', '-'*10)
+        try:
+            cvar_cfg = hparams_config.get('CVaRBenchmark', {})
+            cvar_params = CVaRParams(
+                confidence=cvar_cfg.get('confidence', 0.95),
+                risk_aversion=cvar_cfg.get('risk_aversion', 1.0),
+                w_min=cvar_cfg.get('w_min', 0.0),
+                w_max=cvar_cfg.get('w_max', 0.30),
+                L_tar=cvar_cfg.get('L_tar', 1.6),
+            )
+            cvar_bench = CVaRBenchmark(params=cvar_params)
 
-        X_val_rets = _extract_returns_from_X(X_val, reshaper)
-        cvar_weights = cvar_bench.rolling_optimize(X_val_rets)
+            X_val_rets = _extract_returns_from_X(X_val, reshaper)
+            cvar_weights = cvar_bench.rolling_optimize(X_val_rets)
 
-        evaluator.calc_pf_daily_rets(cvar_weights, 'CVaR Benchmark')
-        all_strategy_weights['CVaR Benchmark'] = cvar_weights
-        print(f'CVaR Benchmark weights shape: {cvar_weights.shape}')
-    except Exception as error:
-        print(f'DEBUG: CVaR Benchmark failed. Skipping.', error)
+            evaluator.calc_pf_daily_rets(cvar_weights, 'CVaR Benchmark')
+            all_strategy_weights['CVaR Benchmark'] = cvar_weights
+            print(f'CVaR Benchmark weights shape: {cvar_weights.shape}')
+        except Exception as error:
+            print(f'DEBUG: CVaR Benchmark failed. Skipping.', error)
 
     # -------------------- Equal Weight -------------------- #
     evaluator.calc_eq_wt_daily_rets()
