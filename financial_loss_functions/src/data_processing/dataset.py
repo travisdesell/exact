@@ -70,6 +70,8 @@ class Reshaper:
         features = []
 
         for col in train_df.columns:
+            if self.col_sep not in col:
+                continue
             t, f = self._split_col(col)
             tickers.append(t)
             features.append(f)
@@ -79,6 +81,8 @@ class Reshaper:
         # Features must be identical for all tickers
         features_by_ticker = {t: set() for t in self.tickers}
         for col in train_df.columns:
+            if self.col_sep not in col:
+                continue
             t, f = self._split_col(col)
             features_by_ticker[t].add(f)
         
