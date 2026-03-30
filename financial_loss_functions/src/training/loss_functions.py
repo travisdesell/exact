@@ -1202,7 +1202,7 @@ def custom_loss_7(
     # print('RP:', risk_parity)
     return log_sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_8(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, log_ret_lambda: float,
     cvar_lambda: float, risk_p_lambda: float, **kwargs
@@ -1269,6 +1269,23 @@ def custom_loss_11(
     cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
     omega = smooth_omega_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity)
+    return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_12(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float
+) -> Tensor:
+    omega = raw_omega_ratio(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
 

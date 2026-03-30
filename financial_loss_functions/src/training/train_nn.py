@@ -477,7 +477,7 @@ class Tuner:
         self.n_jobs = n_jobs
         self.torch_device = torch_device
 
-        self.n_startup_trials = int(self.n_trials * self.n_startup_perc)
+        self.n_startup_trials = max(int(self.n_trials * self.n_startup_perc), 10)
         if self.n_startup_trials < self.min_n_startup:
             self.n_startup_trials = self.min_n_startup
 
