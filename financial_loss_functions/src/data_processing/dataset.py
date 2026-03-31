@@ -313,44 +313,39 @@ class WFAdjustment:
         self.num_steps = 0
         self.extra_days = 0
     
-    def _calc_walk_steps(self, rets_val: pd.DataFrame) -> tuple[int, int]:
-        total_val_days = len(rets_val)
-        self.extra_days = total_val_days % self.stride
-        self.num_steps = (total_val_days - self.extra_days) // self.stride
+    def _calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
+        total_oos_days = len(split)
+        self.extra_days = total_oos_days % self.stride
+        self.num_steps = (total_oos_days - self.extra_days) // self.stride
 
         return self.num_steps
     
     def init_datasets(
-            self,
-            train: pd.DataFrame, rets_train: pd.DataFrame,
-            split: pd.DataFrame, rets_split: pd.DataFrame
-        ):
+            self, train: pd.DataFrame, split: pd.DataFrame
+        ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Create initial datasets by adjusting for the extra days.
         This method adds the first 'extra' days to the training data.
+        We only Adjust teh validation data set, not test set.
         """
-        self._calc_walk_steps(rets_split)
+        self._calc_walk_steps(split)
         
         init_train = pd.concat(
             [train, split.iloc[:self.extra_days]],
             axis=0
         )
-        init_rets_train = pd.concat(
-            [rets_train, rets_split.iloc[:self.extra_days]],
-            axis=0
-        )
-        init_val = split.iloc[self.extra_days:]
-        init_rets_val = rets_split.iloc[self.extra_days:]
+
+        init_split = split.iloc[self.extra_days:]
 
         self.init_train = init_train
-        self.init_rets_train = init_rets_train
-        self.init_val = init_val
-        self.init_rets_val = init_rets_val
+        self.init_split = init_split
 
         print(
             f'Evaluation dataset contains {self.num_steps} steps.',
             f'{self.extra_days} days from evaluation dataset moved to training dataset.'
         )
+
+        return self.init_train, self.init_split
     
     def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
         eval_windows = []
@@ -365,11 +360,6 @@ class WFAdjustment:
             out_wind_idxs.append((current_start, current_end))
         
         return np.stack(eval_windows), out_wind_idxs
-    
-    def get_data(
-            self
-        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        return self.init_train, self.init_rets_train, self.init_val, self.init_rets_val
     
     def get_num_steps(self) -> int:
         return self.num_steps

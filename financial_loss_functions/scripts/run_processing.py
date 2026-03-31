@@ -10,7 +10,8 @@ if __name__ == '__main__':
         os.path.join('config', 'paths.json'),
         os.getenv('CRSP_DIR')
     )
-
+    
+    hparams_config = load_json(os.path.join('config', 'hparams.json'))
     features_config = load_json(os.path.join('config', 'features.json'))
 
-    run_processing_pipeline(paths_config, features_config)
+    run_processing_pipeline(paths_config, hparams_config, features_config)
