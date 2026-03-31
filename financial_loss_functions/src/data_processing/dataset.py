@@ -82,25 +82,24 @@ class Reshaper:
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
-    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
+    def transform_one_window(self, wind_data: np.ndarray) -> np.ndarray:        
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
-        all_data_value = df_window.values
         
-        T = all_data_value.shape[0]
+        T = wind_data.shape[0]
         N = self.num_tickers
         F = self.num_features
         C = self.num_common_feats
 
-        ticker_block = all_data_value[:, :N*F] 
+        ticker_block = wind_data[:, :N*F] 
         # Common Block is the remaining columns at the end
-        common_block = all_data_value[:, N*F:]
+        common_block = wind_data[:, N*F:]
 
         # Handle Layouts using Vectorized Operations
         # TODO: Other forms of reshaping must be implmented !!!!
         if self.layout == ReshapeStyle.T_NxF:
             # Already in shape (T, N*F)
-            return all_data_value
+            return wind_data
         
         elif self.layout == ReshapeStyle.T_N_F_plus_C:
             # BROADCASTING: Each ticker gets the macro features appended to its own features.
@@ -137,7 +136,7 @@ class Reshaper:
             raise ValueError('Run `extract_features` before reshaping!')
 
     def reshape(
-            self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
+            self, features_data: np.ndarray, raw_returns: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Reshapes 2D DataFrame into set `layout` at initialization.
@@ -165,8 +164,8 @@ class Reshaper:
         good_starts = []
 
         for s in starts:
-            X_df = features_data.iloc[s : s + self.in_size]
-            y_df = raw_returns.iloc[
+            X_df = features_data[s : s + self.in_size]
+            y_df = raw_returns[
                 s + self.in_size : s + self.in_size + self.out_size
             ]#[self.tickers]
 
@@ -175,7 +174,7 @@ class Reshaper:
                 raise ValueError('Window has missing data. Fix before training.')
         
             X_list.append(self.transform_one_window(X_df))
-            y_list.append(y_df.values)
+            y_list.append(y_df)
             good_starts.append(s)
         
         X = np.stack(X_list)
@@ -308,17 +307,20 @@ def calc_current_idxs(step: int, stride: int):
     return current_start, current_end
 
 class WFAdjustment:
-    def __init__(self, stride: int):
-        self.stride = stride
+    def __init__(self, out_size: int):
+        self.out_size = out_size
         self.num_steps = 0
         self.extra_days = 0
     
-    def _calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
+    def calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
         total_oos_days = len(split)
-        self.extra_days = total_oos_days % self.stride
-        self.num_steps = (total_oos_days - self.extra_days) // self.stride
+        extra_days = total_oos_days % self.out_size
+        num_steps = (total_oos_days - self.extra_days) // self.out_size
 
-        return self.num_steps
+        self.extra_days = extra_days
+        self.num_steps = num_steps
+
+        return self.num_steps, self.extra_days
     
     def init_datasets(
             self, train: pd.DataFrame, split: pd.DataFrame
@@ -328,7 +330,7 @@ class WFAdjustment:
         This method adds the first 'extra' days to the training data.
         We only Adjust teh validation data set, not test set.
         """
-        self._calc_walk_steps(split)
+        self.calc_walk_steps(split)
         
         init_train = pd.concat(
             [train, split.iloc[:self.extra_days]],
@@ -347,15 +349,18 @@ class WFAdjustment:
 
         return self.init_train, self.init_split
     
-    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
+    def get_eval_windows(self, split: pd.DataFrame) -> tuple[np.ndarray, list[tuple[int, int]]]:
+        if self.num_steps == 0:
+            self.calc_walk_steps(split)
+        
         eval_windows = []
         out_wind_idxs = []
         for step in range(1, self.num_steps+1):
-            current_start, current_end = calc_current_idxs(step, self.stride)
+            current_start, current_end = calc_current_idxs(step, self.out_size)
 
-            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
+            walk_rets_eval = split.iloc[current_start : current_end]
 
-            eval_windows.append(walk_rets_val.values)
+            eval_windows.append(walk_rets_eval.values)
 
             out_wind_idxs.append((current_start, current_end))
         

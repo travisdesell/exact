@@ -1310,8 +1310,12 @@ class CandidatesGrid(GridUtilities):
                 return None    
 
     def train_eval_one_model(
-            self, model_name: str, X_train: np.ndarray, y_train: np.ndarray, 
-            X_val: np.ndarray, y_val: np.ndarray,
+            self,
+            model_name: str,
+            train_data: pd.DataFrame,
+            rets_train: pd.DataFrame, 
+            val_data: pd.DataFrame,
+            rets_val: pd.DataFrame,
             comm = None,
             global_rank = None,
             size = None
@@ -1521,7 +1525,146 @@ class CandidatesGrid(GridUtilities):
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
+
+
+class Walker:
+
+    def __init__(
+            self,
+            num_steps: int,
+            model_name: str,
+            model_cls: Type,
+            loss_name: str,
+            loss_func: Callable,
+            hparams: dict,
+            torch_device: torch.device | str,
+            reshaper: Reshaper
+        ):
+        self.num_steps = num_steps
+        self.model_name = model_name
+        self.model_cls = model_cls
+        self.loss_name = loss_name
+        self.loss_func = loss_func
+        self.hparams = hparams
+        self.torch_device = torch_device
+        self.reshaper = reshaper
+
+        # get window sizes from reshaper object
+        self.in_size = reshaper.in_size
+        self.stride = reshaper.out_size
     
+    def _reshape_step_data(
+            self,
+            walk_train: np.ndarray,
+            walk_rets_train: np.ndarray,
+            walk_rets_val: np.ndarray    
+        ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        # Reshaping entire training data
+        X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
+
+        # Reshaping only last window
+        X_val = self.reshaper.transform_one_window(walk_train[-self.in_size:])
+        X_val = X_val.reshape(1, X_val.shape[0], X_val.shape[1])
+
+        y_val = walk_rets_val.reshape(
+            1, walk_rets_val.shape[0], walk_rets_val.shape[1]
+        )
+
+        return X_train, y_train, X_val, y_val
+
+    def _train_eval_helper(
+            self,
+            train_ds: 'WindowDataset',
+            infer_ds: 'WindowDataset',
+            X_train_shape: torch.Size,
+            y_train_shape: torch.Size
+        ):
+
+        #### FOR TESTING ####
+        # best_hparams['train']['epochs'] = 5
+        ####################
+        trainer = Trainer(
+            model=self.model_cls,
+            loss=self.loss_func,
+            model_hparams=self.hparams['model'],
+            optimizer_hparams=self.hparams['optimizer'],
+            train_hparams=self.hparams['train'],
+            in_size=X_train_shape[2],
+            num_stocks=y_train_shape[2],
+            max_seq_len=X_train_shape[1],
+            scheduler_hparams=self.hparams['scheduler'],
+            loss_hparams=self.hparams['loss'],
+            device=self.torch_device
+        )
+        
+        trainer.train(train_ds)
+        trainer.evaluate(infer_ds)
+
+        # Logging and Diagnostics
+        train_infer_losses = {
+            'train': trainer.train_losses,
+            'eval': trainer.eval_losses
+        }
+
+        alloc_weights = trainer.get_eval_alloc_weights()
+
+        trainer.device_cleanup()
+        del trainer
+
+        return alloc_weights, train_infer_losses
+
+    def walk_1_model(
+            self,
+            train: np.ndarray,
+            rets_train: np.ndarray,
+            val: np.ndarray,
+            rets_val: np.ndarray
+        ):
+        walk_train = train.copy()
+        walk_rets_train = rets_train.copy()
+        walk_val = None
+        walk_rets_val = None
+        
+        # Take steps
+        steps_alloc_weights = []
+        steps_train_infer_losses = []
+        for step in range(self.num_steps):
+            print(
+                '\n', '='*10,
+                f' WFV: {self.model_name} - {self.loss_name}, Step: {step}/{self.num_steps-1}',
+                '='*10
+            )
+
+            current_start, current_end = calc_current_idxs(step+1, self.stride)
+
+            if current_start > 0:
+                walk_train = np.concatenate([walk_train, walk_val], axis=0)
+                walk_rets_train = np.concatenate([walk_rets_train, walk_rets_val], axis=0)
+            
+            # Save walk_val and returns val at every step
+            walk_val = val[current_start : current_end] # To be added to train data later
+            walk_rets_val = rets_val[current_start : current_end]
+
+            X_train, y_train, infer_in, infer_out = self._reshape_step_data(
+                walk_train, walk_rets_train, walk_rets_val
+            )
+
+            train_ds = WindowDataset(X_train, y_train)
+            infer_ds = WindowDataset(infer_in, infer_out)
+            X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
+            
+            alloc_weights, train_infer_losses = self._train_eval_helper(
+                train_ds,
+                infer_ds,
+                X_train_shape,
+                y_train_shape
+            )
+
+            steps_alloc_weights.append(alloc_weights)
+            steps_train_infer_losses.append(train_infer_losses)
+
+        return np.vstack(steps_alloc_weights), steps_train_infer_losses
+
 class WalkForwardValidator(GridUtilities):
     def __init__(
             self,

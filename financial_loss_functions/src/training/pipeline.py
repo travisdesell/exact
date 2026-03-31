@@ -93,42 +93,6 @@ def _load_sp500_rets(paths_config: dict):
     )
 
     return benches['benchmark_val']
-    
-# def rolling_reshape(
-#         train_data: pd.DataFrame,
-#         returns_train: pd.DataFrame,
-#         val_data: pd.DataFrame,
-#         returns_val: pd.DataFrame,
-#         windows_config: dict,
-#         common_features: list,
-#     ) -> tuple:
-#     reshaper = Reshaper(
-#         windows_config['in_size'],
-#         windows_config['out_size'],
-#         windows_config['stride'],
-#         common_features
-#     )
-#     reshaper.extract_features(train_data.columns)
-    
-#     X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-#     # print('-'*10, ' train shapes ', '-'*10)
-#     # print('X_train shpe:', X_train.shape)
-#     # print('y_train shape:', y_train.shape)
-
-#     X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-#     # print('-'*10, ' val shapes ', '-'*10)
-#     # print('X_val shape', X_val.shape)
-#     # print('y_val shape:', y_val.shape)
-
-#     # Calculate indexes for input and output windows on split data
-#     in_wind_indexes, out_wind_indexes = calc_in_out_idx(
-#         returns_val,
-#         windows_config['in_size'],
-#         windows_config['out_size'],
-#         reshaper.stride
-#     ) 
-
-#     return X_train, y_train, X_val, y_val, in_wind_indexes, out_wind_indexes
 
 def _print_evaludation_info(
         out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
@@ -215,33 +179,28 @@ def run_tuning_pipeline(
     artifacts_paths = _common_setup(paths_config)
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, returns_train, val_data, returns_val = _load_processed_data(
+    train_data, rets_train, val_data, rets_val = _load_processed_data(
         paths_config
     )
     
     # -------------------- Preprocessing (Reshaping) -------------------- #
-    reshaper = Reshaper(
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride'],
-        features_config['common_features']
-    )
-    reshaper.extract_features(train_data.columns)
+    # reshaper = Reshaper(
+    #     hparams_config['rolling_windows']['in_size'],
+    #     hparams_config['rolling_windows']['out_size'],
+    #     hparams_config['rolling_windows']['stride'],
+    #     features_config['common_features']
+    # )
+    # reshaper.extract_features(train_data.columns)
     
-    X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    # print('-'*10, ' train shapes ', '-'*10)
-    # print('X_train shpe:', X_train.shape)
-    # print('y_train shape:', y_train.shape)
+    # X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
+    # # print('-'*10, ' train shapes ', '-'*10)
+    # # print('X_train shpe:', X_train.shape)
+    # # print('y_train shape:', y_train.shape)
 
-    X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    # print('-'*10, ' val shapes ', '-'*10)
-    # print('X_val shape', X_val.shape)
-    # print('y_val shape:', y_val.shape)
-
-    # -------------------- Evaluator Setup -------------------- #
-
-    # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    # X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
+    # # print('-'*10, ' val shapes ', '-'*10)
+    # # print('X_val shape', X_val.shape)
+    # # print('y_val shape:', y_val.shape)
 
     # -------------------- Training Neural Network Models -------------------- #
     # Building hyperparameter tuning metric
@@ -281,22 +240,22 @@ def run_tuning_pipeline(
             temp_dir = artifacts_paths['temp_dir']
         )
 
-        if grid_mode == 'all':
-            nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val, comm, global_rank, size
-            )
-            results_suffix = grid_mode
+        # if grid_mode == 'all':
+        #     nn_alloc_weights = candidates_grid.train_eval_grid(
+        #         X_train, y_train, X_val, y_val, comm, global_rank, size
+        #     )
+        #     results_suffix = grid_mode
         
-        elif grid_mode == 'one_model' and model_name is not None:
+        if grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
-                model_name, X_train, y_train, X_val, y_val, comm, global_rank, size
+                model_name, train_data, rets_train, val_data, rets_val, comm, global_rank, size
             )
             results_suffix = model_name
         
         else:
             raise RuntimeError(
                 'Incorrect mode arguments while running at entry point.',
-                'If mpi, grid mode must be `all` or `one_model`.'
+                'If mpi, grid mode must be `one_model` and model name must be provided.'
             )
 
         # Stop all non zero ranks
@@ -326,22 +285,22 @@ def run_tuning_pipeline(
             temp_dir = artifacts_paths['temp_dir']
         )
 
-        if grid_mode == 'all':
-            nn_alloc_weights = candidates_grid.train_eval_grid(
-                X_train, y_train, X_val, y_val, None, None, None
-            )
+        # if grid_mode == 'all':
+        #     nn_alloc_weights = candidates_grid.train_eval_grid(
+        #         X_train, y_train, X_val, y_val, None, None, None
+        #     )
             
-            results_suffix = grid_mode
+        #     results_suffix = grid_mode
         
-        elif grid_mode == 'one_model' and model_name is not None:
+        if grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
-                model_name, X_train, y_train, X_val, y_val, None, None, None
+                model_name, train_data, rets_train, val_data, rets_val, None, None, None
             )
             results_suffix = model_name
 
         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one(
-                model_name, loss_name, X_train, y_train, X_val, y_val
+                model_name, loss_name, train_data, rets_train, val_data, rets_val
             )
 
             results_suffix = f'{model_name}-{loss_name}'
@@ -370,6 +329,13 @@ def run_tuning_pipeline(
             artifacts_paths['tuned_plots_dir'] / (loss_plot_name + '.png')
         )
 
+    # -------------------- Evaluator Setup -------------------- #
+    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
+    y_val, out_wind_idxs = data_adjuster.get_eval_windows(rets_val)
+    
+    # Initializing once to compare all models together
+    evaluator = Evaluator(y_val, MetricLibrary.items())
+    
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
     for model_loss, alloc_weights in nn_alloc_weights.items():
@@ -380,7 +346,7 @@ def run_tuning_pipeline(
     # -------------------- Evaluation on Out-of-Sample data -------------------- #
     # Calculate indexes for input and output windows on split data
     in_wind_idxs, out_wind_idxs = calc_in_out_idx(
-        returns_val,
+        rets_val,
         hparams_config['rolling_windows']['in_size'],
         hparams_config['rolling_windows']['out_size'],
         hparams_config['rolling_windows']['stride']
@@ -485,12 +451,6 @@ def run_wfv_pipeline(
         )
         filtered_models = None
     
-    # -------------------- Prepare Datasets -------------------- #
-    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
-    data_adjuster.init_datasets(train_data, returns_train, val_data, returns_val)
-    init_train, init_rets_train, init_val, init_rets_val = data_adjuster.get_data()
-    num_steps = data_adjuster.get_num_steps()
-    eval_windows, out_wind_idxs = data_adjuster.get_eval_windows()
 
     # -------------------- Walk-Forward Training & Validation -------------------- #
     if mpi:
