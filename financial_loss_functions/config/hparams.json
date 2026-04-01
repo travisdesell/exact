@@ -1,7 +1,7 @@
 {   
     "tuner": {
         "n_seeds": 5,
-        "n_tuning_trials": 1,
+        "n_tuning_trials": 100,
         "n_warmup_steps": 2,
         "n_jobs": 1
     },
@@ -28,7 +28,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -42,7 +42,8 @@
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "AttentionLSTM": {
@@ -63,7 +64,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -79,7 +80,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [1]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "TFT": {
@@ -101,7 +102,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -116,7 +117,8 @@
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "TemporalTransformer": {
@@ -139,7 +141,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -156,7 +158,8 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "InvertedAttentionLSTM": {
@@ -177,7 +180,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -192,7 +195,8 @@
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "DeformTime": {
@@ -216,7 +220,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -234,7 +238,8 @@
             "patch_len": {"type": "categorical", "choices": [4, 6, 8, 12, 16]},
             "stride": {"type": "categorical", "choices": [4, 8, 16]},
             "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
-            "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+            "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+            "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
         }
         },
         "BiAttentionLSTM": {
@@ -262,7 +267,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -293,7 +298,7 @@
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -310,7 +315,8 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.4},
                 "seg_len": {"type": "categorical", "choices": [4, 6, 8, 12]},
                 "win_size": {"type": "categorical", "choices": [2, 4]},
-                "factor": {"type": "categorical", "choices": [5, 10, 20]}
+                "factor": {"type": "categorical", "choices": [5, 10, 20]},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         },
         "VLSTM": {
@@ -332,7 +338,7 @@
                 "clip_grad_norm": 0.5,
                 "epochs": 500,
                 "min_epochs": 0,
-                "early_stopping": true,
+                "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
             },
@@ -348,7 +354,8 @@
                 "nheads":{"type": "categorical", "choices":[0, 1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
             }
         }
 
