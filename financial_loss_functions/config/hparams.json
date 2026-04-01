@@ -427,6 +427,16 @@
                 "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
                 "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
             }
+        },
+        "custom_loss_12" : {
+            "lambdas": {
+                "cvar_lambda": 0.01,
+                "risk_p_lambda": 0.1
+            },
+            "tuning": {
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+            }
         }
     },
     "trad_models": {

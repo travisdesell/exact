@@ -652,10 +652,11 @@ class Tuner:
                     value = trial.suggest_categorical(param_name, space['choices'])
                 
                 # Map the suggested value back to the correct dictionary
-                for cat, vals_dict in trial_hparams.items():
-                    if param_name in vals_dict:
-                        trial_hparams[cat][param_name] = value
-            
+                for cat, values_dict in trial_hparams.items():
+                    if values_dict:
+                        if param_name in values_dict:
+                            trial_hparams[cat][param_name] = value
+
             print(
                 '+'*20,
                 f'Trial {trial.number}, {model_loss_name}',
