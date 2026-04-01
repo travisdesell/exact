@@ -337,6 +337,23 @@ def run_tuning_pipeline(
 
     del candidates_grid
 
+    # # -------------------- Training Tradional Models -------------------- #       
+    print(f'Training All Tradional Models')
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        num_steps
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        init_rets_train=rets_train,
+        init_rets_split=rets_val
+    )
+
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    
+    del trad_grid
+
     # -------------------- Evaluation on Out-of-Sample data -------------------- #    
     # Calculate Equal Weight Portfolio's weights
     eq_wt_calc = EqualWeightCalculator(y_val)
