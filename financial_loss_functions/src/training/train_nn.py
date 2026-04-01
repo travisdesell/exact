@@ -12,11 +12,11 @@ import numpy as np
 import pandas as pd
 from torch import Tensor
 from abc import ABC, abstractmethod
-from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
+from src.data_processing.dataset import WindowDataset, Reshaper
+from src.utils.window import calc_current_idxs, build_eval_windows
 from src.utils.formatting import reformat_hparams, split_combo_names
-from src.data_processing.dataset import WindowDataset, Reshaper, calc_current_idxs
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
@@ -458,10 +458,12 @@ class Tuner:
     def __init__(
             self,
             tune_metric: dict[str, MetricModel],
-            n_seeds: int,
+            tune_bench_rets: np.ndarray,
+            n_steps: int,
             n_trials: int,
             n_warmup_steps: int, 
             n_jobs: int,
+            reshaper: Reshaper,
             torch_device: torch.device | str
         ):
         if tune_metric is not None:
@@ -471,17 +473,19 @@ class Tuner:
         else:
             self.tune_metric = tune_metric
         
-        self.n_seeds = n_seeds
+        self.tune_bench_rets = tune_bench_rets # benchmark returns for information ratio style metrics
+        self.n_steps = n_steps
         self.n_trials = n_trials
         self.n_warmup_steps = n_warmup_steps
         self.n_jobs = n_jobs
+        self.reshaper = reshaper
         self.torch_device = torch_device
 
-        self.n_startup_trials = max(int(self.n_trials * self.n_startup_perc), 10)
-        if self.n_startup_trials < self.min_n_startup:
-            self.n_startup_trials = self.min_n_startup
+        self.n_startup_trials = max(
+            int(self.n_trials * self.n_startup_perc),
+            self.min_n_startup
+        )
 
-        self.benchmark_rets = None # benchmark returns for information ratio style metrics
     
     def _calc_pf_metrics_for_seed(
             self, model_name: str, loss_name: str, seed: int,
@@ -498,12 +502,12 @@ class Tuner:
         return seed_metrics
     
     def _calc_excess_returns(self, model_rets: np.ndarray) -> np.ndarray:
-        return model_rets - self.benchmark_rets
+        return model_rets - self.tune_bench_rets
 
-    def _calc_composite_score(
+    def _calc_composite_scores(
             self, model_loss_name,
-            alloc_weights: np.ndarray, y_val: np.ndarray
-        ) -> float:
+            alloc_weights: np.ndarray , y_val: np.ndarray
+        ) -> np.ndarray:
         
         evaluator = Evaluator(y_val, None)
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
@@ -511,23 +515,22 @@ class Tuner:
         excess_rets = self._calc_excess_returns(model_rets)
         evaluator.update_rets_for_one(model_loss_name, excess_rets)
 
-        composite_score = 0
+        composite_scores = np.zeros(self.n_steps)
         for _, met_dict in self.tune_metric.items():
-            metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
+            metric_values = evaluator.calc_metric_performance(met_dict.func, mean=False)
+            metric_values = metric_values.iloc[:,0].values # Since there is 1 model but multiple steps
+            
             if met_dict.sign == '+':
-                composite_score += metric_mean.item() # .item() since the series will have only 1 value
+                composite_scores += metric_values
             elif met_dict.sign == '-':
-                composite_score -= metric_mean.item()
+                composite_scores -= metric_values
             else:
                 raise ValueError(
                     'Provide only linear operators like + or -. \
                         System designed to take only linear formulas as of now'
                     )
         
-        if composite_score == 0:
-            print('DEBUG: Got a 0 score. Something must be wrong.')
-        
-        return composite_score
+        return composite_scores
 
     def calc_hinge_penalty(
             self, seed_train_losses: list[float], seed_val_losses: list[float],
@@ -575,6 +578,30 @@ class Tuner:
         )
     
         return base_score - gap_penalty
+    
+    def _calc_tuning_objective_no_gap(
+            self, composite_scores: np.ndarray
+        ) -> float:
+        """
+        calculate tuing objective from statistics of composite scores across seeds
+        and gap penalty from train - val losses.
+        """
+
+        mean_score = np.mean(composite_scores)
+        n = len(composite_scores)
+        if n < 2:
+            # Not enough seeds for variance estimate; fall back to mean
+            final_objective = mean_score
+        else:
+            # For statistical consistency across seeds
+            std_score = np.std(composite_scores, ddof=1)
+            # 95% one‑sided lower bound (t‑distribution)
+            t_val = stats.t.ppf(0.95, df=n-1)
+            margin = t_val * std_score / np.sqrt(n)
+
+            final_objective = mean_score - margin
+        
+        return final_objective
 
     def _run_tuning_study(
             self,
@@ -582,160 +609,119 @@ class Tuner:
             model_class: Type,
             loss_name: str,
             loss_func: Callable, 
-            train_ds: 'WindowDataset',
-            val_ds: 'WindowDataset',
-            X_train_shape: torch.Size,
-            y_train_shape: torch.Size,
-            y_val: np.ndarray,
+            train_data: np.ndarray,
+            rets_train: np.ndarray, 
+            val_data: np.ndarray,
+            rets_val: np.ndarray,
             model_cfg: dict,
-            loss_cfg: dict
+            loss_cfg: dict,
+            eval_winds: np.ndarray
         ):
         
         model_loss_name = f'{model_name}-{loss_name}'
 
-        # # Calculate equal weight portfolio & its returns as benchmark
-        if self.benchmark_rets is None:
-            eq_wt_calc = EqualWeightCalculator(y_val)
-            self.benchmark_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+        # # # Calculate equal weight portfolio & its returns as benchmark
+        # if self.benchmark_rets is None:
+        #     eq_wt_calc = EqualWeightCalculator(y_val)
+        #     self.benchmark_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+        default_hparams = reformat_hparams(model_cfg, loss_cfg)
 
-        model_tuning_space = model_cfg.get('tuning', {})
-        
-        loss_lambdas = loss_cfg.get('lambdas') if loss_cfg else {}
+        # extract tuning ranges
+        model_tuning_space = model_cfg.get('tuning', {})        
         loss_tuning_space = loss_cfg.get('tuning', {}) if loss_cfg else {}
+        combined_tuning = model_tuning_space | loss_tuning_space
 
         def _objective(trial):
             # 1. Start with base hparams from JSON
             
-            m_hparams = copy.deepcopy(model_cfg['model'])
-            o_hparams = copy.deepcopy(model_cfg['optimizer'])
-            l_hparams = copy.deepcopy(loss_lambdas)
+            trial_hparams = copy.deepcopy(default_hparams)
             
             # 2. Dynamically update hparams from the JSON tuning space
-            for param_name, space in model_tuning_space.items():
+            for param_name, space in combined_tuning.items():
                 stype = space['type']
                 if stype == 'float':
-                    val = trial.suggest_float(
+                    value = trial.suggest_float(
                         param_name, space['low'], space['high'], log=space.get('log', False)
                     )
                 elif stype == 'int':
-                    val = trial.suggest_int(param_name, space['low'], space['high'])
+                    value = trial.suggest_int(param_name, space['low'], space['high'])
                 elif stype == 'categorical':
-                    val = trial.suggest_categorical(param_name, space['choices'])
+                    value = trial.suggest_categorical(param_name, space['choices'])
                 
                 # Map the suggested value back to the correct dictionary
-                if param_name in m_hparams:
-                    m_hparams[param_name] = val
-                elif param_name in o_hparams:
-                    o_hparams[param_name] = val
+                for cat, vals_dict in trial_hparams.items():
+                    if param_name in vals_dict:
+                        trial_hparams[cat][param_name] = value
             
-            if l_hparams:
-                for lambda_name, space in loss_tuning_space.items():
-                    stype = space['type']
-                    if stype == 'float':
-                        val = trial.suggest_float(
-                            lambda_name, space['low'], space['high'], log=space.get('log', False)
-                        )
-                    elif stype == 'int':
-                        val = trial.suggest_int(lambda_name, space['low'], space['high'])
-                    elif stype == 'categorical':
-                        val = trial.suggest_categorical(lambda_name, space['choices'])
-                    
-                    if lambda_name in l_hparams:
-                        l_hparams[lambda_name] = val
-                
-            # Cross-seed training
-            composite_scores = []
-            seed_train_losses = []
-            seed_val_losses = []
-            seed_best_epochs = []
-
-            # loop over list of random seeds
-            rng = random.Random(trial.number) # To avoid global random state and for reproducibilty
-            rnd_seeds = [rng.randint(0, self.max_seed) for _ in range(self.n_seeds)]
             print(
                 '+'*20,
-                f'Trial {trial.number}, seeds: {rnd_seeds}',
+                f'Trial {trial.number}, {model_loss_name}',
                 '+'*20
             )
-            for i, seed in enumerate(rnd_seeds):
-                # IMPORTANT: Reset the world to this specific seed
-                print(
-                    '='*20,
-                    f'Trial {trial.number}, seed {i+1}/{self.n_seeds} (seed={seed})',
-                    '='*20
-                )
-                set_seed(seed)
-
-                trainer = Trainer(
-                    model=model_class,
-                    loss=loss_func,
-                    model_hparams=m_hparams,
-                    optimizer_hparams=o_hparams,
-                    train_hparams=model_cfg['train'],
-                    in_size=X_train_shape[2],
-                    num_stocks=y_train_shape[2],
-                    max_seq_len=X_train_shape[1],
-                    scheduler_hparams=model_cfg.get('scheduler'),
-                    loss_hparams=l_hparams,
-                    device=self.torch_device
-                )
-                
-                trainer.train(train_ds, val_ds)
-
-                # We grab the losses from the trainer's "Best" epoch
-                best_train_loss, best_val_loss = trainer.get_best_losses()
-                seed_train_losses.append(best_train_loss)
-                seed_val_losses.append(best_val_loss)
-
-                seed_best_epochs.append(trainer.get_best_epoch())
-
-                # Evaluate the get all the portfolio weights for eah window
-                trainer.evaluate(val_ds)
-                alloc_weights = trainer.get_eval_alloc_weights()
-                
-                # Calculate composite scores from allocation weights
-                composite_score = self._calc_composite_score(
-                    model_loss_name,
-                    alloc_weights,
-                    y_val
-                )
-                print(
-                    f'Composite Score for trial: {trial.number}, seed: {seed} = {composite_score}'
-                )
-                composite_scores.append(composite_score)
-
-                # --- PRUNING LOGIC START ---
-                # Report the score of the CURRENT seed (i)
-                # Optuna tracks "step i" across all trials
-                trial.report(composite_score, step=i)
-
-                # Check if this trial should be killed
-                if trial.should_prune():
-                    print(f'!!!! Trial {trial.number} pruned at seed {i+1} !!!!')
-                    raise optuna.exceptions.TrialPruned()
-                # --- PRUNING LOGIC END ---
-                
-                trainer.device_cleanup()
-                del trainer
-            
-            # Inside _objective, after the seed loop
-            trial.set_user_attr('best_epochs', seed_best_epochs)
-            
-            final_objective = self._calc_tuning_objective(
-                composite_scores, seed_train_losses, seed_val_losses
+            final_walker = Walker(
+                self.n_steps,
+                model_name,
+                model_class,
+                loss_name,
+                loss_func,
+                trial_hparams,
+                self.torch_device,
+                self.reshaper
             )
+
+            alloc_weights = final_walker.walk_1_model(
+                train_data,
+                rets_train, 
+                val_data,
+                rets_val
+            )
+
+            # train_val_losses = final_walker.get_train_eval_losses()
+
+            # Calculate composite scores from allocation weights
+            composite_scores = self._calc_composite_scores(
+                model_loss_name,
+                alloc_weights,
+                eval_winds
+            )
+
+            final_objective = self._calc_tuning_objective_no_gap(
+                composite_scores
+            )
+        
+            print(
+                f'Composite Score for trial {trial.number} = {final_objective}'
+            )
+            #     composite_scores.append(composite_score)
+
+            #     # --- PRUNING LOGIC START ---
+            #     # Report the score of the CURRENT seed (i)
+            #     # Optuna tracks "step i" across all trials
+            #     trial.report(composite_score, step=i)
+
+            #     # Check if this trial should be killed
+            #     if trial.should_prune():
+            #         print(f'!!!! Trial {trial.number} pruned at seed {i+1} !!!!')
+            #         raise optuna.exceptions.TrialPruned()
+            #     # --- PRUNING LOGIC END ---
+                
+            
+            
+            # final_objective = self._calc_tuning_objective(
+            #     composite_scores, seed_train_losses, seed_val_losses
+            # )
 
             return final_objective
         
-        if model_tuning_space and y_val is not None:
-            pruner = optuna.pruners.MedianPruner(
-                n_startup_trials=self.n_startup_trials,
-                n_warmup_steps=self.n_warmup_steps
-            )
+        if model_tuning_space:
+            # pruner = optuna.pruners.MedianPruner(
+            #     n_startup_trials=self.n_startup_trials,
+            #     n_warmup_steps=self.n_warmup_steps
+            # )
 
             study = optuna.create_study(
                 direction=self.direction,
-                pruner=pruner,
+                # pruner=pruner,
                 study_name=model_loss_name
             )
             study.optimize(
@@ -744,12 +730,12 @@ class Tuner:
                 n_jobs=self.n_jobs
             )
 
-            # GUARD: Check if we actually found a completed trial
-            completed_trials = [
-                t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
-            ]
-            if not completed_trials:
-                print('WARNING: All trials were pruned. Returning the best pruned trial or default.')
+            # # GUARD: Check if we actually found a completed trial
+            # completed_trials = [
+            #     t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
+            # ]
+            # if not completed_trials:
+            #     print('WARNING: All trials were pruned. Returning the best pruned trial or default.')
             
             return study
         else:
@@ -868,10 +854,6 @@ class GridUtilities(ABC):
     
     # -------------------- Abstract Methods -------------------- #
     @abstractmethod
-    def _train_eval_helper(self):
-        pass
-
-    @abstractmethod
     def _merge_all_results(self):
         pass
 
@@ -883,10 +865,13 @@ class CandidatesGrid(GridUtilities):
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
+            num_steps: int,
+            common_features: list[str],
             torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
             tune_metric: dict[str, MetricModel] | None = None,
+            tune_bench_rets: np.ndarray = None,
             mpi: bool = False,
             temp_dir: str | None = None,
             enable_diagnostics: bool = False
@@ -903,31 +888,49 @@ class CandidatesGrid(GridUtilities):
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
         )
 
+        self.num_steps = num_steps
+
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
         else:
             self.loss_mode = loss_mode
         
         self.tune = tune
+        self.eval_winds = None
         
+        # Rehaper setup
+        self.reshaper = self._reshaper_setup(common_features)
+
+        # Tuner setup
+        self.tuner = self._tuner_setup(tune_metric, tune_bench_rets)
+        
+        self.enable_diagnostics = enable_diagnostics
+
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
+        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
+
+        self.optimized_hparams = {} # Will be filled if tuned
+    
+    def _tuner_setup(self, tune_metric, tune_bench_rets) -> Tuner | None:
         # Tuner configuration
-        if self.tune and tune_metric:
+        if self.tune and tune_metric and tune_bench_rets.any():
             tuner_config = self.hparams_config.get('tuner', {})
             print('Tuner Config:\n', tuner_config)
             
-            n_seeds = tuner_config.get('n_seeds', 5)
             n_trials = tuner_config.get('n_tuning_trials', 30)
             n_warmup_steps = tuner_config.get('n_warmup_steps', 2)
             n_jobs = tuner_config.get('n_jobs', 1)
             print(
-                f'Tuning all models with {n_trials} trials, across {n_seeds} seeds.'
+                f'Tuning all models with {n_trials} trials, across {self.num_steps} steps.'
             )
-            self.tuner = Tuner(
+            tuner = Tuner(
                 tune_metric,
-                n_seeds,
+                tune_bench_rets,
+                self.num_steps,
                 n_trials,
                 n_warmup_steps,
                 n_jobs,
+                self.reshaper,
                 self.torch_device
             )
         
@@ -937,23 +940,30 @@ class CandidatesGrid(GridUtilities):
                 "In the format {'<metric>': 'func': Callable, 'sign': '<sign>'}"
             )
 
+        elif self.tune and not tune_bench_rets:
+            raise ValueError(
+                'Provide tuning benchmark (eg. S&P500 or Equal Weight returns) if tune = True.'
+            )
+
         else:
-            self.tuner = None
+            tuner = None
         
-        self.enable_diagnostics = enable_diagnostics
-
-        self.all_alloc_weights: dict[str, np.ndarray] = {}
-        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
-
-        self.optimized_hparams = {} # Will be filled if tuned
+        return tuner
+    
+    def _reshaper_setup(self, common_features) -> Reshaper:
+        return Reshaper(
+            self.hparams_config['rolling_windows']['in_size'],
+            self.hparams_config['rolling_windows']['out_size'],
+            self.hparams_config['rolling_windows']['stride'],
+            common_features
+        )
     
     def _map_new_params(self, best_config: dict, new_hparams: dict) -> dict:
         
         # Map the best Optuna parameters into our new dictionary
         for k, v in new_hparams.items():
-            if k in best_config['model']: best_config['model'][k] = v
-            elif k in best_config['optimizer']: best_config['optimizer'][k] = v
-            elif k in best_config['loss']: best_config['loss'][k] = v
+            for cat, cat_dict in best_config.items():
+                if k in cat_dict: best_config[cat][k] = v
 
         return best_config
     
@@ -962,17 +972,16 @@ class CandidatesGrid(GridUtilities):
         # 1 is added because the epoch saved starts from 0 in the training loop
         return best_config
 
-    def _train_eval_helper(
+    def _walker_helper(
         self,
         model_name: str,
         model_class: Type,
         loss_name: str,
-        loss_func: Callable, 
-        train_ds: 'WindowDataset',
-        val_ds: 'WindowDataset',
-        X_train_shape: torch.Size,
-        y_train_shape: torch.Size,
-        y_val: np.ndarray | None = None
+        loss_func: Callable,
+        train_data: np.ndarray,
+        rets_train: np.ndarray, 
+        val_data: np.ndarray,
+        rets_val: np.ndarray
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         # Extract base configs
         model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
@@ -994,19 +1003,19 @@ class CandidatesGrid(GridUtilities):
                 model_class,
                 loss_name,
                 loss_func, 
-                train_ds,
-                val_ds,
-                X_train_shape,
-                y_train_shape,
-                y_val,
+                train_data,
+                rets_train, 
+                val_data,
+                rets_val,
                 model_cfg,
                 loss_cfg,
+                self.eval_winds
             )
             best_found_params = study.best_params
-            best_epochs = study.best_trial.user_attrs.get('best_epochs')
+            # best_epochs = study.best_trial.user_attrs.get('best_epochs')
             
             best_config = self._map_new_params(best_config, best_found_params)
-            best_config = self._add_median_epoch(best_config, best_epochs)
+            # best_config = self._add_median_epoch(best_config, best_epochs)
             
             del study
         else:
@@ -1020,35 +1029,28 @@ class CandidatesGrid(GridUtilities):
         else:
             optimized_hparams = None
         
-        # --- 3. Final Training with the Captured Params ---
-        final_trainer = Trainer(
-            model=model_class,
-            loss=loss_func,
-            model_hparams=best_config['model'],
-            optimizer_hparams=best_config['optimizer'],
-            train_hparams=best_config['train'],
-            in_size=X_train_shape[2],
-            num_stocks=y_train_shape[2],
-            max_seq_len=X_train_shape[1],
-            scheduler_hparams=best_config['scheduler'],
-            loss_hparams=best_config['loss'],
-            device=self.torch_device
+        # --- 3. Final Walk Training --- #
+        final_walker = Walker(
+            self.num_steps,
+            model_name,
+            model_class,
+            loss_name,
+            loss_func,
+            best_config,
+            self.torch_device,
+            self.reshaper
         )
+
+        alloc_weights = final_walker.walk_1_model(
+            train_data,
+            rets_train, 
+            val_data,
+            rets_val
+        )
+
+        train_val_losses = final_walker.get_train_eval_losses()
         
-        final_trainer.train(train_ds, val_ds)
-        final_trainer.evaluate(val_ds)
-
-        # Logging and Diagnostics
-        train_val_losses = {
-            'train': final_trainer.train_losses,
-            'val': final_trainer.val_losses,
-            'eval': final_trainer.eval_losses
-        }
-
-        alloc_weights = final_trainer.get_eval_alloc_weights()
-
-        final_trainer.device_cleanup()
-        del final_trainer
+        
 
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')
@@ -1201,7 +1203,7 @@ class CandidatesGrid(GridUtilities):
                 )
                 try: 
                             
-                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
                         model_name,
                         model_class, 
                         loss_name,
@@ -1248,7 +1250,7 @@ class CandidatesGrid(GridUtilities):
             for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
                 print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
-                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
                         model_name,
                         model_class,
                         loss_name,
@@ -1323,16 +1325,23 @@ class CandidatesGrid(GridUtilities):
 
         self._trained_check()
 
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
+        # Extract feature data
+        self.reshaper.extract_features(train_data.columns)
         
+        # Convert all dataframes to arrays
+        train_data = train_data.values
+        rets_train = rets_train.values
+        val_data = val_data.values
+        rets_val = rets_val.values
+
+        # Build eval windows for later use
+        self.eval_winds, _ = build_eval_windows(
+            rets_val, self.num_steps, self.reshaper.out_size)
+
         # Search for model
         model_class = self._search_model(model_name)
         if not model_class: # model not found
             raise RuntimeError(f'{model_name} MODEL NOT FOUND IN LIBRARY!')
-        
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
         losses_to_use = self._build_losses_to_use()
         
@@ -1358,16 +1367,15 @@ class CandidatesGrid(GridUtilities):
                     '-'*10
                 )
                 try:        
-                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
                         model_name,
                         model_class, 
                         loss_name,
                         loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
+                        train_data,
+                        rets_train, 
+                        val_data,
+                        rets_val
                     )
                     self.all_alloc_weights[
                         f'{model_name}{self.model_loss_sep}{loss_name}'
@@ -1406,16 +1414,15 @@ class CandidatesGrid(GridUtilities):
             for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
                 print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
                 try:
-                    alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
                         model_name,
                         model_class,
                         loss_name,
                         loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
+                        train_data,
+                        rets_train, 
+                        val_data,
+                        rets_val
                     )
                     
                     local_alloc_weights[
@@ -1471,15 +1478,26 @@ class CandidatesGrid(GridUtilities):
             self,
             model_name: str, 
             loss_name: str,
-            X_train: np.ndarray, y_train: np.ndarray,
-            X_val: np.ndarray, y_val: np.ndarray
+            train_data: pd.DataFrame,
+            rets_train: pd.DataFrame, 
+            val_data: pd.DataFrame,
+            rets_val: pd.DataFrame,
         ):
 
         self._trained_check()
 
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
+        # Extract feature data
+        self.reshaper.extract_features(train_data.columns)
+        
+        # Convert all dataframes to arrays
+        train_data = train_data.values
+        rets_train = rets_train.values
+        val_data = val_data.values
+        rets_val = rets_val.values
+
+        # Build eval windows for later use
+        self.eval_winds, _ = build_eval_windows(
+            rets_val, self.num_steps, self.reshaper.out_size)
 
         model_class = self._search_model(model_name)
         if model_class is None:
@@ -1488,21 +1506,18 @@ class CandidatesGrid(GridUtilities):
         loss_func = self._search_loss_func(loss_name)
         if loss_func is None:
             raise KeyError(f'Loss Function {loss_name} not found.')
-        
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
 
         try:
             print('\n', '-'*10, f' Training {model_name}-{loss_name} ', '-'*10)
-            alloc_weights, train_val_losses, optimized_hparams = self._train_eval_helper(
+            alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
                 model_name,
                 model_class, 
                 loss_name,
                 loss_func,
-                train_ds,
-                val_ds,
-                X_train_shape,
-                y_train_shape,
-                y_val
+                train_data,
+                rets_train, 
+                val_data,
+                rets_val
             )
             self.all_alloc_weights[
                 f'{model_name}{self.model_loss_sep}{loss_name}'
@@ -1521,7 +1536,21 @@ class CandidatesGrid(GridUtilities):
         return self.all_alloc_weights
 
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
-        return self.train_val_losses
+        reformatted_dict = {}
+        for model_loss, step_losses in self.train_val_losses.items():
+            train_losses = []
+            eval_losses = []
+            for step in step_losses:
+                train_losses.append(step['train'])
+                eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+            
+            reformatted_dict[model_loss] = {
+                'train': train_losses,
+                'eval': eval_losses
+            }
+        
+        return reformatted_dict
+    
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
@@ -1552,6 +1581,9 @@ class Walker:
         # get window sizes from reshaper object
         self.in_size = reshaper.in_size
         self.stride = reshaper.out_size
+
+        self.alloc_weights = []
+        self.train_eval_losses = []
     
     def _reshape_step_data(
             self,
@@ -1560,6 +1592,7 @@ class Walker:
             walk_rets_val: np.ndarray    
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # Reshaping entire training data
+
         X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
 
         # Reshaping only last window
@@ -1592,7 +1625,7 @@ class Walker:
             in_size=X_train_shape[2],
             num_stocks=y_train_shape[2],
             max_seq_len=X_train_shape[1],
-            scheduler_hparams=self.hparams['scheduler'],
+            # scheduler_hparams=self.hparams['scheduler'],
             loss_hparams=self.hparams['loss'],
             device=self.torch_device
         )
@@ -1601,7 +1634,7 @@ class Walker:
         trainer.evaluate(infer_ds)
 
         # Logging and Diagnostics
-        train_infer_losses = {
+        train_eval_losses = {
             'train': trainer.train_losses,
             'eval': trainer.eval_losses
         }
@@ -1611,7 +1644,7 @@ class Walker:
         trainer.device_cleanup()
         del trainer
 
-        return alloc_weights, train_infer_losses
+        return alloc_weights, train_eval_losses
 
     def walk_1_model(
             self,
@@ -1627,7 +1660,7 @@ class Walker:
         
         # Take steps
         steps_alloc_weights = []
-        steps_train_infer_losses = []
+        steps_train_eval_losses = []
         for step in range(self.num_steps):
             print(
                 '\n', '='*10,
@@ -1644,7 +1677,7 @@ class Walker:
             # Save walk_val and returns val at every step
             walk_val = val[current_start : current_end] # To be added to train data later
             walk_rets_val = rets_val[current_start : current_end]
-
+            
             X_train, y_train, infer_in, infer_out = self._reshape_step_data(
                 walk_train, walk_rets_train, walk_rets_val
             )
@@ -1653,7 +1686,7 @@ class Walker:
             infer_ds = WindowDataset(infer_in, infer_out)
             X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
             
-            alloc_weights, train_infer_losses = self._train_eval_helper(
+            alloc_weights, train_eval_losses = self._train_eval_helper(
                 train_ds,
                 infer_ds,
                 X_train_shape,
@@ -1661,9 +1694,16 @@ class Walker:
             )
 
             steps_alloc_weights.append(alloc_weights)
-            steps_train_infer_losses.append(train_infer_losses)
+            steps_train_eval_losses.append(train_eval_losses)
 
-        return np.vstack(steps_alloc_weights), steps_train_infer_losses
+        self.alloc_weights = np.vstack(steps_alloc_weights)
+        self.train_eval_losses = steps_train_eval_losses
+
+        return self.alloc_weights
+    
+    def get_train_eval_losses(self) -> dict:
+        return self.train_eval_losses
+
 
 class WalkForwardValidator(GridUtilities):
     def __init__(

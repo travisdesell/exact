@@ -1,7 +1,7 @@
 {   
     "tuner": {
         "n_seeds": 5,
-        "n_tuning_trials": 100,
+        "n_tuning_trials": 1,
         "n_warmup_steps": 2,
         "n_jobs": 1
     },
@@ -78,7 +78,8 @@
                 "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
-                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true}
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [1]}
             }
         },
         "TFT": {

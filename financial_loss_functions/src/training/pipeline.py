@@ -6,6 +6,12 @@ import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
 from src.utils.formatting import serialize_np_dict
+from src.utils.window import (
+    build_eval_windows,
+    extract_oos_dates,
+    get_date_index_col,
+    extract_sp500_winds
+)
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, ArtifactDataExtractor
 from src.visualization.plots import (
@@ -21,10 +27,7 @@ from src.evaluation.evaluator import (
 from src.data_processing.dataset import (
     Reshaper,
     WFAdjustment,
-    calc_in_out_idx,
-    extract_oos_dates,
-    get_date_index_col,
-    extract_sp500_winds
+    calc_in_out_idx
 )
 
 # Model and Loss Libraries
@@ -182,25 +185,29 @@ def run_tuning_pipeline(
     train_data, rets_train, val_data, rets_val = _load_processed_data(
         paths_config
     )
-    
-    # -------------------- Preprocessing (Reshaping) -------------------- #
-    # reshaper = Reshaper(
-    #     hparams_config['rolling_windows']['in_size'],
-    #     hparams_config['rolling_windows']['out_size'],
-    #     hparams_config['rolling_windows']['stride'],
-    #     features_config['common_features']
-    # )
-    # reshaper.extract_features(train_data.columns)
-    
-    # X_train, y_train, _ = reshaper.reshape(train_data, returns_train)
-    # # print('-'*10, ' train shapes ', '-'*10)
-    # # print('X_train shpe:', X_train.shape)
-    # # print('y_train shape:', y_train.shape)
+    # Loading S&P 500 for benchmarking
+    sp500_rets = _load_sp500_rets(paths_config)
 
-    # X_val, y_val, _ = reshaper.reshape(val_data, returns_val)
-    # # print('-'*10, ' val shapes ', '-'*10)
-    # # print('X_val shape', X_val.shape)
-    # # print('y_val shape:', y_val.shape)
+    
+    # -------------------- Prepare Validation Sets -------------------- #
+    out_size = hparams_config['rolling_windows']['out_size']
+    data_adjuster = WFAdjustment(out_size)
+    num_steps, extra_days = data_adjuster.calc_walk_steps(rets_val)
+
+    # # y_val for out of sample evaluation
+    y_val, out_wind_idxs = build_eval_windows(rets_val, num_steps, out_size)
+
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
+        out_wind_idxs
+    )
+    
+    if extra_days != 0:
+        raise RuntimeError(
+            'Validation data incorrectly adjusted. Number of days must be divisible by out_size.'
+        )
 
     # -------------------- Training Neural Network Models -------------------- #
     # Building hyperparameter tuning metric
@@ -214,8 +221,11 @@ def run_tuning_pipeline(
             # 'omega': MetricModel(func=MetricLibrary.get('omega'), sign='+'),
             # 'calmar': MetricModel(func=MetricLibrary.get('calmar'), sign='+')
         }
+
+        tune_bench_rets = sp500_rets_winds
     else:
         tune_metric = None
+        tune_bench_rets = None
     
 
     if mpi:
@@ -232,10 +242,13 @@ def run_tuning_pipeline(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
             hparams_config = hparams_config,
+            num_steps = num_steps,
+            common_features=features_config['common_features'],
             torch_device = torch_device,
             loss_mode = loss_mode,
             tune = tune,
             tune_metric = tune_metric,
+            tune_bench_rets = tune_bench_rets,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir']
         )
@@ -277,10 +290,13 @@ def run_tuning_pipeline(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
             hparams_config = hparams_config,
+            num_steps = num_steps,
+            common_features=features_config['common_features'],
             torch_device = torch_device,
             loss_mode = loss_mode,
             tune = tune,
             tune_metric = tune_metric,
+            tune_bench_rets = tune_bench_rets,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir']
         )
@@ -330,8 +346,6 @@ def run_tuning_pipeline(
         )
 
     # -------------------- Evaluator Setup -------------------- #
-    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
-    y_val, out_wind_idxs = data_adjuster.get_eval_windows(rets_val)
     
     # Initializing once to compare all models together
     evaluator = Evaluator(y_val, MetricLibrary.items())
@@ -352,15 +366,6 @@ def run_tuning_pipeline(
         hparams_config['rolling_windows']['stride']
     ) 
 
-    # Loading S&P 500 for benchmarking
-    sp500_rets = _load_sp500_rets(paths_config)
-
-    # Extract s&p500 returns column sliced for the respective output windows
-    sp500_rets_winds = extract_sp500_winds(
-        sp500_rets,
-        features_config['sp500_returns'],
-        out_wind_idxs
-    )
     
     # Calculate Equal Weight Portfolio's weeights
     eq_wt_calc = EqualWeightCalculator(y_val)

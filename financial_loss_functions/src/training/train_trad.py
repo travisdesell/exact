@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 import pandas as pd
 from typing import Type, Any
-from src.data_processing.dataset import calc_current_idxs
+from src.utils.window import calc_current_idxs
 from src.data_processing.preprocess_crsp import preprocessor2
 
 class TradModelsTrainer:

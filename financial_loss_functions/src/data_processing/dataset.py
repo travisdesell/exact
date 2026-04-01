@@ -170,7 +170,7 @@ class Reshaper:
             ]#[self.tickers]
 
             # skip invalid windows
-            if y_df.isna().any().any():
+            if np.isnan(y_df).any():
                 raise ValueError('Window has missing data. Fix before training.')
         
             X_list.append(self.transform_one_window(X_df))
@@ -267,44 +267,6 @@ def calc_in_out_idx(
 
     return in_sample_indexes, out_sample_indexes
 
-def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
-    """
-    Get the datetime index columns from the provided dataframe using the 
-    start and stop indexes.
-    """
-    date_idx_cols = []
-    for idxs in wind_strt_stops:
-        date_idx_cols.append(split.index[idxs[0] : idxs[1]])
-    
-    return date_idx_cols
-
-def extract_oos_dates(
-        split: pd.DataFrame, in_wind_idxs: list[tuple], out_wind_idxs: list[tuple]
-    ) -> tuple[list[tuple], list[tuple]]:
-    in_win_date_cols = get_date_index_col(split, in_wind_idxs)
-    out_win_date_cols = get_date_index_col(split, out_wind_idxs)
-
-    return in_win_date_cols, out_win_date_cols
-
-def extract_sp500_winds(
-        benchmark_split: pd.DataFrame, col_name: str, out_win_idxs: list[tuple]
-    ) -> np.ndarray:
-    sp500_col = benchmark_split[col_name]
-
-    sp500_windows = []
-    for idxs in out_win_idxs:
-        sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
-    
-    return np.vstack(sp500_windows)
-
-def calc_current_idxs(step: int, stride: int):
-    if step == 0:
-        raise ValueError('Got step 0. Must be > 0')
-    
-    current_end = step * stride
-    current_start = current_end - stride
-
-    return current_start, current_end
 
 class WFAdjustment:
     def __init__(self, out_size: int):
@@ -348,23 +310,6 @@ class WFAdjustment:
         )
 
         return self.init_train, self.init_split
-    
-    def get_eval_windows(self, split: pd.DataFrame) -> tuple[np.ndarray, list[tuple[int, int]]]:
-        if self.num_steps == 0:
-            self.calc_walk_steps(split)
-        
-        eval_windows = []
-        out_wind_idxs = []
-        for step in range(1, self.num_steps+1):
-            current_start, current_end = calc_current_idxs(step, self.out_size)
-
-            walk_rets_eval = split.iloc[current_start : current_end]
-
-            eval_windows.append(walk_rets_eval.values)
-
-            out_wind_idxs.append((current_start, current_end))
-        
-        return np.stack(eval_windows), out_wind_idxs
     
     def get_num_steps(self) -> int:
         return self.num_steps
