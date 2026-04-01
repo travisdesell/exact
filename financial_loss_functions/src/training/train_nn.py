@@ -501,20 +501,21 @@ class Tuner:
         
         return seed_metrics
     
-    def _calc_excess_returns(self, model_rets: np.ndarray) -> np.ndarray:
-        return model_rets - self.tune_bench_rets
-
     def _calc_composite_scores(
             self, model_loss_name,
             alloc_weights: np.ndarray , y_val: np.ndarray
         ) -> np.ndarray:
         
         evaluator = Evaluator(y_val, None)
+        # Calculate daily returns for this particular portfolio
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
         model_rets = evaluator.get_rets_for_one(model_loss_name)
-        excess_rets = self._calc_excess_returns(model_rets)
+
+        # Calculate excess returns compared to the benchmark
+        excess_rets = model_rets - self.tune_bench_rets
         evaluator.update_rets_for_one(model_loss_name, excess_rets)
 
+        # Calculate compossite score for each window (Information Ratio style)
         composite_scores = np.zeros(self.n_steps)
         for _, met_dict in self.tune_metric.items():
             metric_values = evaluator.calc_metric_performance(met_dict.func, mean=False)
@@ -529,6 +530,8 @@ class Tuner:
                     'Provide only linear operators like + or -. \
                         System designed to take only linear formulas as of now'
                     )
+        
+        del evaluator
         
         return composite_scores
 

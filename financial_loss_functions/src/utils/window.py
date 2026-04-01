@@ -53,3 +53,34 @@ def extract_sp500_winds(
         sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
     
     return np.stack(sp500_windows)
+
+def calc_in_out_idx(
+        split_data: pd.DataFrame, in_size: int, out_size: int, stride: int
+    ) -> tuple[list[tuple], list[tuple]]:
+
+    #### Implment start index shifting of training data here, if needed ####
+    #### Current design intended to use entire train data.
+
+    # Check for missing data
+    if split_data.isna().any().any():
+        raise ValueError('Split has missing data. Fix before training.')
+    
+    starts = list(
+        range(0, len(split_data) - (in_size + out_size) + 1, stride)
+    )
+
+    in_sample_indexes = []
+    out_sample_indexes = []
+    for strt in starts:
+        in_end = strt + in_size
+        in_sample_indexes.append((strt, in_end))
+        
+        # FIX: out_start must be exactly in_end
+        out_start = in_end 
+        out_end = out_start + out_size
+        out_sample_indexes.append((out_start, out_end))
+
+    if len(in_sample_indexes) != len(out_sample_indexes):
+        raise RuntimeError('Window count mismatch.')
+
+    return in_sample_indexes, out_sample_indexes

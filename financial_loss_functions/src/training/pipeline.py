@@ -10,13 +10,13 @@ from src.utils.window import (
     build_eval_windows,
     extract_oos_dates,
     get_date_index_col,
-    extract_sp500_winds
+    extract_sp500_winds,
+    calc_in_out_idx
+
 )
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, ArtifactDataExtractor
-from src.visualization.plots import (
-    train_val_losses_plot, wfv_losses_plot, plot_windowed_comparison
-)
+from src.visualization.plots import (wfv_losses_plot)
 from src.utils.io import (
     create_directory, save_to_csv, save_to_json, raise_file_not_found
 )
@@ -24,12 +24,7 @@ from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValida
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
 )
-from src.data_processing.dataset import (
-    Reshaper,
-    WFAdjustment,
-    calc_in_out_idx
-)
-
+from src.data_processing.dataset import WFAdjustment
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
@@ -252,12 +247,6 @@ def run_tuning_pipeline(
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir']
         )
-
-        # if grid_mode == 'all':
-        #     nn_alloc_weights = candidates_grid.train_eval_grid(
-        #         X_train, y_train, X_val, y_val, comm, global_rank, size
-        #     )
-        #     results_suffix = grid_mode
         
         if grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
@@ -301,13 +290,6 @@ def run_tuning_pipeline(
             temp_dir = artifacts_paths['temp_dir']
         )
 
-        # if grid_mode == 'all':
-        #     nn_alloc_weights = candidates_grid.train_eval_grid(
-        #         X_train, y_train, X_val, y_val, None, None, None
-        #     )
-            
-        #     results_suffix = grid_mode
-        
         if grid_mode == 'one_model' and model_name is not None:
             nn_alloc_weights = candidates_grid.train_eval_one_model(
                 model_name, train_data, rets_train, val_data, rets_val, None, None, None
@@ -336,13 +318,12 @@ def run_tuning_pipeline(
     # Plot training and validation loss curves
     nn_train_loss_curves = candidates_grid.get_train_val_losses()
     for model_loss, model_loss_curves in nn_train_loss_curves.items():
-        loss_plot_name = model_loss + ' Loss Curves'
-        train_val_losses_plot(
+        wfv_plot_name = model_loss + ' WFV Losses'
+        wfv_losses_plot(
             model_loss_curves['train'],
-            model_loss_curves['val'],
             model_loss_curves['eval'],
-            loss_plot_name,
-            artifacts_paths['tuned_plots_dir'] / (loss_plot_name + '.png')
+            wfv_plot_name,
+            artifacts_paths['tuned_plots_dir'] / (wfv_plot_name + '.png')
         )
 
     # -------------------- Evaluator Setup -------------------- #
@@ -354,20 +335,11 @@ def run_tuning_pipeline(
     # Calling on every models output allocation weights to calculate pf returns
     for model_loss, alloc_weights in nn_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
-    
+
     del candidates_grid
 
-    # -------------------- Evaluation on Out-of-Sample data -------------------- #
-    # Calculate indexes for input and output windows on split data
-    in_wind_idxs, out_wind_idxs = calc_in_out_idx(
-        rets_val,
-        hparams_config['rolling_windows']['in_size'],
-        hparams_config['rolling_windows']['out_size'],
-        hparams_config['rolling_windows']['stride']
-    ) 
-
-    
-    # Calculate Equal Weight Portfolio's weeights
+    # -------------------- Evaluation on Out-of-Sample data -------------------- #    
+    # Calculate Equal Weight Portfolio's weights
     eq_wt_calc = EqualWeightCalculator(y_val)
     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
@@ -380,16 +352,11 @@ def run_tuning_pipeline(
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
-    # Extract dates index columns for the rrespective output windows
-    in_win_date_cols, out_win_date_cols = extract_oos_dates(
-        val_data,
-        in_wind_idxs,
-        out_wind_idxs
-    )
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(rets_val, out_wind_idxs)
 
     _print_evaludation_info(
-        out_win_date_cols,
-        in_win_date_cols,
+        out_win_date_cols=out_win_date_cols,
         avgerage_performance_metrics=avg_perf_metrics,
     )
 
@@ -397,226 +364,226 @@ def run_tuning_pipeline(
     print(f'Time taken for pipeline = {time_taken} mins')
 
 
-def run_wfv_pipeline(
-    paths_config: dict,
-    hparams_config: dict,
-    features_config: dict,
-    grid_mode: str,
-    model_name: str | None,
-    loss_name: str | None,
-    mpi: bool = False
-): 
+# def run_wfv_pipeline(
+#     paths_config: dict,
+#     hparams_config: dict,
+#     features_config: dict,
+#     grid_mode: str,
+#     model_name: str | None,
+#     loss_name: str | None,
+#     mpi: bool = False
+# ): 
     
-    """
-    Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
+#     """
+#     Run Dynamic Walk-Foward Validation for selected models that beat the benchmark.
     
-    Args:
-        paths_config (dict): Dictionary containing paths
-        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
-    """
-    print('\n', '=' * 40, ' Walk-Forward Validation Grid Pipeline ', '=' * 40)
-    start_time = time.time()
+#     Args:
+#         paths_config (dict): Dictionary containing paths
+#         hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
+#     """
+#     print('\n', '=' * 40, ' Walk-Forward Validation Grid Pipeline ', '=' * 40)
+#     start_time = time.time()
 
-    artifacts_paths = _common_setup(paths_config)
+#     artifacts_paths = _common_setup(paths_config)
     
-    # -------------------- Loading Processed Data -------------------- #
-    train_data, returns_train, val_data, returns_val = _load_processed_data(
-        paths_config
-    )
+#     # -------------------- Loading Processed Data -------------------- #
+#     train_data, returns_train, val_data, returns_val = _load_processed_data(
+#         paths_config
+#     )
 
-    # -------------------- Loading Relevant Training Artifacts -------------------- #
-    artifacts_extrator = ArtifactDataExtractor(
-        grid_mode,
-        artifacts_paths
-    )
+#     # -------------------- Loading Relevant Training Artifacts -------------------- #
+#     artifacts_extrator = ArtifactDataExtractor(
+#         grid_mode,
+#         artifacts_paths
+#     )
 
-    if grid_mode in ['all', 'one_model']:
-        # Get all models from library
-        all_models = []
-        for cat in NNModelLibrary.list_categories():
-            all_models.extend(NNModelLibrary.list_models(cat))
+#     if grid_mode in ['all', 'one_model']:
+#         # Get all models from library
+#         all_models = []
+#         for cat in NNModelLibrary.list_categories():
+#             all_models.extend(NNModelLibrary.list_models(cat))
     
-        all_avg_perf = artifacts_extrator.agg_avg_perf('avg_perf', all_models)
-        opti_hparams = artifacts_extrator.agg_opti_hparams('optimized', all_models)
+#         all_avg_perf = artifacts_extrator.agg_avg_perf('avg_perf', all_models)
+#         opti_hparams = artifacts_extrator.agg_opti_hparams('optimized', all_models)
 
-        all_benches = TradModelLibrary.list_models()
-        all_benches.extend([EQ_WT_NAME, SP500_NAME])
+#         all_benches = TradModelLibrary.list_models()
+#         all_benches.extend([EQ_WT_NAME, SP500_NAME])
 
-        # Filter models that beat Equal Weight Portfolio
-        filtered_perf, filtered_models = filter_models(
-            all_avg_perf, EQ_WT_NAME, 'sharpe', all_benches
-        )
+#         # Filter models that beat Equal Weight Portfolio
+#         filtered_perf, filtered_models = filter_models(
+#             all_avg_perf, EQ_WT_NAME, 'sharpe', all_benches
+#         )
 
-        print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
-        print('Filtered Avg. Performance Metrics: \n', filtered_perf)
+#         print(f'\nModels that beat Equal Weight portfolio: {filtered_models}')
+#         print('Filtered Avg. Performance Metrics: \n', filtered_perf)
     
-    elif grid_mode == 'one' and model_name is not None and loss_name is not None:
-        opti_hparams = artifacts_extrator.agg_opti_hparams(
-            'optimized', [f'{model_name}-{loss_name}']
-        )
-        filtered_models = None
+#     elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+#         opti_hparams = artifacts_extrator.agg_opti_hparams(
+#             'optimized', [f'{model_name}-{loss_name}']
+#         )
+#         filtered_models = None
     
 
-    # -------------------- Walk-Forward Training & Validation -------------------- #
-    if mpi:
-        comm, global_rank, size, gpu_id, cpus_per_rank = mpi_setup()
-        torch_device = get_best_device(gpu_id)
+#     # -------------------- Walk-Forward Training & Validation -------------------- #
+#     if mpi:
+#         comm, global_rank, size, gpu_id, cpus_per_rank = mpi_setup()
+#         torch_device = get_best_device(gpu_id)
 
-        if global_rank == 0:
-            _create_dirs(artifacts_paths)
+#         if global_rank == 0:
+#             _create_dirs(artifacts_paths)
 
-        grid_validator = WalkForwardValidator(
-            model_lib = NNModelLibrary.items(),
-            loss_lib = LossLibrary.items(),
-            hparams_config = hparams_config,
-            common_features = features_config['common_features'],
-            torch_device = torch_device,
-            num_steps = num_steps,
-            filtered_models = filtered_models,
-            mpi = mpi,
-            temp_dir = artifacts_paths['temp_dir'],
-            optimized_hparams = opti_hparams
-        )
+#         grid_validator = WalkForwardValidator(
+#             model_lib = NNModelLibrary.items(),
+#             loss_lib = LossLibrary.items(),
+#             hparams_config = hparams_config,
+#             common_features = features_config['common_features'],
+#             torch_device = torch_device,
+#             num_steps = num_steps,
+#             filtered_models = filtered_models,
+#             mpi = mpi,
+#             temp_dir = artifacts_paths['temp_dir'],
+#             optimized_hparams = opti_hparams
+#         )
 
-        if grid_mode in ['all', 'one_model']:
-            nn_alloc_weights = grid_validator.validate_grid(
-                init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
-            )
-            results_suffix = 'All'
-        else:
-            raise RuntimeError(
-                'Incorrect mode arguments while running at entry point.',
-                'If mpi, grid mode must be `all` or `one_model`.'
-            )
+#         if grid_mode in ['all', 'one_model']:
+#             nn_alloc_weights = grid_validator.validate_grid(
+#                 init_train, init_rets_train, init_val, init_rets_val, comm, global_rank, size
+#             )
+#             results_suffix = 'All'
+#         else:
+#             raise RuntimeError(
+#                 'Incorrect mode arguments while running at entry point.',
+#                 'If mpi, grid mode must be `all` or `one_model`.'
+#             )
         
-        # Stop all non zero ranks
-        if global_rank != 0:
-            print(f'Rank {global_rank}: Work complete. Shutting down.')
-            sys.exit(0) # This stops the process for this rank only
+#         # Stop all non zero ranks
+#         if global_rank != 0:
+#             print(f'Rank {global_rank}: Work complete. Shutting down.')
+#             sys.exit(0) # This stops the process for this rank only
         
-        if nn_alloc_weights is None:
-            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+#         if nn_alloc_weights is None:
+#             print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
     
-    else:
-        _create_dirs(artifacts_paths)
+#     else:
+#         _create_dirs(artifacts_paths)
 
-        # Using default MPS or CUDA
-        torch_device = get_best_device()
+#         # Using default MPS or CUDA
+#         torch_device = get_best_device()
 
-        grid_validator = WalkForwardValidator(
-            model_lib = NNModelLibrary.items(),
-            loss_lib = LossLibrary.items(),
-            hparams_config = hparams_config,
-            common_features = features_config['common_features'],
-            torch_device = torch_device,
-            num_steps = num_steps,
-            filtered_models = filtered_models,
-            mpi = mpi,
-            temp_dir = artifacts_paths['temp_dir'],
-            optimized_hparams = opti_hparams
-        )
+#         grid_validator = WalkForwardValidator(
+#             model_lib = NNModelLibrary.items(),
+#             loss_lib = LossLibrary.items(),
+#             hparams_config = hparams_config,
+#             common_features = features_config['common_features'],
+#             torch_device = torch_device,
+#             num_steps = num_steps,
+#             filtered_models = filtered_models,
+#             mpi = mpi,
+#             temp_dir = artifacts_paths['temp_dir'],
+#             optimized_hparams = opti_hparams
+#         )
 
-        if grid_mode in ['all', 'one_model']:
-            nn_alloc_weights = grid_validator.validate_grid(
-                init_train, init_rets_train, init_val, init_rets_val, None, None, None
-            )
+#         if grid_mode in ['all', 'one_model']:
+#             nn_alloc_weights = grid_validator.validate_grid(
+#                 init_train, init_rets_train, init_val, init_rets_val, None, None, None
+#             )
             
-            results_suffix = 'All'
+#             results_suffix = 'All'
 
-        elif grid_mode == 'one' and model_name is not None and loss_name is not None:
-            nn_alloc_weights = grid_validator.validate_one(
-                model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
-            )
+#         elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+#             nn_alloc_weights = grid_validator.validate_one(
+#                 model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
+#             )
 
-            results_suffix = f'{model_name}-{loss_name}'
+#             results_suffix = f'{model_name}-{loss_name}'
         
     
-    nn_train_infer_losses = grid_validator.get_train_infer_losses()
-    for model_loss, model_loss_curves in nn_train_infer_losses.items():
-        wfv_plot_name = model_loss + ' WFV Losses'
-        wfv_losses_plot(
-            model_loss_curves['train'],
-            model_loss_curves['eval'],
-            wfv_plot_name,
-            artifacts_paths['wfv_plots_dir'] / (wfv_plot_name + '.png')
-        )
+#     nn_train_infer_losses = grid_validator.get_train_infer_losses()
+#     for model_loss, model_loss_curves in nn_train_infer_losses.items():
+#         wfv_plot_name = model_loss + ' WFV Losses'
+#         wfv_losses_plot(
+#             model_loss_curves['train'],
+#             model_loss_curves['eval'],
+#             wfv_plot_name,
+#             artifacts_paths['wfv_plots_dir'] / (wfv_plot_name + '.png')
+#         )
     
-    print('WFV completed!')
+#     print('WFV completed!')
     
-    # -------------------- Evaluator Setup -------------------- #
-    # Initializing Evaluator
-    evaluator = Evaluator(eval_windows, MetricLibrary.items())  
+#     # -------------------- Evaluator Setup -------------------- #
+#     # Initializing Evaluator
+#     evaluator = Evaluator(eval_windows, MetricLibrary.items())  
     
-    # -------------------- Training Tradional Models -------------------- #        
-    print(f'Training All Tradional Models workers.')
-    trad_grid = TradModelsTrainer(
-        TradModelLibrary.items(),
-        hparams_config,
-        num_steps
-    )
-    trad_alloc_weights = trad_grid.train_all(
-        init_rets_train=init_rets_train,
-        init_rets_split=init_rets_val
-    )
+#     # -------------------- Training Tradional Models -------------------- #        
+#     print(f'Training All Tradional Models workers.')
+#     trad_grid = TradModelsTrainer(
+#         TradModelLibrary.items(),
+#         hparams_config,
+#         num_steps
+#     )
+#     trad_alloc_weights = trad_grid.train_all(
+#         init_rets_train=init_rets_train,
+#         init_rets_split=init_rets_val
+#     )
 
-    for trad_model_name, alloc_weights in trad_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+#     for trad_model_name, alloc_weights in trad_alloc_weights.items():
+#         evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
     
-    del trad_grid
+#     del trad_grid
 
-    # -------------------- Out-of-Sample Evaluation -------------------- #
+#     # -------------------- Out-of-Sample Evaluation -------------------- #
 
-    for model_loss, alloc_weights in nn_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
+#     for model_loss, alloc_weights in nn_alloc_weights.items():
+#         evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
 
-    # Loading S&P 500 for benchmarking
-    sp500_rets = _load_sp500_rets(paths_config)
+#     # Loading S&P 500 for benchmarking
+#     sp500_rets = _load_sp500_rets(paths_config)
 
-    # Extract s&p500 returns column sliced for the respective output windows
-    sp500_rets_winds = extract_sp500_winds(
-        sp500_rets,
-        features_config['sp500_returns'],
-        out_wind_idxs
-    )  
+#     # Extract s&p500 returns column sliced for the respective output windows
+#     sp500_rets_winds = extract_sp500_winds(
+#         sp500_rets,
+#         features_config['sp500_returns'],
+#         out_wind_idxs
+#     )  
     
-    # Calculate Equal Weight Portfolio's weeights
-    eq_wt_calc = EqualWeightCalculator(eval_windows)
-    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+#     # Calculate Equal Weight Portfolio's weeights
+#     eq_wt_calc = EqualWeightCalculator(eval_windows)
+#     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
-    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
-    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
-    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
+#     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
+#     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+#     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
 
         
-    avg_perf_metrics = evaluator.calc_avg_performance()
-    perf_file_name = artifacts_paths['wfv_perf_dir'] \
-        / f'wfv_avg_perf_{results_suffix}.csv'
-    save_to_csv(avg_perf_metrics, perf_file_name)
+#     avg_perf_metrics = evaluator.calc_avg_performance()
+#     perf_file_name = artifacts_paths['wfv_perf_dir'] \
+#         / f'wfv_avg_perf_{results_suffix}.csv'
+#     save_to_csv(avg_perf_metrics, perf_file_name)
 
-    # Extract dates index columns for the respective output windows
-    out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
+#     # Extract dates index columns for the respective output windows
+#     out_win_date_cols = get_date_index_col(returns_val, out_wind_idxs)
 
 
-    all_daily_returns = evaluator.get_all_daily_returns()
-    all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
-        / f'wfv_all_rets_{results_suffix}.json'
-    save_to_json(
-        serialize_np_dict(all_daily_returns),
-        all_rets_file_name
-    )
+#     all_daily_returns = evaluator.get_all_daily_returns()
+#     all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
+#         / f'wfv_all_rets_{results_suffix}.json'
+#     save_to_json(
+#         serialize_np_dict(all_daily_returns),
+#         all_rets_file_name
+#     )
     
-    plot_windowed_comparison(
-        all_daily_returns,
-        out_win_date_cols,
-        2,
-        artifacts_paths['wfv_plots_dir'] / \
-            (f'WFV Performances_{results_suffix}' + '.png')
-    )
+#     plot_windowed_comparison(
+#         all_daily_returns,
+#         out_win_date_cols,
+#         2,
+#         artifacts_paths['wfv_plots_dir'] / \
+#             (f'WFV Performances_{results_suffix}' + '.png')
+#     )
     
-    _print_evaludation_info(
-        out_win_date_cols=out_win_date_cols,
-        avgerage_performance_metrics=avg_perf_metrics
-    )
+#     _print_evaludation_info(
+#         out_win_date_cols=out_win_date_cols,
+#         avgerage_performance_metrics=avg_perf_metrics
+#     )
     
-    time_taken = round((time.time() - start_time) / 60, 3)
-    print(f'Time taken for pipeline = {time_taken} mins')
+#     time_taken = round((time.time() - start_time) / 60, 3)
+#     print(f'Time taken for pipeline = {time_taken} mins')

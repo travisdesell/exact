@@ -16,8 +16,10 @@ class Evaluator:
         """
         # Returns by window
         self.eval_returns = eval_returns
-        if self.eval_returns is None:
-            raise ValueError('Evaluation returns is None.')
+        if self.eval_returns.ndim != 3:
+            raise ValueError(
+                f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
+            )
         
         self.metrics_lib = metrics_lib
         
@@ -36,17 +38,23 @@ class Evaluator:
         """
         
         pf_daily_returns = []
-        
-        # Iterating over window samples
-        for i in range(eval_weights.shape[0]):
-            weights = eval_weights[i]  # Shape: (50,)
-            returns = self.eval_returns[i]  # Shape: (50, 50) - time steps x assets
-            
-            # Calculate daily portfolio returns (dot product at each time step)
-            daily_returns = np.dot(returns, weights)
-            pf_daily_returns.append(daily_returns) # Shape: (50,)
-            
-        self.all_daily_returns[model_name] = np.array(pf_daily_returns)
+
+        if eval_weights.ndim == 2:
+            # Iterating over window samples
+            for i in range(eval_weights.shape[0]):
+                weights = eval_weights[i]  # Shape: (50,)
+                returns = self.eval_returns[i]  # Shape: (50, 50) - time steps x assets
+                
+                # Calculate daily portfolio returns (dot product at each time step)
+                daily_returns = np.dot(returns, weights)
+                pf_daily_returns.append(daily_returns) # Shape: (50,)
+                
+            self.all_daily_returns[model_name] = np.array(pf_daily_returns)
+        else:
+            print(
+                f'DEBUG: Evaluation weights array must have only 2 dims, got {eval_weights.ndim}.'
+                f'Skipping {model_name}!'
+            )
     
     def get_rets_for_one(self, model_name: str) -> np.ndarray:
         return self.all_daily_returns.get(model_name)
