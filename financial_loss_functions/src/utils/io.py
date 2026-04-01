@@ -13,7 +13,7 @@ def create_directory(path: str | Path) -> None:
         path (str | Path) Path to directory
     """
     if not os.path.exists(path): 
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
         print(f'{path} Directory Created!')
 
 def delete_file(file_path: str | Path) -> None:

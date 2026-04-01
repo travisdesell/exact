@@ -34,12 +34,12 @@ EQ_WT_NAME = 'Equal_Weight'
 SP500_NAME = 'S&P500'
 
 
-def _create_dirs(artifacts_paths: dict[str, Path|str]):
-    """
-    Create directories if they dont exist in artifacts directory.
-    """
-    for dir_path in artifacts_paths.values():
-        create_directory(dir_path)
+# def _create_dirs(artifacts_paths: dict[str, Path|str]):
+#     """
+#     Create directories if they dont exist in artifacts directory.
+#     """
+#     for dir_path in artifacts_paths.values():
+#         create_directory(dir_path)
 
 def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
     models_module = paths_config['models_module']
@@ -52,6 +52,7 @@ def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
     artifacts_paths = {}
     for name, path in paths_config['artifacts'].items():
         dir_path = Path(path)
+        create_directory(dir_path)
         artifacts_paths[name] = dir_path
     
     return artifacts_paths
@@ -230,8 +231,6 @@ def run_tuning_pipeline(
 
         # Create artifact directories if the don't exist
         # Only rank 0 can create if directories don't exist
-        if global_rank == 0:
-            _create_dirs(artifacts_paths)
 
         candidates_grid = CandidatesGrid(
             model_lib = NNModelLibrary.items(),
@@ -270,7 +269,6 @@ def run_tuning_pipeline(
         
 
     else:
-        _create_dirs(artifacts_paths)
         
         # Default cuda or mps device
         torch_device = get_best_device()
