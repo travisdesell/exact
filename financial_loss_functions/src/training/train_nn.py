@@ -14,8 +14,8 @@ from torch import Tensor
 from abc import ABC, abstractmethod
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
+from src.utils.window import calc_current_idxs
 from src.data_processing.dataset import WindowDataset, Reshaper
-from src.utils.window import calc_current_idxs, build_eval_windows
 from src.utils.formatting import reformat_hparams, split_combo_names
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
@@ -459,6 +459,7 @@ class Tuner:
             self,
             tune_metric: dict[str, MetricModel],
             tune_bench_rets: np.ndarray,
+            eval_winds: np.ndarray,
             n_steps: int,
             n_trials: int,
             n_warmup_steps: int, 
@@ -474,6 +475,7 @@ class Tuner:
             self.tune_metric = tune_metric
         
         self.tune_bench_rets = tune_bench_rets # benchmark returns for information ratio style metrics
+        self.eval_winds = eval_winds
         self.n_steps = n_steps
         self.n_trials = n_trials
         self.n_warmup_steps = n_warmup_steps
@@ -617,8 +619,7 @@ class Tuner:
             val_data: np.ndarray,
             rets_val: np.ndarray,
             model_cfg: dict,
-            loss_cfg: dict,
-            eval_winds: np.ndarray
+            loss_cfg: dict
         ):
         
         model_loss_name = f'{model_name}-{loss_name}'
@@ -686,7 +687,7 @@ class Tuner:
             composite_scores = self._calc_composite_scores(
                 model_loss_name,
                 alloc_weights,
-                eval_winds
+                self.eval_winds
             )
 
             final_objective = self._calc_tuning_objective_no_gap(
@@ -874,8 +875,7 @@ class CandidatesGrid(GridUtilities):
             torch_device: torch.device | str,
             loss_mode: str = 'custom',
             tune: bool = False,
-            tune_metric: dict[str, MetricModel] | None = None,
-            tune_bench_rets: np.ndarray = None,
+            tuner_eval_items: dict[str, dict[str, MetricModel] | np.ndarray] = None,
             mpi: bool = False,
             temp_dir: str | None = None,
             enable_diagnostics: bool = False
@@ -900,13 +900,12 @@ class CandidatesGrid(GridUtilities):
             self.loss_mode = loss_mode
         
         self.tune = tune
-        self.eval_winds = None
         
         # Rehaper setup
         self.reshaper = self._reshaper_setup(common_features)
 
         # Tuner setup
-        self.tuner = self._tuner_setup(tune_metric, tune_bench_rets)
+        self.tuner = self._tuner_setup(tuner_eval_items)
         
         self.enable_diagnostics = enable_diagnostics
 
@@ -915,40 +914,53 @@ class CandidatesGrid(GridUtilities):
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def _tuner_setup(self, tune_metric, tune_bench_rets) -> Tuner | None:
-        # Tuner configuration
-        if self.tune and tune_metric and tune_bench_rets.any():
-            tuner_config = self.hparams_config.get('tuner', {})
-            print('Tuner Config:\n', tuner_config)
+    def _tuner_setup(self, tuner_eval_items) -> Tuner | None:
+
+        if self.tune:
+            tune_metric = tuner_eval_items.get('metric')
+            tune_bench_rets = tuner_eval_items.get('bench_rets')
+            tune_eval_winds = tuner_eval_items.get('eval_winds')
             
-            n_trials = tuner_config.get('n_tuning_trials', 30)
-            n_warmup_steps = tuner_config.get('n_warmup_steps', 2)
-            n_jobs = tuner_config.get('n_jobs', 1)
-            print(
-                f'Tuning all models with {n_trials} trials, across {self.num_steps} steps.'
-            )
-            tuner = Tuner(
-                tune_metric,
-                tune_bench_rets,
-                self.num_steps,
-                n_trials,
-                n_warmup_steps,
-                n_jobs,
-                self.reshaper,
-                self.torch_device
-            )
-        
-        elif self.tune and not tune_metric:
-            raise ValueError(
-                'Provide Tuning metric if tune = True.',
-                "In the format {'<metric>': 'func': Callable, 'sign': '<sign>'}"
-            )
+            # Tuner configuration
+            if tune_metric and tune_bench_rets is not None and tune_eval_winds is not None:
+                tuner_config = self.hparams_config.get('tuner', {})
+                print('Tuner Config:\n', tuner_config)
+                
+                n_trials = tuner_config.get('n_tuning_trials', 30)
+                n_warmup_steps = tuner_config.get('n_warmup_steps', 2)
+                n_jobs = tuner_config.get('n_jobs', 1)
+                print(
+                    f'Tuning all models with {n_trials} trials, across {self.num_steps} steps.'
+                )
+                tuner = Tuner(
+                    tune_metric,
+                    tune_bench_rets,
+                    tune_eval_winds,
+                    self.num_steps,
+                    n_trials,
+                    n_warmup_steps,
+                    n_jobs,
+                    self.reshaper,
+                    self.torch_device
+                )
+            
+            elif not tune_metric:
+                raise ValueError(
+                    'Provide Tuning metric if tune = True.',
+                    "In the tuner_eval_items dict, add 'metric': {'<metric>': 'func': Callable, 'sign': '<sign>'}"
+                )
 
-        elif self.tune and not tune_bench_rets:
-            raise ValueError(
-                'Provide tuning benchmark (eg. S&P500 or Equal Weight returns) if tune = True.'
-            )
-
+            elif not tune_bench_rets:
+                raise ValueError(
+                    'Provide tuning benchmark (eg. S&P500 or Equal Weight returns) if tune = True.',
+                    "In the tuner_eval_items dict, add 'bench_rets': np.ndarray"
+                )
+            elif not tune_eval_winds:
+                raise ValueError(
+                    'Provide evaluation windows reshaped and sliced from validation returns if tune = True.',
+                    "In the tuner_eval_items dict, add 'eval_winds': np.ndarray"
+                )
+            
         else:
             tuner = None
         
@@ -1012,8 +1024,7 @@ class CandidatesGrid(GridUtilities):
                 val_data,
                 rets_val,
                 model_cfg,
-                loss_cfg,
-                self.eval_winds
+                loss_cfg
             )
             best_found_params = study.best_params
             # best_epochs = study.best_trial.user_attrs.get('best_epochs')
@@ -1338,10 +1349,6 @@ class CandidatesGrid(GridUtilities):
         val_data = val_data.values
         rets_val = rets_val.values
 
-        # Build eval windows for later use
-        self.eval_winds, _ = build_eval_windows(
-            rets_val, self.num_steps, self.reshaper.out_size)
-
         # Search for model
         model_class = self._search_model(model_name)
         if not model_class: # model not found
@@ -1498,10 +1505,6 @@ class CandidatesGrid(GridUtilities):
         rets_train = rets_train.values
         val_data = val_data.values
         rets_val = rets_val.values
-
-        # Build eval windows for later use
-        self.eval_winds, _ = build_eval_windows(
-            rets_val, self.num_steps, self.reshaper.out_size)
 
         model_class = self._search_model(model_name)
         if model_class is None:

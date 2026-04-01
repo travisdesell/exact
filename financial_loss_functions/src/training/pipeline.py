@@ -218,10 +218,13 @@ def run_tuning_pipeline(
             # 'calmar': MetricModel(func=MetricLibrary.get('calmar'), sign='+')
         }
 
-        tune_bench_rets = sp500_rets_winds
+        tuner_eval_items = {
+            'metric': tune_metric,
+            'bench_rets': sp500_rets_winds,
+            'eval_winds': y_val
+        }
     else:
-        tune_metric = None
-        tune_bench_rets = None
+        tuner_eval_items = None
     
 
     if mpi:
@@ -241,8 +244,7 @@ def run_tuning_pipeline(
             torch_device = torch_device,
             loss_mode = loss_mode,
             tune = tune,
-            tune_metric = tune_metric,
-            tune_bench_rets = tune_bench_rets,
+            tuner_eval_items = tuner_eval_items,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir']
         )
@@ -282,8 +284,7 @@ def run_tuning_pipeline(
             torch_device = torch_device,
             loss_mode = loss_mode,
             tune = tune,
-            tune_metric = tune_metric,
-            tune_bench_rets = tune_bench_rets,
+            tuner_eval_items = tuner_eval_items,
             mpi = mpi,
             temp_dir = artifacts_paths['temp_dir']
         )
