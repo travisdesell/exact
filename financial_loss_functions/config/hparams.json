@@ -357,6 +357,49 @@
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
                 "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
+        },
+        "PatchTST": {
+            "model": {
+                "hidden_size": 128,
+                "num_layers": 3,
+                "nheads": 8,
+                "dropout": 0.2,
+                "expansion_factor": 4,
+                "patch_size": 12,
+                "stride": 12,
+                "equal_prior": false
+            },
+            "optimizer": {
+                "lr": 1e-4,
+                "weight_decay": 1e-3
+            },
+            "train": {
+                "train_batch_size": 64,
+                "val_batch_size": 64,
+                "clip_grad_norm": 0.5,
+                "epochs": 200,
+                "min_epochs": 0,
+                "early_stopping": false,
+                "early_stop_patience": 20,
+                "early_stop_min_delta": 1e-4
+            },
+            "scheduler": {
+                "factor": 0.5,
+                "patience": 10,
+                "min_lr": 1e-8
+            },
+            "tuning": {
+                "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
+                "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
+                "nheads": {"type": "categorical", "choices": [4, 8, 12]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
+                "patch_size": {"type": "categorical", "choices": [6, 8, 12, 16]},
+                "stride": {"type": "categorical", "choices": [6, 8, 12, 16]},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
+            }
         }
 
     },
