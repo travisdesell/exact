@@ -193,19 +193,17 @@ def run_tuning_pipeline(
     # # y_val for out of sample evaluation
     y_val, out_wind_idxs = build_eval_windows(rets_val, num_steps, out_size)
 
-    # Extract s&p500 returns column sliced for the respective output windows
-    sp500_rets_winds = extract_sp500_winds(
-        sp500_rets,
-        features_config['sp500_returns'],
-        out_wind_idxs
-    )
-    
     if extra_days != 0:
         raise RuntimeError(
             'Validation data incorrectly adjusted. Number of days must be divisible by out_size.'
         )
 
     # -------------------- Training Neural Network Models -------------------- #
+
+    # Calculate Equal Weight Portfolio's weights
+    eq_wt_calc = EqualWeightCalculator(y_val)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+    
     # Building hyperparameter tuning metric
     # System designed to take only linear formulas using + or -
     # Must follow the MetricModel structure
@@ -220,12 +218,11 @@ def run_tuning_pipeline(
 
         tuner_eval_items = {
             'metric': tune_metric,
-            'bench_rets': sp500_rets_winds,
+            'bench_rets': eq_wt_rets,
             'eval_winds': y_val
         }
     else:
         tuner_eval_items = None
-    
 
     if mpi:
 
@@ -355,9 +352,12 @@ def run_tuning_pipeline(
     # del trad_grid
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- #    
-    # Calculate Equal Weight Portfolio's weights
-    eq_wt_calc = EqualWeightCalculator(y_val)
-    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
+        out_wind_idxs
+    )
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
