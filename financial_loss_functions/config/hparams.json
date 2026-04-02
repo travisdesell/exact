@@ -505,24 +505,28 @@
                 "ent_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
             }
         },
-        "custom_loss_15" : {
+         "custom_loss_15" : {
             "lambdas": {
-                "mdd_lambda": 0.1,
-                "risk_p_lambda": 0.1
+                "cvar_lambda": 0.1,
+                "risk_p_lambda": 0.1,
+                "hhi_lambda": 0.1
             },
             "tuning": {
-                "mdd_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
-                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "hhi_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
             }
         },
         "custom_loss_16" : {
             "lambdas": {
-                "mdd_lambda": 0.01,
-                "risk_p_lambda": 0.1
+                "cvar_lambda": 0.1,
+                "risk_p_lambda": 0.1,
+                "hhi_lambda": 0.1
             },
             "tuning": {
-                "mdd_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
-                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
+                "cvar_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "risk_p_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]},
+                "hhi_lambda": {"type": "categorical", "choices": [0.001, 0.01, 0.1, 1]}
             }
         }
     },
