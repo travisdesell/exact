@@ -8,7 +8,8 @@ from numpy.testing import assert_array_equal
 from src.data_processing.dataset import (
     Reshaper,
     ReshapeStyle,
-    WindowDataset
+    WindowDataset,
+    WFAdjustment
 )
 
 # -------------------- Tests for Rehsaper -------------------- #
@@ -273,6 +274,20 @@ def test_len_and_getitem_returns_correct_tensors():
     assert torch.allclose(x0, torch.tensor(X[0], dtype=torch.float32))
     assert torch.allclose(y0, torch.tensor(y[0], dtype=torch.float32))
 
+def test_get_X_y_shapes():
+    X = np.array([
+        [[1.0, 2.0], [3.0, 4.0]],
+        [[5.0, 6.0], [7.0, 8.0]],
+        [[9.0, 10.0], [11.0, 12.0]],
+    ])  # shape (3,2,2)
+    y = np.array([[0.1], [0.2], [0.3]])  # shape (3,1)
+
+    ds = WindowDataset(X, y)
+
+    X_tensor_shape, y_tensor_shape = ds.get_X_y_shapes()
+
+    assert X_tensor_shape == X.shape
+    assert y_tensor_shape == y.shape
 
 def test_negative_indexing_and_out_of_range_raises():
     X = np.arange(6).reshape(3, 2, 1).astype(float)  # (3,2,1)
@@ -319,3 +334,105 @@ def test_zero_length_dataset_len_zero_and_indexing_raises():
 
     with pytest.raises(IndexError):
         _ = ds[0]
+
+# -------------------- Tests for WFAdjustment -------------------- #
+def test_calc_walk_steps():
+    out_size = 60
+    
+    wf = WFAdjustment(out_size)
+
+    initial_num_rows = 501
+    expected_extra_days = initial_num_rows % out_size
+    expected_steps = initial_num_rows // out_size
+
+    test_split = pd.DataFrame(
+        1,
+        index=range(initial_num_rows),
+        columns=['A', 'B']
+    )
+    steps, extra_days = wf.calc_walk_steps(test_split)
+
+    assert steps == expected_steps, 'Incorrect number of steps calculated'
+    assert extra_days == expected_extra_days, 'Incorrect extra days calculated'
+
+    # When len of dataframe is divisible by steps, hence extra days is 0
+    initial_num_rows = 600
+    expected_extra_days = initial_num_rows % out_size
+    expected_steps = initial_num_rows // out_size
+    
+    test_split = pd.DataFrame(
+        1,
+        index=range(out_size*expected_steps),
+        columns=['A', 'B']
+    )
+    steps, extra_days = wf.calc_walk_steps(test_split)
+
+    assert steps == expected_steps, 'Incorrect number of steps calculated'
+    assert extra_days == expected_extra_days, 'Incorrect extra days calculated'
+
+def test_init_datasets():
+    out_size = 60
+    
+    wf = WFAdjustment(out_size)
+
+    initial_num_rows = 501
+    expected_extra_rows = initial_num_rows % out_size
+    expected_steps = initial_num_rows // out_size
+
+    test_train = pd.DataFrame(
+        1,
+        index=range(initial_num_rows),
+        columns=['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
+    )
+
+    test_split = pd.DataFrame(
+        2,
+        index=range(initial_num_rows),
+        columns=['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
+    )
+
+    wf = WFAdjustment(out_size)
+
+    adjusted_train, adjusted_split = wf.init_datasets(test_train, test_split)
+
+    assert adjusted_train.shape[0]-expected_extra_rows == test_train.shape[0]
+    assert adjusted_split.shape[0]+expected_extra_rows == test_split.shape[0]
+
+    assert adjusted_train.shape[1] == test_train.shape[1]
+    assert adjusted_split.shape[1] == test_split.shape[1]
+
+    assert wf.num_steps == expected_steps
+    assert wf.extra_days == expected_extra_rows
+
+def test_get_num_steps_extra_days():
+    out_size = 50
+    
+    wf = WFAdjustment(out_size)
+
+    # Before calculation
+    assert wf.get_num_steps() is None
+    assert wf.get_extra_days() is None
+
+
+    # After calculation
+    initial_num_rows = 620
+    expected_extra_days = initial_num_rows % out_size
+    expected_steps = initial_num_rows // out_size
+
+
+    test_train = pd.DataFrame(
+        1,
+        index=range(initial_num_rows),
+        columns=['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
+    )
+
+    test_split = pd.DataFrame(
+        2,
+        index=range(initial_num_rows),
+        columns=['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
+    )
+
+    _, _ = wf.init_datasets(test_train, test_split)
+
+    assert wf.get_num_steps() is expected_steps
+    assert wf.get_extra_days() is expected_extra_days

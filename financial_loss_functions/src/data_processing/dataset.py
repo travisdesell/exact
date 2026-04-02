@@ -260,13 +260,13 @@ class WindowDataset(Dataset):
 class WFAdjustment:
     def __init__(self, out_size: int):
         self.out_size = out_size
-        self.num_steps = 0
-        self.extra_days = 0
+        self.num_steps = None
+        self.extra_days = None
     
     def calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
         total_oos_days = len(split)
         extra_days = total_oos_days % self.out_size
-        num_steps = (total_oos_days - self.extra_days) // self.out_size
+        num_steps = total_oos_days // self.out_size
 
         self.extra_days = extra_days
         self.num_steps = num_steps
