@@ -56,11 +56,17 @@ class Reshaper:
                 'Use ReshapeStyle from src.data_processing.preprocess.'
             )
         
+        if not common_features:
+            raise ValueError(
+                'A list of common features must be provided so that they can get broadcasted if needed.'
+            )
+        
         self.num_common_feats = len(common_features)
 
         self.tickers = [] # All tickers
         self.features = [] # All features
 
+        self.total_num_cols = None
         self.num_tickers = None
         self.num_features = None
     
@@ -79,6 +85,7 @@ class Reshaper:
         # features.extend(common_feats)
         self.features = list(set(features)) # Not required to sort here
 
+        self.total_num_cols = len(train_cols)
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
@@ -131,9 +138,23 @@ class Reshaper:
             raise ValueError('layout must be of type `ReshapeStyle`')
 
     def _features_check(self):
-        if (len(self.tickers) == 0 or 
-            len(self.features) == 0):
+        if (
+            not self.num_tickers or 
+            not self.num_features or
+            not self.total_num_cols
+        ):
             raise ValueError('Run `extract_features` before reshaping!')
+
+    def _columns_match_check(self, features_num_cols: int, returns_num_cols: int):
+        if features_num_cols != self.total_num_cols:
+            raise ValueError(
+                'Extracted columns do not match provided array shape.'
+            )
+
+        if returns_num_cols != self.num_tickers:
+            raise ValueError(
+                'Number of tickers in extracted columns do not match provided array shape.'
+            )
 
     def reshape(
             self, features_data: np.ndarray, raw_returns: np.ndarray
@@ -149,10 +170,11 @@ class Reshaper:
         """
         
         self._features_check()
+        self._columns_match_check(features_data.shape[1], raw_returns.shape[1])
 
         if self.in_size + self.out_size > features_data.shape[0]:
             raise ValueError(
-                'Incorrect rolling window sizes. in_size + out_size <= Number os time steps'
+                'Incorrect rolling window sizes. in_size + out_size <= Number of time steps'
             )
 
         starts = list(
