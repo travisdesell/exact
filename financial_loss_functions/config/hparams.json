@@ -391,7 +391,7 @@
             "tuning": {
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
-                "nheads": {"type": "categorical", "choices": [4, 8, 12]},
+                "nheads": {"type": "categorical", "choices": [2, 4, 8]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
                 "patch_size": {"type": "categorical", "choices": [6, 8, 12, 16]},
