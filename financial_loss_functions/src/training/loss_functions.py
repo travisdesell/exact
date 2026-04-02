@@ -1321,3 +1321,22 @@ def custom_loss_13(
             (risk_p_lambda * risk_parity) + \
                 (ent_lambda + entropy)
     return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_14(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
+) -> Tensor:
+    omega = smooth_omega_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+    entropy = entropy_conc_regularizer(weights)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity) + \
+                (ent_lambda + entropy)
+    return loss
