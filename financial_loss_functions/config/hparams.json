@@ -26,7 +26,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -43,7 +43,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-2, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "AttentionLSTM": {
@@ -62,7 +62,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -80,7 +80,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "TFT": {
@@ -100,7 +100,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -118,7 +118,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "TemporalTransformer": {
@@ -139,7 +139,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -159,7 +159,7 @@
                 "expansion_factor": {"type": "categorical", "choices": [1, 2, 4]},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "InvertedAttentionLSTM": {
@@ -178,7 +178,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -196,7 +196,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "DeformTime": {
@@ -219,7 +219,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
@@ -229,18 +229,18 @@
                 "patience": 10,
                 "min_lr": 1e-6
             },
-            "tuning": {
-            "e_layers": {"type": "categorical", "choices": [1, 2, 3]},
-            "d_model": {"type": "categorical", "choices": [16, 32, 64, 128]},
-            "nheads": {"type": "categorical", "choices": [2, 4, 8]},
-            "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
-            "kernel_size": {"type": "categorical", "choices": [3, 5, 7, 9]},
-            "patch_len": {"type": "categorical", "choices": [4, 6, 8, 12, 16]},
-            "stride": {"type": "categorical", "choices": [4, 8, 16]},
-            "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
-            "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-            "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
-        }
+                "tuning": {
+                "e_layers": {"type": "categorical", "choices": [1, 2, 3]},
+                "d_model": {"type": "categorical", "choices": [16, 32, 64, 128]},
+                "nheads": {"type": "categorical", "choices": [2, 4, 8]},
+                "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
+                "kernel_size": {"type": "categorical", "choices": [3, 5, 7, 9]},
+                "patch_len": {"type": "categorical", "choices": [4, 6, 8, 12, 16]},
+                "stride": {"type": "categorical", "choices": [4, 8, 16]},
+                "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
+                "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
+            }
         },
         "BiAttentionLSTM": {
             "model": {
@@ -265,7 +265,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -297,7 +297,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "early_stopping": false,
                 "early_stop_patience": 20,
                 "early_stop_min_delta": 1e-4
@@ -316,7 +316,7 @@
                 "seg_len": {"type": "categorical", "choices": [4, 6, 8, 12]},
                 "win_size": {"type": "categorical", "choices": [2, 4]},
                 "factor": {"type": "categorical", "choices": [5, 10, 20]},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         },
         "VLSTM": {
@@ -336,7 +336,7 @@
                 "train_batch_size": 64,
                 "val_batch_size": 64,
                 "clip_grad_norm": 0.5,
-                "epochs": 500,
+                "epochs": 200,
                 "min_epochs": 0,
                 "early_stopping": false,
                 "early_stop_patience": 20,
@@ -355,7 +355,7 @@
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-5, "high": 1e-3, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
-                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500]}
+                "epochs": {"type": "categorical", "choices": [25, 50, 100, 150, 200]}
             }
         }
 
