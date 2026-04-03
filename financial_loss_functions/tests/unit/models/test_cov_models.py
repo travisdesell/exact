@@ -1,12 +1,14 @@
 import pytest
 import numpy as np
 import pandas as pd
+from unittest.mock import patch
 from src.models.cov_models import (
     HierarchialRiskParity,
     NaiveMVP,
     BaseQuadraticOptimizer,
     GlobalMinimumVariance,
-    MeanVariancePortfolio
+    MeanVariancePortfolio,
+    NestedClusteredOptimization
 )
 
 # -------------------- Common Fixtures -------------------- #
@@ -32,131 +34,6 @@ def sample_data():
     assert vars_[0] < vars_[2] < vars_[1], f'Unexpected variances: {vars_}'
 
     return returns, cov, corr
-
-# -------------------- HRP Tests -------------------- #
-@pytest.fixture
-def hrp():
-    """Create HRP instance"""
-    return HierarchialRiskParity()
-
-@pytest.fixture
-def sample_linkage():
-    link = np.array([
-            [0, 1, 0.1, 2],  # cluster (0,1)
-            [2, 3, 0.2, 2],  # cluster (2,3)
-            [4, 5, 0.3, 4]   # final cluster ((0,1),(2,3))
-        ], dtype=float)
-    return link
-
-def test_correlDist(hrp, sample_data):
-    # Testing correlation distance matrix for symmetry and digonal
-    _, _, corr = sample_data
-
-    dist = hrp._correlDist(corr)
-
-    assert dist.shape == corr.shape
-    assert np.allclose(dist.values, dist.values.T), 'Matrix should symmetric'
-    assert np.allclose(np.diag(dist), 0), 'Diagonal should be 0'
-    assert (dist >= 0).all().all()
-    assert (dist <= 1).all().all()
-
-def test_getQuasiDiag_vaild_output(hrp, sample_linkage):
-    # Testing if function outputs correct indices representing assets    
-    order = hrp._getQuasiDiag(sample_linkage)
-
-    # Should produce ordering of all 4 original indices
-    assert isinstance(order, list)
-    assert len(order) == 4
-    assert set(order) == {0, 1, 2, 3}, 'Should contain all asset indices'
-    assert all(isinstance(x, int) for x in order), 'All indices should be int'
-
-def test_getQuasiDiag_deterministic(hrp, sample_linkage):
-    result1 = hrp._getQuasiDiag(sample_linkage)
-    result2 = hrp._getQuasiDiag(sample_linkage)
-
-    assert result1 == result2, 'Output should be deterministic for same linkage'
-
-def test_getQuasiDiag_single_item(hrp):
-    link = np.array([[0, 1, 0.1, 2]], dtype=float)
-    order = hrp._getQuasiDiag(link)
-
-    assert isinstance(order, list)
-    assert set(order) == {0, 1}
-    assert len(order) == 2
-
-def test_getIVP(hrp, sample_data):
-    _, cov, _ = sample_data
-    ivp = hrp._getIVP(cov.values)
-
-    assert ivp.shape[0] == cov.shape[0]
-    assert np.isclose(ivp.sum(), 1.0)  # weights sum to 1
-    assert np.all(ivp >= 0)  # no negative weights
-
-def test_getClusterVar(hrp, sample_data):
-    _, cov, _ = sample_data
-    assets = list(cov.columns)
-    var = hrp._getClusterVar(cov, assets)
-
-    assert var > 0  # variance must be positive
-    assert isinstance(var, float)
-
-def test_getRecBipart_unit(hrp, sample_data):
-    _, cov, _ = sample_data
-
-    # Provide a fixed, deterministic ordering of labels (do not call clustering)
-    sortIx = ['A', 'B', 'C']
-
-    weights = hrp._getRecBipart(cov, sortIx)
-
-    # Basic structural checks
-    assert isinstance(weights, pd.Series)
-    assert list(weights.index) == sortIx
-    assert len(weights) == 3
-
-    # Numeric checks: positive and normalized
-    assert (weights >= 0).all(), 'All weights must be non-negative'
-    assert np.isclose(weights.sum(), 1.0), f'Weights do not sum to 1: sum={weights.sum()}'
-
-    # asset with lowest variance should get the largest weight
-    variances = cov.values.diagonal()
-    idx_low_var = cov.index[np.argmin(variances)]   # expected 'A'
-    idx_high_var = cov.index[np.argmax(variances)]  # expected 'B'
-
-    assert weights[idx_low_var] > weights[idx_high_var], (
-        f'Expected low-variance asset {idx_low_var} to have higher weight than '
-        f'high-variance asset {idx_high_var}: {weights.to_dict()}'
-    )
-
-    # Middle variance asset should have weight between low and high
-    mid_idx = [i for i in cov.index if i not in {idx_low_var, idx_high_var}][0]
-    assert weights[idx_low_var] >= weights[mid_idx] >= weights[idx_high_var], (
-        f'Expected ordering low >= mid >= high but got {weights.to_dict()}'
-    )
-
-def test_calculate_weights(hrp, sample_data):
-    _, cov, corr = sample_data
-
-    weights = hrp.calculate_weights(cov, corr)
-
-    # Structural checks
-    assert isinstance(weights, pd.Series)
-    assert list(weights.index) == list(cov.index)
-    assert np.isclose(weights.sum(), 1.0)
-
-    # Behavioral checks
-    # Lowest variance asset should have largest weight
-    idx_low_var = cov.index[np.argmin(np.diag(cov.values))]
-    idx_high_var = cov.index[np.argmax(np.diag(cov.values))]
-
-    assert weights[idx_low_var] > weights[idx_high_var]
-
-    # Check getter
-    retrieved_weights = hrp.get_weights()
-    pd.testing.assert_series_equal(retrieved_weights, weights)
-
-def test_get_weights_raises_if_not_fit(hrp):
-    with pytest.raises(ValueError):
-        hrp.get_weights()
 
 # -------------------- Naive MVP Tests -------------------- #
 def test_naive_mvp_simple_case():
@@ -525,3 +402,260 @@ def test_get_expected_returns_returns_copy(sample_data):
     mu_copy[0] = 999.0
     # internal expected_returns_ should remain original
     assert mvp.expected_returns_[0] != 999.0
+
+# -------------------- HRP Tests -------------------- #
+@pytest.fixture
+def hrp():
+    """Create HRP instance"""
+    return HierarchialRiskParity()
+
+@pytest.fixture
+def sample_linkage():
+    link = np.array([
+            [0, 1, 0.1, 2],  # cluster (0,1)
+            [2, 3, 0.2, 2],  # cluster (2,3)
+            [4, 5, 0.3, 4]   # final cluster ((0,1),(2,3))
+        ], dtype=float)
+    return link
+
+def test_correlDist(hrp, sample_data):
+    # Testing correlation distance matrix for symmetry and digonal
+    _, _, corr = sample_data
+
+    dist = hrp._correlDist(corr)
+
+    assert dist.shape == corr.shape
+    assert np.allclose(dist.values, dist.values.T), 'Matrix should symmetric'
+    assert np.allclose(np.diag(dist), 0), 'Diagonal should be 0'
+    assert (dist >= 0).all().all()
+    assert (dist <= 1).all().all()
+
+def test_getQuasiDiag_vaild_output(hrp, sample_linkage):
+    # Testing if function outputs correct indices representing assets    
+    order = hrp._getQuasiDiag(sample_linkage)
+
+    # Should produce ordering of all 4 original indices
+    assert isinstance(order, list)
+    assert len(order) == 4
+    assert set(order) == {0, 1, 2, 3}, 'Should contain all asset indices'
+    assert all(isinstance(x, int) for x in order), 'All indices should be int'
+
+def test_getQuasiDiag_deterministic(hrp, sample_linkage):
+    result1 = hrp._getQuasiDiag(sample_linkage)
+    result2 = hrp._getQuasiDiag(sample_linkage)
+
+    assert result1 == result2, 'Output should be deterministic for same linkage'
+
+def test_getQuasiDiag_single_item(hrp):
+    link = np.array([[0, 1, 0.1, 2]], dtype=float)
+    order = hrp._getQuasiDiag(link)
+
+    assert isinstance(order, list)
+    assert set(order) == {0, 1}
+    assert len(order) == 2
+
+def test_getIVP(hrp, sample_data):
+    _, cov, _ = sample_data
+    ivp = hrp._getIVP(cov.values)
+
+    assert ivp.shape[0] == cov.shape[0]
+    assert np.isclose(ivp.sum(), 1.0)  # weights sum to 1
+    assert np.all(ivp >= 0)  # no negative weights
+
+def test_getClusterVar(hrp, sample_data):
+    _, cov, _ = sample_data
+    assets = list(cov.columns)
+    var = hrp._getClusterVar(cov, assets)
+
+    assert var > 0  # variance must be positive
+    assert isinstance(var, float)
+
+def test_getRecBipart_unit(hrp, sample_data):
+    _, cov, _ = sample_data
+
+    # Provide a fixed, deterministic ordering of labels (do not call clustering)
+    sortIx = ['A', 'B', 'C']
+
+    weights = hrp._getRecBipart(cov, sortIx)
+
+    # Basic structural checks
+    assert isinstance(weights, pd.Series)
+    assert list(weights.index) == sortIx
+    assert len(weights) == 3
+
+    # Numeric checks: positive and normalized
+    assert (weights >= 0).all(), 'All weights must be non-negative'
+    assert np.isclose(weights.sum(), 1.0), f'Weights do not sum to 1: sum={weights.sum()}'
+
+    # asset with lowest variance should get the largest weight
+    variances = cov.values.diagonal()
+    idx_low_var = cov.index[np.argmin(variances)]   # expected 'A'
+    idx_high_var = cov.index[np.argmax(variances)]  # expected 'B'
+
+    assert weights[idx_low_var] > weights[idx_high_var], (
+        f'Expected low-variance asset {idx_low_var} to have higher weight than '
+        f'high-variance asset {idx_high_var}: {weights.to_dict()}'
+    )
+
+    # Middle variance asset should have weight between low and high
+    mid_idx = [i for i in cov.index if i not in {idx_low_var, idx_high_var}][0]
+    assert weights[idx_low_var] >= weights[mid_idx] >= weights[idx_high_var], (
+        f'Expected ordering low >= mid >= high but got {weights.to_dict()}'
+    )
+
+def test_calculate_weights(hrp, sample_data):
+    _, cov, corr = sample_data
+
+    weights = hrp.calculate_weights(cov, corr)
+
+    # Structural checks
+    assert isinstance(weights, pd.Series)
+    assert list(weights.index) == list(cov.index)
+    assert np.isclose(weights.sum(), 1.0)
+
+    # Behavioral checks
+    # Lowest variance asset should have largest weight
+    idx_low_var = cov.index[np.argmin(np.diag(cov.values))]
+    idx_high_var = cov.index[np.argmax(np.diag(cov.values))]
+
+    assert weights[idx_low_var] > weights[idx_high_var]
+
+    # Check getter
+    retrieved_weights = hrp.get_weights()
+    pd.testing.assert_series_equal(retrieved_weights, weights)
+
+def test_get_weights_raises_if_not_fit(hrp):
+    with pytest.raises(ValueError):
+        hrp.get_weights()
+
+# -------------------- NCO Tests -------------------- #
+@pytest.fixture
+def nco():
+    """Create NCO instance"""
+    return NestedClusteredOptimization(de_noise=True)
+
+def test_cov2corr(nco, sample_data):
+    returns, cov, corr = sample_data
+    computed_corr = nco._cov2corr(cov.values)
+    np.testing.assert_almost_equal(computed_corr, corr.values, decimal=6)
+    # Diagonal should be 1
+    assert np.allclose(np.diag(computed_corr), 1.0)
+
+def test_getPCA(nco, sample_data):
+    returns, cov, corr = sample_data
+    eVal, eVec = nco._getPCA(corr.values)
+    assert eVal.shape == (3,3)
+    assert np.all(np.diag(eVal) >= 0)
+    # Orthonormality
+    np.testing.assert_almost_equal(eVec.T @ eVec, np.eye(3), decimal=6)
+
+def test_mpPDF(nco):
+    pdf = nco._mpPDF(var=0.5, q=2.0, pts=100)
+    assert isinstance(pdf, pd.Series)
+    assert len(pdf) == 100
+    assert pdf.index[0] < pdf.index[-1]
+
+def test_fitKDE(nco):
+    obs = np.random.normal(0, 1, 100)
+    pdf = nco._fitKDE(obs, bWidth=0.25, kernel='gaussian')
+    assert isinstance(pdf, pd.Series)
+    assert len(pdf) > 0
+
+def test_errPDFs(nco):
+    var = 0.5
+    eVal = np.array([0.2, 0.5, 1.2])
+    q = 2.0
+    bWidth = 0.1
+    sse = nco._errPDFs(var, eVal, q, bWidth)
+    assert isinstance(sse, float)
+    assert sse >= 0
+
+def test_findMaxEval(nco, sample_data):
+    returns, cov, corr = sample_data
+    eVal, _ = nco._getPCA(corr.values)
+    q = len(returns) / returns.shape[1]
+    eMax, var = nco._findMaxEval(np.diag(eVal), q, bWidth=0.1)
+    assert eMax > 0
+    assert 0 < var < 1
+
+def test_denoisedCorr(nco, sample_data):
+    returns, cov, corr = sample_data
+    eVal, eVec = nco._getPCA(corr.values)
+    nFacts = 2
+    corr_denoised = nco._denoisedCorr(eVal, eVec, nFacts)
+    assert corr_denoised.shape == (3,3)
+    np.testing.assert_almost_equal(np.diag(corr_denoised), 1.0, decimal=6)
+
+def test_corr2cov(nco, sample_data):
+    returns, cov, corr = sample_data
+    std = np.sqrt(np.diag(cov.values))
+    cov_reconstructed = nco._corr2cov(corr.values, std)
+    np.testing.assert_almost_equal(cov_reconstructed, cov.values, decimal=6)
+
+def test_deNoiseCov(nco, sample_data):
+    returns, cov, corr = sample_data
+    T, N = returns.shape
+    q = T / N
+    cov_denoised = nco._deNoiseCov(cov.values, q, bWidth=0.1)
+    assert cov_denoised.shape == (3,3)
+    np.testing.assert_almost_equal(cov_denoised, cov_denoised.T, decimal=6)
+
+def test_de_noise(nco, sample_data):
+    returns, cov, corr = sample_data
+    T, N = returns.shape
+    cov_denoised = nco._de_noise(cov, T, N)
+    assert isinstance(cov_denoised, pd.DataFrame)
+    assert cov_denoised.shape == cov.shape
+    assert cov_denoised.index.equals(cov.index)
+    assert cov_denoised.columns.equals(cov.columns)
+
+def test_clusterKMeansBase(nco, sample_data):
+    returns, cov, corr = sample_data
+    corr1, clstrs, silh = nco._clusterKMeansBase(corr, maxNumClusters=2, n_init=2)
+    assert isinstance(corr1, pd.DataFrame)
+    assert corr1.shape == corr.shape
+    assert isinstance(clstrs, dict)
+    assert len(clstrs) <= 2
+    assert isinstance(silh, pd.Series)
+    assert len(silh) == len(corr.columns)
+
+def test_calc_nco_no_mu(nco, sample_data):
+    returns, cov, corr = sample_data
+    weights = nco._calc_nco(cov, mu=None, maxNumClusters=int(cov.shape[0]/2))
+    assert isinstance(weights, pd.Series)
+    assert len(weights) == len(cov.columns)
+    assert (weights >= 0).all()
+    assert np.isclose(weights.sum(), 1.0, atol=1e-6)
+
+def test_calc_nco_with_mu(nco, sample_data):
+    returns, cov, corr = sample_data
+    mu = np.array([0.01, 0.02, 0.015]).reshape(-1,1)
+    weights = nco._calc_nco(cov, mu=mu, maxNumClusters=int(cov.shape[0]/2))
+    assert isinstance(weights, pd.Series)
+    assert len(weights) == len(cov.columns)
+    assert (weights >= 0).all()
+    assert np.isclose(weights.sum(), 1.0, atol=1e-6)
+
+def test_calculate_weights_with_denoise(nco, sample_data):
+    returns, cov, corr = sample_data
+    weights = nco.calculate_weights(cov, returns)
+    assert isinstance(weights, pd.Series)
+    assert len(weights) == len(cov.columns)
+    assert (weights >= 0).all()
+    assert np.isclose(weights.sum(), 1.0, atol=1e-6)
+
+def test_calculate_weights_without_denoise(nco, sample_data):
+    returns, cov, corr = sample_data
+    weights = nco.calculate_weights(cov, returns)
+    assert isinstance(weights, pd.Series)
+    assert len(weights) == len(cov.columns)
+    assert (weights >= 0).all()
+    assert np.isclose(weights.sum(), 1.0, atol=1e-6)
+
+def test_single_asset():
+    returns_single = pd.DataFrame({'A': [0.01, -0.01, 0.02]})
+    cov_single = returns_single.cov()
+    nco = NestedClusteredOptimization(de_noise=False)
+    weights = nco.calculate_weights(cov_single, returns_single)
+    assert len(weights) == 1
+    assert weights.iloc[0] == 1.0

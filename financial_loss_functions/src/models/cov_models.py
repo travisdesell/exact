@@ -897,27 +897,42 @@ class NestedClusteredOptimization():
     def _clusterKMeansBase(self, corr0, maxNumClusters=10, n_init=10):
         x = ((1-corr0.fillna(0))/2.)**.5
         silh = pd.Series(dtype=float) # observation matrix
-        for init in range(n_init):
-            for i in range(2, maxNumClusters+1):
-                kmeans_= KMeans(n_clusters=i, n_init=1)
-                kmeans_ = kmeans_.fit(x)
-                silh_ = silhouette_samples(x, kmeans_.labels_)
-                stat = (silh_.mean()/silh_.std(), silh.mean()/silh.std())
-                if np.isnan(stat[1]) or stat[0]>stat[1]:
-                    silh, kmeans = silh_, kmeans_
+        kmeans = None
+        
+        if maxNumClusters > 1 and corr0.shape[0] > 2:
+            for init in range(n_init):
+                for i in range(2, maxNumClusters+1):
+                    kmeans_= KMeans(n_clusters=i, n_init=1)
+                    kmeans_ = kmeans_.fit(x)
+                    silh_ = silhouette_samples(x, kmeans_.labels_)
+                    stat = (silh_.mean()/silh_.std(), silh.mean()/silh.std())
+                    if np.isnan(stat[1]) or stat[0]>stat[1]:
+                        silh, kmeans = silh_, kmeans_
+        
+        # FALLBACK: If no clustering happened, treat everyone as one cluster
+        if kmeans is None:
+            clstrs = {0: corr0.columns.tolist()}
+            silh = pd.Series(0.0, index=x.index)
+            return corr0, clstrs, silh
+        
         newIdx = np.argsort(kmeans.labels_)
         corr1 = corr0.iloc[newIdx] # reorder rows
 
         corr1=corr1.iloc[:,newIdx] # reorder columns
-        clstrs = {i:corr0.columns[np.where(kmeans.labels_==i)[0]].tolist()\
-                for i in np.unique(kmeans.labels_)
-                } # cluster members
+        clstrs = {
+            i:corr0.columns[np.where(kmeans.labels_==i)[0]].tolist() 
+            for i in np.unique(kmeans.labels_)
+                
+        } # cluster members
         silh = pd.Series(silh, index=x.index)
         return corr1, clstrs, silh
     
     def _calc_nco(self, cov, mu=None, maxNumClusters=None):
         # cov = pd.DataFrame(cov)
-        if mu is not None: mu = pd.Series(mu[:,0])
+        # if mu is not None: mu = pd.Series(mu[:,0])
+        if mu is not None:
+            mu = pd.Series(mu.flatten(), index=cov.index)
+        
         corr1 = self._cov2corr(cov)
         corr1, clstrs, _ = self._clusterKMeansBase(corr1, maxNumClusters, n_init=10)
         
