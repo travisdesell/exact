@@ -10,7 +10,15 @@ def calc_current_idxs(step: int, stride: int):
 
     return current_start, current_end
 
-def build_eval_windows(split: np.ndarray, num_steps, out_size) -> tuple[np.ndarray, list[tuple[int, int]]]:  
+def build_eval_windows(
+        split: np.ndarray,
+        num_steps: int,
+        out_size: int
+    ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
+    
+    if len(split) < out_size * num_steps:
+        raise ValueError('Provided dataframe is smaller than num_steps * out_size.')
+    
     eval_windows = []
     out_wind_idxs = []
     for step in range(1, num_steps+1):
