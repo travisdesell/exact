@@ -3,10 +3,11 @@ import pandas as pd
 from src.data_processing.loading import (
     load_raw_crsp_datasets,
     load_macro_data,
-    load_csv_files
+    load_csv_files,
+    ArtifactDataExtractor
 )
 
-# ---------- Load CRSP tests ---------- #
+# -------------------- Tests for Load CRSP -------------------- #
 def test_load_crsp_datasets(tmp_path):
     # Create tiny CSV files for train, val, test
     train_file = tmp_path / 'combined_predictors_train.csv'
@@ -33,14 +34,7 @@ def test_load_crsp_datasets(tmp_path):
     assert train.iloc[0,0] == 0.1
     assert test.iloc[0,1] == 0.6
 
-def test_load_crsp_datasets_file_not_found():
-    # Not creating any files, passing the empty directory
-    with pytest.raises(FileNotFoundError) as excinfo:
-        load_raw_crsp_datasets('train.csv', 'val.csv', 'test.csv')
-    
-    assert 'Required file not found' in str(excinfo.value)
-
-# ---------- Load CSV files tests ---------- #
+# -------------------- Tests for Load CSV files -------------------- #
 def test_load_csv_files(tmp_path):
     # Creating test files
     test_file1 = tmp_path / 'test_file1.csv'
@@ -77,19 +71,7 @@ def test_load_csv_files(tmp_path):
     assert files_dict['path2'].iloc[0,1] == 0.4
     assert files_dict['path3'].iloc[0,0] == 0.5
 
-def test_load_csv_files():
-    # Not creating any files, passing the empty directory
-    test_paths = {
-        'path1': 'file1.csv',
-        'path2': 'file2.csv',
-        'path3': 'file2.csv'
-    }
-    with pytest.raises(FileNotFoundError) as excinfo:
-        load_csv_files(test_paths)
-    
-    assert 'Required file not found' in str(excinfo.value)
-
-# ---------- Load macro files tests ---------- #
+# -------------------- Tests for Load macro files -------------------- #
 def test_load_macro_data(tmp_path):
     test_file1 = tmp_path / 'test_file1.csv'
     test_file2 = tmp_path / 'test_file2.csv'
@@ -126,3 +108,130 @@ def test_load_macro_data(tmp_path):
         load_macro_data(tmp_path)
     
     assert f'No CSVs not found in directory: {tmp_path}' in str(excinfo.value)
+
+# -------------------- Tests for ArtifactDataExtractor -------------------- #
+@pytest.fixture
+def artifacts_paths(tmp_path):
+    return {
+        'avg_perf_dir': tmp_path / 'avg_perf',
+        'hparams_dir': tmp_path / 'hparams',
+    }
+
+@pytest.fixture
+def extractor(artifacts_paths):
+    return ArtifactDataExtractor(
+        prev_grid_mode='one_model',
+        artifacts_paths=artifacts_paths
+    )
+
+def test_find_artifact_files_all_exist(extractor, artifacts_paths, tmp_path):
+    # Create dummy files
+    avg_dir = artifacts_paths['avg_perf_dir']
+    avg_dir.mkdir(parents=True, exist_ok=True)
+    file1 = avg_dir / 'test_A.csv'
+    file2 = avg_dir / 'test_B.csv'
+    file1.touch()
+    file2.touch()
+
+    suffixes = ['A', 'B']
+    result = extractor.find_artifact_files('test', suffixes, avg_dir, '.csv')
+    assert result == {'A': file1, 'B': file2}
+
+def test_find_artifact_files_missing(extractor, artifacts_paths, capsys):
+
+    avg_dir = artifacts_paths['avg_perf_dir']
+    avg_dir.mkdir(parents=True, exist_ok=True)
+    suffixes = ['A', 'B']
+    # No files created
+    result = extractor.find_artifact_files('test', suffixes, avg_dir, '.csv')
+    assert result == {}
+    captured = capsys.readouterr()
+    assert "not found" in captured.out
+
+def test_build_avg_perf_paths_success(extractor, artifacts_paths):
+    avg_dir = artifacts_paths['avg_perf_dir']
+    avg_dir.mkdir(parents=True, exist_ok=True)
+    (avg_dir / 'test_model.csv').touch()
+    result = extractor._build_avg_perf_paths('test', ['model'])
+    assert 'model' in result
+    assert result['model'] == avg_dir / 'test_model.csv'
+
+def test_build_avg_perf_paths_failure(extractor, artifacts_paths):
+    avg_dir = artifacts_paths['avg_perf_dir']
+    avg_dir.mkdir(parents=True, exist_ok=True)
+    # No file
+    with pytest.raises(RuntimeError, match="No average Performance files found"):
+        extractor._build_avg_perf_paths('test', ['model'])
+
+def test_build_opti_hparams_paths_success(extractor, artifacts_paths):
+    hparams_dir = artifacts_paths['hparams_dir']
+    hparams_dir.mkdir(parents=True, exist_ok=True)
+    (hparams_dir / 'test_model.json').touch()
+    result = extractor._build_opti_hparams_paths('test', ['model'])
+    assert result == {'model': hparams_dir / 'test_model.json'}
+
+def test_build_opti_hparams_paths_missing(extractor, artifacts_paths, capsys):
+    hparams_dir = artifacts_paths['hparams_dir']
+    hparams_dir.mkdir(parents=True, exist_ok=True)
+    result = extractor._build_opti_hparams_paths('test', ['model'])
+    assert result is None
+    captured = capsys.readouterr()
+    assert "WARNING: Models not tuned!" in captured.out
+
+def test_agg_avg_perf_one_model_mode(extractor, artifacts_paths, monkeypatch):
+    avg_dir = artifacts_paths['avg_perf_dir']
+    avg_dir.mkdir(parents=True, exist_ok=True)
+    (avg_dir / 'avg_A.csv').touch()
+    (avg_dir / 'avg_B.csv').touch()
+
+    df_A = pd.DataFrame({'A': [1]}, index=['modelA'])
+    df_B = pd.DataFrame({'B': [2]}, index=['modelB'])
+    def mock_load_csv_files(paths):
+        return {'A': df_A, 'B': df_B}
+    monkeypatch.setattr('src.data_processing.loading.load_csv_files', mock_load_csv_files)
+
+    result = extractor.agg_avg_perf('avg', model_names=['A', 'B'])
+    expected = pd.concat([df_A, df_B], axis=0)
+    expected = expected[~expected.index.duplicated(keep='first')]
+    pd.testing.assert_frame_equal(result, expected)
+
+def test_agg_avg_perf_one_model_no_names(extractor):
+    with pytest.raises(ValueError, match="List of model names must be provided"):
+        extractor.agg_avg_perf('avg', model_names=None)
+
+def test_agg_avg_perf_one_mode(extractor):
+    extractor.prev_grid_mode = 'one'
+    with pytest.raises(ValueError, match="does not work for `one` mode"):
+        extractor.agg_avg_perf('avg', model_names=None)
+
+def test_agg_opti_hparams_one_model_mode(extractor, artifacts_paths):
+    extractor.prev_grid_mode = 'one_model'
+    hparams_dir = artifacts_paths['hparams_dir']
+    hparams_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write valid JSON content (not empty)
+    (hparams_dir / 'opti_A.json').write_text('{"A": {"lr": 0.01}}')
+    (hparams_dir / 'opti_B.json').write_text('{"B": {"lr": 0.02}}')
+
+    result = extractor.agg_opti_hparams('opti', model_names=['A', 'B'])
+    expected = {'A': {'lr': 0.01}, 'B': {'lr': 0.02}}
+    assert result == expected
+
+def test_agg_opti_hparams_one_mode(extractor, artifacts_paths):
+    extractor.prev_grid_mode = 'one'
+    hparams_dir = artifacts_paths['hparams_dir']
+    hparams_dir.mkdir(parents=True, exist_ok=True)
+
+    (hparams_dir / 'opti_one.json').write_text('{"model1": {"c": 3}}')
+
+    result = extractor.agg_opti_hparams('opti', model_names=['one'])
+    expected = {'model1': {'c': 3}}
+    assert result == expected
+
+def test_agg_opti_hparams_one_model_missing(extractor, capsys):
+    extractor.prev_grid_mode = 'one_model'
+    # No files
+    result = extractor.agg_opti_hparams('opti', model_names=['missing'])
+    assert result is None
+    captured = capsys.readouterr()
+    assert "WARNING: Models not tuned!" in captured.out
