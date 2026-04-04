@@ -6,7 +6,7 @@
         "n_jobs": 1
     },
     "rolling_windows": {
-        "in_size": 120,
+        "in_size": 190,
         "out_size": 60,
         "stride": 1
     },
