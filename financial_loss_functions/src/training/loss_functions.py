@@ -1341,7 +1341,7 @@ def custom_loss_14(
                 (ent_lambda + entropy)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_15(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
@@ -1365,7 +1365,7 @@ def custom_loss_15(
                 (hhi_lambda + hhi)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_16(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
