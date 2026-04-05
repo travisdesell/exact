@@ -65,6 +65,7 @@ def test_processing_with_committed_sample(tmp_path):
         dst = tmp_raw / fname
         shutil.copy(src, dst)
     
+    # SHOULD MATCH PATHS CONFIG
     paths_config = {
         'data': {
             'crsp_dir': str(tmp_raw),
@@ -89,9 +90,10 @@ def test_processing_with_committed_sample(tmp_path):
     }
 
     features_config = {'common_features': ['sprtrn'], 'sp500_returns': 'sprtrn'}
+    hparams_config = {'rolling_windows': {'out_size': 60}}
 
     # run pipeline (integration smoke test)
-    run_processing_pipeline(paths_config, features_config)
+    run_processing_pipeline(paths_config, hparams_config, features_config)
 
     # load processed files
     processed_files = {
