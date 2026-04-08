@@ -68,16 +68,14 @@ class ArtifactDataExtractor:
     def __init__(
             self,
             prev_grid_mode: str,
-            artifacts_paths: dict[str, Path|str]
+            artifacts_paths: dict[str, Path | str]
 
         ):
         self.prev_grid_mode = prev_grid_mode
         self.artifacts_paths = artifacts_paths
 
-        # if prev_grid_mode == 'one_model' and not model_names:
-        #     raise ValueError(
-        #         'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
-        #     )
+        if self.prev_grid_mode not in ['one_model', 'one']:
+            raise ValueError('Incorrect mode arguments while running at entry point.')
 
     def find_artifact_files(
         self, prefix: str, suffixes: list[str], dir_path: str | Path, ext: str
@@ -102,67 +100,23 @@ class ArtifactDataExtractor:
 
         return arti_paths
     
-    def _build_avg_perf_paths(
-            self, prefix: str, suffixes: list[str]
-        ) -> dict[str, Path|str]:
-        # Average Performance files
-        avg_perf_paths = self.find_artifact_files(
-            prefix,
-            suffixes,
-            self.artifacts_paths['avg_perf_dir'],
-            '.csv' # Average Performance files at csv
-        )
-        if len(avg_perf_paths) == 0:
-            raise RuntimeError(
-                'No average Performance files found. Run training and tuning first.'
-            )
-        
-        return avg_perf_paths
-    
-    def _build_opti_hparams_paths(
-            self, prefix: str, suffixes: list[str]
-        ) -> dict[str, Path|str] | None:
-        # Optimized Hyperparameter files
-        opti_paths = self.find_artifact_files(
-            prefix,
-            suffixes,
-            self.artifacts_paths['hparams_dir'],
-            '.json' # Optimized Hyperparameter files are json
-        )
-
-        if len(opti_paths) == 0:
-            print(
-                'WARNING: Models not tuned! Using default hyperparameters.',
-                'Tune models using `python -m scripts.run_training`'
-            )
-            opti_paths = None
-        
-        return opti_paths
-    
     def agg_avg_perf(
-            self, avg_perf_prefix: str, model_names: list[str] | None = None
-        ):
-        if self.prev_grid_mode == 'all':
-            avg_perf_paths = self._build_avg_perf_paths(
-                avg_perf_prefix, ['all']
+            self, avg_perf_prefix: str, model_names: list[str]
+        ) -> pd.DataFrame:
+        if self.prev_grid_mode == 'one_model':
+            # Build paths
+            avg_perf_paths = self.find_artifact_files(
+                avg_perf_prefix,
+                model_names,
+                self.artifacts_paths['avg_perf_dir'],
+                '.csv' # Average Performance files at csv
             )
-            if len(avg_perf_paths) > 1:
-                raise RuntimeError('More than 1 file found for `all` mode.')
-            
-            avg_perf_dfs = load_csv_files(avg_perf_paths)
-
-            all_avg_perf = avg_perf_dfs.values()[0] # There should be only 1 file
-        
-        elif self.prev_grid_mode == 'one_model':
-            if not model_names:
-                raise ValueError(
-                    'List of model names must be provided as suffixes for `one_model` prev_grid_mode.'
+            if len(avg_perf_paths) == 0:
+                raise RuntimeError(
+                    'No average Performance files found. Run training and tuning first.'
                 )
-
-            # Build paths and load files
-            avg_perf_paths = self._build_avg_perf_paths(
-                avg_perf_prefix, model_names
-            )
+            
+            # Load CSV files
             avg_perf_dfs = load_csv_files(avg_perf_paths)
 
             # Combine all files into one dataframe
@@ -171,41 +125,54 @@ class ArtifactDataExtractor:
 
         elif self.prev_grid_mode == 'one':
             raise ValueError('`aggregate_avg_perf()`, does not work for `one` mode.')
-        else:
-            raise RuntimeError('Incorrect mode arguments while running at entry point.')
-        
+
         return all_avg_perf
     
     def agg_opti_hparams(
-            self, opti_hparams_prefix: str, model_names: list[str] | None = None
-        ):
-        if self.prev_grid_mode == 'all':
-            opti_paths = self._build_opti_hparams_paths(
-                opti_hparams_prefix, ['all']
-            )
-            
-            if opti_paths:
-                optimized_hparams = {}
-                for path in opti_paths.values():
-                    optimized_hparams.update(load_json(path))
-            else:
-                optimized_hparams = None
-        
-        elif self.prev_grid_mode in ['one_model', 'one']:
-            
-            # Build paths and load files
-            opti_paths = self._build_opti_hparams_paths(
-                opti_hparams_prefix, model_names
-            )
-            
-            if opti_paths:
-                optimized_hparams = {}
-                for path in opti_paths.values():
-                    optimized_hparams.update(load_json(path))
-            else:
-                optimized_hparams = None
+            self, opti_hparams_prefix: str, model_names: list[str]
+        ) -> dict:
+        # Build paths
+        opti_paths = self.find_artifact_files(
+            opti_hparams_prefix,
+            model_names,
+            self.artifacts_paths['hparams_dir'],
+            '.json' # Optimized Hyperparameter files are json
+        )
 
+        # load files if paths exist
+        if len(opti_paths) != 0:
+            optimized_hparams = {}
+            for path in opti_paths.values():
+                optimized_hparams.update(load_json(path))
         else:
-            raise RuntimeError('Incorrect mode arguments while running at entry point.')
+            print(
+                'WARNING: Models not tuned! No optimized hyperparameters found.',
+                'Tune models using `python -m scripts.run_training <options> -t`'
+            )
+            optimized_hparams = None
+
         
         return optimized_hparams
+    
+    def agg_daily_rets(self, rets_prefix: str, model_names: list[str]) -> dict:
+
+        # Build paths
+        rets_paths = self.find_artifact_files(
+            rets_prefix,
+            model_names,
+            self.artifacts_paths['wfv_perf_dir'],
+            '.json'
+        )
+
+        # load returns json files if the paths exist
+        if len(rets_paths) != 0:
+            daily_rets = {}
+            for path in rets_paths.values():
+                daily_rets.update(load_json(path))
+        else:
+            print(
+                'WARNING: No daily returns found.'
+            )
+            daily_rets = None
+        
+        return daily_rets
