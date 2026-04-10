@@ -71,41 +71,41 @@ def clean_inplace(
     
     return train, val, test
 
-def get_only_returns(
-        train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    Extract only return columns from each of the split datasets.
+# def get_only_returns(
+#         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
+#     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+#     """
+#     Extract only return columns from each of the split datasets.
 
-    @param train pd.DataFrame Training data.
-    @param val pd.DataFrame Validation data.
-    @param test pd.DataFrame Test data.
+#     @param train pd.DataFrame Training data.
+#     @param val pd.DataFrame Validation data.
+#     @param test pd.DataFrame Test data.
     
-    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
-            ret_train, ret_val, and ret_test
+#     @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
+#             ret_train, ret_val, and ret_test
 
-    """
-    # return_cols = []
-    return_suffix = '_RET'
-    # for col in train.columns:
-    #     if return_suffix in col:
-    #         return_cols.append(col)
+#     """
+#     # return_cols = []
+#     return_suffix = '_RET'
+#     # for col in train.columns:
+#     #     if return_suffix in col:
+#     #         return_cols.append(col)
     
-    return_cols = extract_req_cols(train.columns, return_suffix)
+#     return_cols = extract_req_cols(train.columns, return_suffix)
     
-    ret_train = train[return_cols]
-    ret_val = val[return_cols]
-    ret_test = test[return_cols]
+#     ret_train = train[return_cols]
+#     ret_val = val[return_cols]
+#     ret_test = test[return_cols]
 
-    ret_train.columns = [col.replace(return_suffix, '') for col in return_cols]
-    ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
-    ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
+#     ret_train.columns = [col.replace(return_suffix, '') for col in return_cols]
+#     ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
+#     ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
 
-    return (
-        ret_train.sort_index(axis=1),
-        ret_val.sort_index(axis=1),
-        ret_test.sort_index(axis=1)
-    )
+#     return (
+#         ret_train.sort_index(axis=1),
+#         ret_val.sort_index(axis=1),
+#         ret_test.sort_index(axis=1)
+#     )
 
 class SSA:
     def __init__(self, window_len: int, variance_thres: float = 0.90):
@@ -273,6 +273,7 @@ def calculate_dema(df, span=20):
 
 class Preprocessor:
     col_sep = '_'
+    return_suffix = '_RET'
     
     def __init__(
             self,
@@ -289,16 +290,18 @@ class Preprocessor:
         self.common_features = common_features
         self.broadcast = broadcast
         
-        self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
-        self._box_cox = PowerTransformer(method='box-cox', standardize=False)
+        # self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
+        # self._box_cox = PowerTransformer(method='box-cox', standardize=False)
 
         # self.ssa = SSA(window_len=90)
-        self.kalman_filt = KalmanDenoise()
+        # self.kalman_filt = KalmanDenoise()
 
-        self._robust_scaler = RobustScaler()
+        # self._robust_scaler = RobustScaler()
 
         self.unordered_cols = None
         self.all_tickers = None
+
+        self.return_cols = None
 
     def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
@@ -442,9 +445,26 @@ class Preprocessor:
         all_features.extend(sorted(self.common_features))
         return all_features, tickers
 
+    def _extract_only_returns(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
+        if mode == 'fit':
+            self.return_cols = extract_req_cols(data.columns, self.return_suffix)
+        else:
+            pass
+        
+        if self.return_cols is not None:
+            
+            returns_data = data[self.return_cols]
+
+            returns_data.columns = [col.replace(self.return_suffix, '') for col in self.return_cols]
+
+            return returns_data.sort_index(axis=1)
+
+        else:
+            raise RuntimeError('Run `process_train_data` first.')
+
     def process_train_data(
             self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
-        )-> pd.DataFrame:
+        )-> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Preprocesses given training data
 
@@ -453,7 +473,8 @@ class Preprocessor:
         
         @return pd.DataFrame Preprocessed training data
         """
-
+        ret_train = self._extract_only_returns(train, 'fit')
+        
         macro_cols: list[str] = []
         if macro_data:
             macro_cols = list(macro_data.columns)
@@ -473,17 +494,17 @@ class Preprocessor:
         # train = self.kalman_filt.kalman_transform(train)
 
         # train = self._transform(train, 'fit')
-        train = self._normalize(train, 'fit')
+        # train = self._normalize(train, 'fit')
 
         # Broadcast common features only if needed
         if self.broadcast:
             train = self._broadcast_common(train, self.common_features)
 
-        return train
+        return train, ret_train
 
     def process_split_data(
             self, split_data: pd.DataFrame, macro_data: pd.DataFrame | None = None
-        ) -> pd.DataFrame:
+        ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Preprocesses given validation or test data based on statistics 
         from the training data.
@@ -493,6 +514,8 @@ class Preprocessor:
         
         @return pd.DataFrame Preprocessed validation or test data
         """
+        
+        ret_split = self._extract_only_returns(split_data, 'split')
 
         # macro_cols: list[str] = []
         if macro_data:
@@ -519,13 +542,13 @@ class Preprocessor:
         # Kalman filter for denosining
         # split_data = self.kalman_filt.kalman_transform(split_data)
 
-        split_data = self._normalize(split_data, 'split')
+        # split_data = self._normalize(split_data, 'split')
 
         # Broadcast common features only if needed
         if self.broadcast:
             split_data = self._broadcast_common(split_data, self.common_features)
 
-        return split_data
+        return split_data, ret_split
 
     def get_common_features(self) -> list:
         """

@@ -3,13 +3,11 @@ import pytest
 import numpy as np
 import torch.nn.functional as F
 from src.models.lstm import BaseLSTM, AttentionLSTM
+from src.utils.device import set_seed
 
 # reuse seed helper from previous file if present; otherwise:
 def seed_everything(seed=0):
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    set_seed(seed)
 
 
 def assert_probability_vector(weights: torch.Tensor, atol=1e-6):
@@ -18,7 +16,7 @@ def assert_probability_vector(weights: torch.Tensor, atol=1e-6):
     sums = weights.sum(dim=-1)
     assert torch.allclose(sums, torch.ones_like(sums), atol=atol)
 
-# ---------- Tests for BaseLSTM class ---------- #
+# -------------------- Tests for BaseLSTM class -------------------- #
 def test_baselstm_constructor_attributes():
     """Constructor should create expected submodules and shapes."""
     input_size, hidden_size, num_layers, num_stocks = 4, 8, 2, 5
@@ -197,7 +195,7 @@ def test_baselstm_last_timestep_dependency_and_zero_input_stability():
     assert torch.allclose(w_last, w_last2, atol=1e-7), "eval() forward should be deterministic"
 
 
-# ---------- Tests for AttentionLSTM class ---------- #
+# -------------------- Tests for AttentionLSTM class -------------------- #
 def test_attentionlstm_constructor_attributes():
     """Constructor should create expected submodules including attention and layer norms."""
     input_size, hidden_size, num_layers, num_stocks = 6, 8, 1, 4
@@ -206,15 +204,14 @@ def test_attentionlstm_constructor_attributes():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.0,
         equal_prior = False
     )
 
     assert hasattr(model, 'lstm')
     assert hasattr(model, 'ln_lstm')
-    assert hasattr(model, 'attn')
-    assert hasattr(model, 'ln_attn')
+    assert hasattr(model, 't_attn')
     assert hasattr(model, 'fc')
     assert model.lstm.input_size == input_size
     assert model.fc.out_features == num_stocks
@@ -228,7 +225,7 @@ def test_equal_prior_yields_uniform_when_fc_zero_attentionlstm():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.0,
         equal_prior = True
     )
@@ -253,7 +250,7 @@ def test_dropout_train_vs_eval_behavior_attentionlstm():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.5,
         equal_prior = True
     )
@@ -290,7 +287,7 @@ def test_attentionlstm_output_shape_and_probability(batch, seq_len, input_size, 
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.2,
         equal_prior = False
     )
@@ -316,7 +313,7 @@ def test_attentionlstm_residual_and_pooling_effects():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.0,
         equal_prior = False
     )
@@ -349,7 +346,7 @@ def test_attentionlstm_grad_flow_and_input_sensitivity():
         hidden_size=hidden_size,
         num_layers=num_layers,
         num_stocks=num_stocks,
-        attention_heads = 2,
+        nheads = 2,
         dropout=0.0,
         equal_prior = False
     )

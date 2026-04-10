@@ -56,11 +56,17 @@ class Reshaper:
                 'Use ReshapeStyle from src.data_processing.preprocess.'
             )
         
+        if not common_features:
+            raise ValueError(
+                'A list of common features must be provided so that they can get broadcasted if needed.'
+            )
+        
         self.num_common_feats = len(common_features)
 
         self.tickers = [] # All tickers
         self.features = [] # All features
 
+        self.total_num_cols = None
         self.num_tickers = None
         self.num_features = None
     
@@ -79,28 +85,28 @@ class Reshaper:
         # features.extend(common_feats)
         self.features = list(set(features)) # Not required to sort here
 
+        self.total_num_cols = len(train_cols)
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
-    def transform_one_window(self, df_window: pd.DataFrame) -> np.ndarray:        
+    def transform_one_window(self, wind_data: np.ndarray) -> np.ndarray:        
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
-        all_data_value = df_window.values
         
-        T = all_data_value.shape[0]
+        T = wind_data.shape[0]
         N = self.num_tickers
         F = self.num_features
         C = self.num_common_feats
 
-        ticker_block = all_data_value[:, :N*F] 
+        ticker_block = wind_data[:, :N*F] 
         # Common Block is the remaining columns at the end
-        common_block = all_data_value[:, N*F:]
+        common_block = wind_data[:, N*F:]
 
         # Handle Layouts using Vectorized Operations
         # TODO: Other forms of reshaping must be implmented !!!!
         if self.layout == ReshapeStyle.T_NxF:
             # Already in shape (T, N*F)
-            return all_data_value
+            return wind_data
         
         elif self.layout == ReshapeStyle.T_N_F_plus_C:
             # BROADCASTING: Each ticker gets the macro features appended to its own features.
@@ -132,12 +138,26 @@ class Reshaper:
             raise ValueError('layout must be of type `ReshapeStyle`')
 
     def _features_check(self):
-        if (len(self.tickers) == 0 or 
-            len(self.features) == 0):
+        if (
+            not self.num_tickers or 
+            not self.num_features or
+            not self.total_num_cols
+        ):
             raise ValueError('Run `extract_features` before reshaping!')
 
+    def _columns_match_check(self, features_num_cols: int, returns_num_cols: int):
+        if features_num_cols != self.total_num_cols:
+            raise ValueError(
+                'Extracted columns do not match provided array shape.'
+            )
+
+        if returns_num_cols != self.num_tickers:
+            raise ValueError(
+                'Number of tickers in extracted columns do not match provided array shape.'
+            )
+
     def reshape(
-            self, features_data: pd.DataFrame, raw_returns: pd.DataFrame
+            self, features_data: np.ndarray, raw_returns: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Reshapes 2D DataFrame into set `layout` at initialization.
@@ -150,10 +170,11 @@ class Reshaper:
         """
         
         self._features_check()
+        self._columns_match_check(features_data.shape[1], raw_returns.shape[1])
 
         if self.in_size + self.out_size > features_data.shape[0]:
             raise ValueError(
-                'Incorrect rolling window sizes. in_size + out_size <= Number os time steps'
+                'Incorrect rolling window sizes. in_size + out_size <= Number of time steps'
             )
 
         starts = list(
@@ -165,17 +186,17 @@ class Reshaper:
         good_starts = []
 
         for s in starts:
-            X_df = features_data.iloc[s : s + self.in_size]
-            y_df = raw_returns.iloc[
+            X_df = features_data[s : s + self.in_size]
+            y_df = raw_returns[
                 s + self.in_size : s + self.in_size + self.out_size
             ]#[self.tickers]
 
             # skip invalid windows
-            if y_df.isna().any().any():
+            if np.isnan(y_df).any():
                 raise ValueError('Window has missing data. Fix before training.')
         
             X_list.append(self.transform_one_window(X_df))
-            y_list.append(y_df.values)
+            y_list.append(y_df)
             good_starts.append(s)
         
         X = np.stack(X_list)
@@ -236,140 +257,48 @@ class WindowDataset(Dataset):
         # Return one sample
         return self.X[idx], self.y[idx]
 
-
-def calc_in_out_idx(
-        split_data: pd.DataFrame, in_size: int, out_size: int, stride: int
-    ) -> tuple[list[tuple], list[tuple]]:
-
-    #### Implment start index shifting of training data here, if needed ####
-    #### Current design intended to use entire train data.
-
-    # Check for missing data
-    if split_data.isna().any().any():
-        raise ValueError('Split has missing data. Fix before training.')
-    
-    starts = list(
-        range(0, len(split_data) - (in_size + out_size) + 1, stride)
-    )
-
-    in_sample_indexes = []
-    out_sample_indexes = []
-    for strt in starts:
-        in_end = strt + in_size
-        in_sample_indexes.append((strt, in_end))
-        
-        # FIX: out_start must be exactly in_end
-        out_start = in_end 
-        out_end = out_start + out_size
-        out_sample_indexes.append((out_start, out_end))
-
-    if len(in_sample_indexes) != len(out_sample_indexes):
-        raise RuntimeError('Window count mismatch.')
-
-    return in_sample_indexes, out_sample_indexes
-
-def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
-    """
-    Get the datetime index columns from the provided dataframe using the 
-    start and stop indexes.
-    """
-    date_idx_cols = []
-    for idxs in wind_strt_stops:
-        date_idx_cols.append(split.index[idxs[0] : idxs[1]])
-    
-    return date_idx_cols
-
-def extract_oos_dates(
-        split: pd.DataFrame, in_wind_idxs: list[tuple], out_wind_idxs: list[tuple]
-    ) -> tuple[list[tuple], list[tuple]]:
-    in_win_date_cols = get_date_index_col(split, in_wind_idxs)
-    out_win_date_cols = get_date_index_col(split, out_wind_idxs)
-
-    return in_win_date_cols, out_win_date_cols
-
-def extract_sp500_winds(
-        benchmark_split: pd.DataFrame, col_name: str, out_win_idxs: list[tuple]
-    ) -> np.ndarray:
-    sp500_col = benchmark_split[col_name]
-
-    sp500_windows = []
-    for idxs in out_win_idxs:
-        sp500_windows.append(sp500_col.iloc[idxs[0] : idxs[1]].to_numpy())
-    
-    return np.vstack(sp500_windows)
-
-def calc_current_idxs(step: int, stride: int):
-    if step == 0:
-        raise ValueError('Got step 0. Must be > 0')
-    
-    current_end = step * stride
-    current_start = current_end - stride
-
-    return current_start, current_end
-
 class WFAdjustment:
-    def __init__(self, stride: int):
-        self.stride = stride
-        self.num_steps = 0
-        self.extra_days = 0
+    def __init__(self, out_size: int):
+        self.out_size = out_size
+        self.num_steps = None
+        self.extra_days = None
     
-    def _calc_walk_steps(self, rets_val: pd.DataFrame) -> tuple[int, int]:
-        total_val_days = len(rets_val)
-        self.extra_days = total_val_days % self.stride
-        self.num_steps = (total_val_days - self.extra_days) // self.stride
+    def calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
+        total_oos_days = len(split)
+        extra_days = total_oos_days % self.out_size
+        num_steps = total_oos_days // self.out_size
 
-        return self.num_steps
+        self.extra_days = extra_days
+        self.num_steps = num_steps
+
+        return self.num_steps, self.extra_days
     
     def init_datasets(
-            self,
-            train: pd.DataFrame, rets_train: pd.DataFrame,
-            split: pd.DataFrame, rets_split: pd.DataFrame
-        ):
+            self, train: pd.DataFrame, split: pd.DataFrame
+        ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Create initial datasets by adjusting for the extra days.
         This method adds the first 'extra' days to the training data.
+        We only Adjust teh validation data set, not test set.
         """
-        self._calc_walk_steps(rets_split)
+        self.calc_walk_steps(split)
         
         init_train = pd.concat(
             [train, split.iloc[:self.extra_days]],
             axis=0
         )
-        init_rets_train = pd.concat(
-            [rets_train, rets_split.iloc[:self.extra_days]],
-            axis=0
-        )
-        init_val = split.iloc[self.extra_days:]
-        init_rets_val = rets_split.iloc[self.extra_days:]
+
+        init_split = split.iloc[self.extra_days:]
 
         self.init_train = init_train
-        self.init_rets_train = init_rets_train
-        self.init_val = init_val
-        self.init_rets_val = init_rets_val
+        self.init_split = init_split
 
         print(
             f'Evaluation dataset contains {self.num_steps} steps.',
             f'{self.extra_days} days from evaluation dataset moved to training dataset.'
         )
-    
-    def get_eval_windows(self) -> tuple[np.ndarray, list[tuple[int, int]]]:
-        eval_windows = []
-        out_wind_idxs = []
-        for step in range(1, self.num_steps+1):
-            current_start, current_end = calc_current_idxs(step, self.stride)
 
-            walk_rets_val = self.init_rets_val.iloc[current_start : current_end]
-
-            eval_windows.append(walk_rets_val.values)
-
-            out_wind_idxs.append((current_start, current_end))
-        
-        return np.stack(eval_windows), out_wind_idxs
-    
-    def get_data(
-            self
-        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        return self.init_train, self.init_rets_train, self.init_val, self.init_rets_val
+        return self.init_train, self.init_split
     
     def get_num_steps(self) -> int:
         return self.num_steps

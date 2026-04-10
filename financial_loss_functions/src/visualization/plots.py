@@ -112,7 +112,7 @@ def plot_windowed_comparison(
     all_daily_returns: dict,
     window_dates: list,  # Add this parameter (list of DatetimeIndex)
     windows_per_row: int,
-    output_path: str,
+    output_path: str | None = None,
     plot: bool = False
 ):
     cmap = plt.get_cmap('tab20')
@@ -164,7 +164,9 @@ def plot_windowed_comparison(
     fig.autofmt_xdate()
     
     plt.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches='tight')
+
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
 
     # 2. CREATE SEPARATE LEGEND FILE
     # Extract handles and labels from the LAST used axis
@@ -178,12 +180,13 @@ def plot_windowed_comparison(
     # Remove all axis info so it's just the legend
     plt.axis('off')
     
-    # Generate legend path (e.g., 'path/to/plot_legend.png')
-    base, ext = os.path.splitext(output_path)
-    legend_path = f'{base}_legend{ext}'
-    
-    # Save with bbox_inches='tight' to crop the white space
-    fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
+    if output_path:
+        # Generate legend path (e.g., 'path/to/plot_legend.png')
+        base, ext = os.path.splitext(output_path)
+        legend_path = f'{base}_legend{ext}'
+        
+        # Save with bbox_inches='tight' to crop the white space
+        fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
 
     if plot:
         plt.show()

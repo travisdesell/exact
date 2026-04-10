@@ -859,7 +859,7 @@ def smooth_omega_objective(
 def hhi_regularizer(
     weights: Tensor,
     scale_to_unit: bool = True,
-    eps: float = 1e-12
+    eps: float = 1e-8
 ) -> Tensor:
     """
     HHI concentration penalty (batch-mean).
@@ -896,7 +896,7 @@ def hhi_signed_regularizer(
     weights: Tensor,
     normalize_by_gross: bool = False,
     scale_to_unit: bool = True,
-    eps: float = 1e-12
+    eps: float = 1e-8
 ) -> Tensor:
     """
 
@@ -934,7 +934,7 @@ def entropy_conc_regularizer(
     weights: Tensor,
     signed: bool = False,
     mode: str = 'scaled',
-    eps: float = 1e-12,
+    eps: float = 1e-8,
 ) -> Tensor:
     """
     Entropy concentration penalty (no clustering).
@@ -1168,24 +1168,6 @@ def custom_loss_5(
     # print('RP:', risk_parity * lambda1)
     return sharpe + lambda1 * risk_parity 
 
-@LossLibrary.register(category='custom')
-def custom_loss_6(
-    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
-    cvar_lambda: float, risk_p_lambda: float, **kwargs
-) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
-    """
-    #### 2ND BEST
-    sharpe = differentiable_sharpe_objective(pf_returns)
-    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
-    risk_parity = risk_parity_regularizer(weights, all_returns)
-
-    # print('Sharpe:', sharpe)
-    # print('CVaR:', cvar)
-    # print('RP:', risk_parity)
-    return sharpe + (cvar_lambda * cvar) + (risk_p_lambda * risk_parity)
-
 # @LossLibrary.register(category='custom')
 def custom_loss_7(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
@@ -1202,7 +1184,7 @@ def custom_loss_7(
     # print('RP:', risk_parity)
     return log_sharpe + (lambda1 * cvar) + (lambda2 * risk_parity)
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_8(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, log_ret_lambda: float,
     cvar_lambda: float, risk_p_lambda: float, **kwargs
@@ -1243,6 +1225,25 @@ def custom_loss_9(
     return log_sortino + (lambda1 * cvar) + (lambda2 * risk_parity)
 
 @LossLibrary.register(category='custom')
+def custom_loss_6(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
+    cvar_lambda: float, risk_p_lambda: float, **kwargs
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
+    """
+    #### 2ND BEST
+    sharpe = differentiable_sharpe_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar)
+    # print('RP:', risk_parity)
+    return sharpe + (cvar_lambda * cvar) + (risk_p_lambda * risk_parity)
+
+
+@LossLibrary.register(category='custom')
 def custom_loss_10(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float
@@ -1278,4 +1279,107 @@ def custom_loss_11(
     loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity)
+    return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_12(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float
+) -> Tensor:
+    omega = raw_omega_ratio(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity)
+    return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_13(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """
+    sharpe = smooth_neglog_sharpe_loss(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+    entropy = entropy_conc_regularizer(weights)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar * cvar_lambda)
+    # print('RP:', risk_parity * risk_p_lambda)
+    # print('Entropy:', entropy)
+
+    loss = sharpe + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity) + \
+                (ent_lambda + entropy)
+    return loss
+
+@LossLibrary.register(category='custom')
+def custom_loss_14(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
+) -> Tensor:
+    omega = smooth_omega_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+    entropy = entropy_conc_regularizer(weights)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity) + \
+                (ent_lambda + entropy)
+    return loss
+
+# @LossLibrary.register(category='custom')
+def custom_loss_15(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
+) -> Tensor:
+    """
+    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """
+    sharpe = smooth_neglog_sharpe_loss(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+    hhi = hhi_regularizer(weights)
+
+    # print('Sharpe:', sharpe)
+    # print('CVaR:', cvar * cvar_lambda)
+    # print('RP:', risk_parity * risk_p_lambda)
+    # print('Entropy:', entropy)
+
+    loss = sharpe + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity) + \
+                (hhi_lambda + hhi)
+    return loss
+
+# @LossLibrary.register(category='custom')
+def custom_loss_16(
+    weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
+    cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
+) -> Tensor:
+    omega = smooth_omega_objective(pf_returns)
+    cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
+    risk_parity = risk_parity_regularizer(weights, all_returns)
+    hhi = hhi_regularizer(weights)
+
+    # print('Omega:', omega)
+    # print('CVaR:', cvar* cvar_lambda)
+    # print('RP:', risk_parity* risk_p_lambda)
+    loss = omega + \
+        (cvar_lambda * cvar) + \
+            (risk_p_lambda * risk_parity) + \
+                (hhi_lambda + hhi)
     return loss

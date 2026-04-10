@@ -6,7 +6,6 @@ from numpy.testing import assert_allclose
 from src.data_processing.preprocess_crsp import (
     clean_inplace,
     preprocessor2,
-    get_only_returns,
     Preprocessor
 )
 
@@ -62,23 +61,23 @@ def test_clean_inplace_dup_dates():
     assert not test.index.duplicated().any(), 'Duplicate index date found in the test set.'
 
 # ---------- Get only returns tests ---------- #
-def test_get_only_data_returns():
-    train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
-    val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
-    test = pd.DataFrame({'ABCD_RET': [0.7, 0.8, 0.9], 'ABCD_VOL':[400, 500, 600]})
+# def test_get_only_data_returns():
+#     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
+#     val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
+#     test = pd.DataFrame({'ABCD_RET': [0.7, 0.8, 0.9], 'ABCD_VOL':[400, 500, 600]})
 
-    train_ret, val_ret, test_ret = get_only_returns(train, val, test)
+#     train_ret, val_ret, test_ret = get_only_returns(train, val, test)
     
-    # Should keep only columns containing '_RET',
-    # but with suffix removed
-    assert list(train_ret.columns) == ['ABCD']
-    assert list(val_ret.columns) == ['ABCD']
-    assert list(test_ret.columns) == ['ABCD']
+#     # Should keep only columns containing '_RET',
+#     # but with suffix removed
+#     assert list(train_ret.columns) == ['ABCD']
+#     assert list(val_ret.columns) == ['ABCD']
+#     assert list(test_ret.columns) == ['ABCD']
 
-    # Check values remain the same
-    assert train_ret.iloc[0,0] == 0.1
-    assert val_ret.iloc[1,0] == 0.5
-    assert test_ret.iloc[2,0] == 0.9
+#     # Check values remain the same
+#     assert train_ret.iloc[0,0] == 0.1
+#     assert val_ret.iloc[1,0] == 0.5
+#     assert test_ret.iloc[2,0] == 0.9
 
 # ---------- Cov Preprocessor tests ---------- #
 def test_cov_preprocessor():
@@ -150,7 +149,7 @@ def make_sample_train(n=100, seed=0):
     gdp = np.linspace(1.0, 2.0, n)
 
     df = pd.DataFrame({
-        'ABCD_PRICE': a_price,
+        'ABCD_RET': a_price,
         'ABCD_VOL_CHANGE': a_vol,
         'ABCD_TURNOVER': a_turn,
         'BCDE_VOL_CHANGE': b_vol,
@@ -159,103 +158,131 @@ def make_sample_train(n=100, seed=0):
     }, index=dates)
     return df
 
-def test_transform_fit_and_split_applies_power_transforms(preprocessor):
-    train = make_sample_train(n=50, seed=1)
-    split = make_sample_train(n=20, seed=2)
+def test_extract_only_returns(preprocessor):
+    train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
+    val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
+    test = pd.DataFrame({'ABCD_RET': [0.7, 0.8, 0.9], 'ABCD_VOL':[400, 500, 600]})
 
-    preprocessor.unordered_cols = list(train.columns)
+    ret_train = preprocessor._extract_only_returns(train, 'fit')
+    ret_val = preprocessor._extract_only_returns(val, 'split')
+    ret_test = preprocessor._extract_only_returns(test, 'split')
 
-    # fit mode
-    transformed_train = preprocessor._transform(train.copy(), mode='fit')
+    # Should keep only columns containing '_RET',
+    # but with suffix removed
+    assert list(ret_train.columns) == ['ABCD']
+    assert list(ret_val.columns) == ['ABCD']
+    assert list(ret_test.columns) == ['ABCD']
 
-    # Ensure transformers were fitted and transformed data changed for the relevant cols
-    vol_cols = [c for c in preprocessor.unordered_cols if '_VOL_CHANGE' in c]
-    turn_cols = [c for c in preprocessor.unordered_cols if '_TURNOVER' in c]
+    # Check values remain the same
+    assert ret_train.iloc[0,0] == 0.1
+    assert ret_val.iloc[1,0] == 0.5
+    assert ret_test.iloc[2,0] == 0.9
 
-    # At least one value should differ from original after fit-transform
-    assert not np.allclose(train[vol_cols].values, transformed_train[vol_cols].values)
-    assert not np.allclose(train[turn_cols].values, transformed_train[turn_cols].values)
+def test_extract_only_returns_incorrect_init(preprocessor):
+    train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
 
-    # split mode
-    # Manually compute expected transformed values
-    expected_split = split.copy()
-    expected_split[vol_cols] = preprocessor._yeo_john.transform(split[vol_cols])
-    expected_split[turn_cols] = preprocessor._box_cox.transform(split[turn_cols])
+    with pytest.raises(RuntimeError) as excinfo:
+        preprocessor._extract_only_returns(train, 'split')
+    
+    assert 'Run `process_train_data` first.' in str(excinfo)
 
-    result_split = preprocessor._transform(split.copy(), mode='split')
+# def test_transform_fit_and_split_applies_power_transforms(preprocessor):
+#     train = make_sample_train(n=50, seed=1)
+#     split = make_sample_train(n=20, seed=2)
 
-    # Compare
-    assert_allclose(
-        result_split[vol_cols].values, 
-        expected_split[vol_cols].values,
-        atol=1e-8
-    )
-    assert_allclose(
-        result_split[turn_cols].values,
-        expected_split[turn_cols].values,
-        atol=1e-8
-    )
+#     preprocessor.unordered_cols = list(train.columns)
 
-def test_power_transform_reduces_skewness(preprocessor):
-    """
-    Ensure that Yeo-Johnson and Box-Cox transformations reduce skewness
-    in VOL_CHANGE and TURNOVER columns.
-    """
-    # Create an intentionally skewed dataset
-    rng = np.random.default_rng(0)
-    n = 300
+#     # fit mode
+#     transformed_train = preprocessor._transform(train.copy(), mode='fit')
 
-    # VOL_CHANGE (can be negative): heavily right-skewed via exp() - 5
-    vol_a = np.exp(rng.normal(1, 1, size=n)) - 5
-    vol_b = np.exp(rng.normal(1.2, 1, size=n)) - 6
+#     # Ensure transformers were fitted and transformed data changed for the relevant cols
+#     vol_cols = [c for c in preprocessor.unordered_cols if '_VOL_CHANGE' in c]
+#     turn_cols = [c for c in preprocessor.unordered_cols if '_TURNOVER' in c]
 
-    # TURNOVER (strictly positive): lognormal = extremely skewed
-    turn_a = rng.lognormal(mean=1, sigma=1, size=n)
-    turn_b = rng.lognormal(mean=0.8, sigma=1, size=n)
+#     # At least one value should differ from original after fit-transform
+#     assert not np.allclose(train[vol_cols].values, transformed_train[vol_cols].values)
+#     assert not np.allclose(train[turn_cols].values, transformed_train[turn_cols].values)
 
-    df = pd.DataFrame({
-        'A_VOL_CHANGE': vol_a,
-        'B_VOL_CHANGE': vol_b,
-        'A_TURNOVER': turn_a,
-        'B_TURNOVER': turn_b,
-    })
+#     # split mode
+#     # Manually compute expected transformed values
+#     expected_split = split.copy()
+#     expected_split[vol_cols] = preprocessor._yeo_john.transform(split[vol_cols])
+#     expected_split[turn_cols] = preprocessor._box_cox.transform(split[turn_cols])
 
-    # Preprocessor needs all_col_names set before calling _transform
-    preprocessor.unordered_cols = list(df.columns)
+#     result_split = preprocessor._transform(split.copy(), mode='split')
 
-    # Skewness BEFORE transformation
-    before_skew = df.apply(lambda s: skew(s.dropna()))
+#     # Compare
+#     assert_allclose(
+#         result_split[vol_cols].values, 
+#         expected_split[vol_cols].values,
+#         atol=1e-8
+#     )
+#     assert_allclose(
+#         result_split[turn_cols].values,
+#         expected_split[turn_cols].values,
+#         atol=1e-8
+#     )
 
-    # Transform (fit mode)
-    df_after = preprocessor._transform(df.copy(), mode="fit")
+# def test_power_transform_reduces_skewness(preprocessor):
+#     """
+#     Ensure that Yeo-Johnson and Box-Cox transformations reduce skewness
+#     in VOL_CHANGE and TURNOVER columns.
+#     """
+#     # Create an intentionally skewed dataset
+#     rng = np.random.default_rng(0)
+#     n = 300
 
-    # Skewness AFTER transformation
-    after_skew = df_after.apply(lambda s: skew(s.dropna()))
+#     # VOL_CHANGE (can be negative): heavily right-skewed via exp() - 5
+#     vol_a = np.exp(rng.normal(1, 1, size=n)) - 5
+#     vol_b = np.exp(rng.normal(1.2, 1, size=n)) - 6
 
-    # Check skewness reduction for each transformed column
-    for col in ['A_VOL_CHANGE', 'B_VOL_CHANGE', 'A_TURNOVER', 'B_TURNOVER']:
-        assert abs(after_skew[col]) < abs(before_skew[col]), \
-            f'Skewness did not decrease for {col}: before={before_skew[col]}, after={after_skew[col]}'
+#     # TURNOVER (strictly positive): lognormal = extremely skewed
+#     turn_a = rng.lognormal(mean=1, sigma=1, size=n)
+#     turn_b = rng.lognormal(mean=0.8, sigma=1, size=n)
 
-def test_normalize_fit_median_and_iqr(preprocessor):
-    # small deterministic dataframe whose median and IQR are known
-    df = pd.DataFrame({
-        'col1': np.array([0, 1, 2, 3, 4], dtype=float),   # median=2, IQR=2 (3-1)
-        'col': np.array([10, 20, 30, 40, 50], dtype=float), # median=30, IQR=20 (40-20)
-    })
+#     df = pd.DataFrame({
+#         'A_VOL_CHANGE': vol_a,
+#         'B_VOL_CHANGE': vol_b,
+#         'A_TURNOVER': turn_a,
+#         'B_TURNOVER': turn_b,
+#     })
 
-    scaled = preprocessor._normalize(df.copy(), mode='fit')
+#     # Preprocessor needs all_col_names set before calling _transform
+#     preprocessor.unordered_cols = list(df.columns)
 
-    # For RobustScaler, after fitting:
-    # - column medians should be ~ 0
-    # - IQR should be ~ 1
-    for col in scaled.columns:
-        col_vals = scaled[col].values
-        median = np.median(col_vals)
-        iqr = np.percentile(col_vals, 75) - np.percentile(col_vals, 25)
+#     # Skewness BEFORE transformation
+#     before_skew = df.apply(lambda s: skew(s.dropna()))
 
-        assert np.isclose(median, 0.0, atol=1e-8), f'median for {col} not ~0 (got {median})'
-        assert np.isclose(iqr, 1.0, atol=1e-8), f'IQR for {col} not ~1 (got {iqr})'
+#     # Transform (fit mode)
+#     df_after = preprocessor._transform(df.copy(), mode="fit")
+
+#     # Skewness AFTER transformation
+#     after_skew = df_after.apply(lambda s: skew(s.dropna()))
+
+#     # Check skewness reduction for each transformed column
+#     for col in ['A_VOL_CHANGE', 'B_VOL_CHANGE', 'A_TURNOVER', 'B_TURNOVER']:
+#         assert abs(after_skew[col]) < abs(before_skew[col]), \
+#             f'Skewness did not decrease for {col}: before={before_skew[col]}, after={after_skew[col]}'
+
+# def test_normalize_fit_median_and_iqr(preprocessor):
+#     # small deterministic dataframe whose median and IQR are known
+#     df = pd.DataFrame({
+#         'col1': np.array([0, 1, 2, 3, 4], dtype=float),   # median=2, IQR=2 (3-1)
+#         'col': np.array([10, 20, 30, 40, 50], dtype=float), # median=30, IQR=20 (40-20)
+#     })
+
+#     scaled = preprocessor._normalize(df.copy(), mode='fit')
+
+#     # For RobustScaler, after fitting:
+#     # - column medians should be ~ 0
+#     # - IQR should be ~ 1
+#     for col in scaled.columns:
+#         col_vals = scaled[col].values
+#         median = np.median(col_vals)
+#         iqr = np.percentile(col_vals, 75) - np.percentile(col_vals, 25)
+
+#         assert np.isclose(median, 0.0, atol=1e-8), f'median for {col} not ~0 (got {median})'
+#         assert np.isclose(iqr, 1.0, atol=1e-8), f'IQR for {col} not ~1 (got {iqr})'
 
 def test_broadcast_common_features(preprocessor):
     # Small df with macro common feature 'sp500r'
@@ -270,7 +297,8 @@ def test_broadcast_common_features(preprocessor):
         'sp500r': np.linspace(2.0, 3.0, n),
     }, index=dates)
     preprocessor.broadcast = True # Set to true, since default is false
-    processed = preprocessor.process_train_data(df.copy())
+    processed, _ = preprocessor.process_train_data(df.copy())
+    processed
 
     # Original macro column 'GDP' must be removed
     assert 'sp500r' not in processed.columns

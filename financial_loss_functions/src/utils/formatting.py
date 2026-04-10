@@ -32,7 +32,7 @@ def reformat_hparams(model_cfg: dict, loss_cfg: dict) -> dict:
         'optimizer': copy.deepcopy(model_cfg['optimizer']),
         'train': copy.deepcopy(model_cfg['train']),
         'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
-        'loss': copy.deepcopy(loss_cfg.get('lambdas'))
+        'loss': copy.deepcopy(loss_cfg.get('lambdas', {}))
     }
 
     return hparams

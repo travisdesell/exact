@@ -1,13 +1,17 @@
 from pathlib import Path
 from src.utils.io import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
+from src.data_processing.dataset import WFAdjustment
 from src.data_processing.preprocess_crsp import (
     clean_inplace,
-    get_only_returns,
     Preprocessor
 )
 
-def run_processing_pipeline(paths_config: dict, features_config: dict):
+def run_processing_pipeline(
+        paths_config: dict,
+        hparams_config: dict,
+        features_config: dict
+    ):
     """
     Data Processing Pipeline entry point
 
@@ -40,24 +44,11 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     # -------------------- CRSP Cleaning -------------------- #
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
-    # -------------------- CRSP Split Returns and S&P 500 Returns -------------------- #
-    # Common processing (realized returns)
-    ret_train, ret_val, ret_test = get_only_returns(train_data, val_data, test_data)
-    save_to_csv(
-        ret_train,
-        Path(paths_config['processed_paths']['returns_train'])
-    )
-    save_to_csv(
-        ret_val,
-        Path(paths_config['processed_paths']['returns_val'])
-    )
-    save_to_csv(
-        ret_test,
-        Path(paths_config['processed_paths']['returns_test'])
-    )
-    
-    print('Realized returns extracted and saved.')
+    # -------------------- CRSP Cleaning -------------------- #
+    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
+    train_data, val_data = data_adjuster.init_datasets(train_data, val_data)
 
+    # -------------------- Split S&P 500 Returns -------------------- #
     # Extract and Save S&P 500 returns for benchmarks
     sp500_col_name = features_config['sp500_returns']
     
@@ -115,10 +106,31 @@ def run_processing_pipeline(paths_config: dict, features_config: dict):
     nn_preprocessor = Preprocessor(
         common_features = features_config['common_features']
     )
-    processed_train = nn_preprocessor.process_train_data(train_data)
-    processed_val = nn_preprocessor.process_split_data(val_data)
-    processed_test = nn_preprocessor.process_split_data(test_data)
+    processed_train, ret_train = nn_preprocessor.process_train_data(train_data)
+    processed_val, ret_val = nn_preprocessor.process_split_data(val_data)
+    processed_test, ret_test = nn_preprocessor.process_split_data(test_data)
 
+    print('Shape of train data:', processed_train.shape)
+    print('Shape of validation data:', processed_val.shape)
+    print('Shape of test data:', processed_test.shape)
+
+    # Save returns data
+    save_to_csv(
+        ret_train,
+        Path(paths_config['processed_paths']['returns_train'])
+    )
+    save_to_csv(
+        ret_val,
+        Path(paths_config['processed_paths']['returns_val'])
+    )
+    save_to_csv(
+        ret_test,
+        Path(paths_config['processed_paths']['returns_test'])
+    )
+    
+    print('Realized returns extracted and saved.')
+    
+    # Save all features data
     save_to_csv(
         processed_train,
         Path(paths_config['processed_paths']['processed_train'])

@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 import pandas as pd
 from typing import Type, Any
-from src.data_processing.dataset import calc_current_idxs
+from src.utils.window import calc_current_idxs
 from src.data_processing.preprocess_crsp import preprocessor2
 
 class TradModelsTrainer:
@@ -107,7 +107,7 @@ class TradModelsTrainer:
 
         if current_start > 0:
             rets_train_slice = pd.concat(
-                [init_rets_train, init_rets_split[:current_start]]
+                [init_rets_train, init_rets_split.iloc[:current_start]]
             )
         else: # First step
             rets_train_slice = init_rets_train
@@ -119,7 +119,13 @@ class TradModelsTrainer:
             init_rets_train: pd.DataFrame,
             init_rets_split: pd.DataFrame,
         ) -> dict[str, np.ndarray]:
-        
+
+        if init_rets_train.shape[1] != init_rets_split.shape[1]:
+            raise ValueError(
+                'Both dataframes must have equal number of columns.',
+                'Data must be only returns for each stock.'
+            )
+
         for step in range(self.num_steps):
             start_time = time.time()
             rets_train_slice = self._build_walk_slice(

@@ -153,7 +153,7 @@ class TFT(nn.Module):
         if equal_prior:
             # 1. Initialize weights to near-zero 
             # This makes the output independent of the hidden state at start
-            # nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
             
             # 2. Initialize bias to zero
             # Softmax(0) = 1/N
@@ -181,44 +181,78 @@ class TFT(nn.Module):
         return torch.softmax(logits, dim=-1)
 
 
-# @NNModelLibrary.register(category='transformer')
+@NNModelLibrary.register(category='transformer')
 class PatchTST(nn.Module):
     def __init__(
-            self, 
-            input_size: int,
-            hidden_size: int,
-            num_stocks: int,
-            patch_size: int,
-            stride: int, 
-            seq_len: int
-        ):
+        self, 
+        input_size: int,          # 251 features
+        hidden_size: int,         # d_model
+        num_layers: int,
+        num_stocks: int,          # output dimension
+        patch_size: int,
+        stride: int,
+        nheads: int,
+        dropout: float,
+        expansion_factor: int,
+        max_seq_len: int,
+        equal_prior: bool,
+        **kwargs
+    ):
         super().__init__()
         self.patch_size = patch_size
-        self.num_patches = seq_len // stride
-        
-        # 1. Patching Linear Layer
-        # Takes a patch of 5 days across 251 features and projects it
-        self.patch_projection = nn.Linear(input_size * patch_size, hidden_size)
-        
-        # 2. Standard Transformer Encoder
+        self.stride = stride
+        # Number of patches (non‑overlapping if stride == patch_size)
+        self.num_patches = (max_seq_len - patch_size) // stride + 1
+
+        # Patch projection
+        self.patch_proj = nn.Linear(input_size * patch_size, hidden_size)
+
+        # Learnable positional embedding
+        self.pos_embedding = nn.Parameter(torch.randn(1, self.num_patches, hidden_size))
+
+        # Transformer encoder with pre‑norm
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=hidden_size, nhead=4, batch_first=True, dropout=0.2
+            d_model=hidden_size,
+            nhead=nheads,
+            dim_feedforward=hidden_size * expansion_factor,
+            dropout=dropout,
+            batch_first=True,
+            activation='gelu',
+            norm_first=True          # pre‑normalisation
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=3)
-        
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
         self.fc = nn.Linear(hidden_size, num_stocks)
 
-    def forward(self, x: Tensor) -> Tensor:
-        # x: (Batch, 60, 251)
+        if equal_prior:
+            # 1. Initialize weights to near-zero 
+            # This makes the output independent of the hidden state at start
+            # nn.init.constant_(self.fc.weight, 0.0)
+            nn.init.uniform_(self.fc.weight, a=-1e-3, b=1e-3) 
+            
+            # 2. Initialize bias to zero
+            # Softmax(0) = 1/N
+            nn.init.constant_(self.fc.bias, 0.0)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, C = x.shape
-        
-        # Create patches: (Batch, Num_Patches, Patch_Size * Features)
-        x = x.unfold(1, self.patch_size, self.patch_size) # Extract patches
-        x = x.reshape(B, self.num_patches, -1) 
-        
-        x = self.patch_projection(x) # (B, 12, hidden_size)
-        x = self.transformer(x)
-        
-        # Pooling: Use the context of the most recent patches
-        context = x.mean(dim=1) 
-        return torch.softmax(self.fc(context), dim=-1)
+
+        # Extract patches: (B, num_patches, patch_size, C)
+        patches = x.unfold(1, self.patch_size, self.stride)  # (B, num_patches, C, patch_size)
+        patches = patches.permute(0, 1, 3, 2)                # (B, num_patches, patch_size, C)
+        # Flatten patch into a vector
+        patch_vec = patches.reshape(B, self.num_patches, -1) # (B, num_patches, patch_size*C)
+
+        # Project to d_model
+        x = self.patch_proj(patch_vec)                       # (B, num_patches, hidden_size)
+
+        # Add positional embeddings
+        x = x + self.pos_embedding[:, :self.num_patches, :]
+
+        # Transformer
+        x = self.transformer(x)                              # (B, num_patches, hidden_size)
+
+        # Pool (mean over patches) and output
+        context = x.mean(dim=1)                              # (B, hidden_size)
+        logits = self.fc(context)                            # (B, num_stocks)
+        return torch.softmax(logits, dim=-1)
