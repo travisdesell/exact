@@ -257,7 +257,7 @@ class WindowDataset(Dataset):
         # Return one sample
         return self.X[idx], self.y[idx]
 
-class WFAdjustment:
+class WFUtilities:
     def __init__(self, out_size: int):
         self.out_size = out_size
         self.num_steps = None

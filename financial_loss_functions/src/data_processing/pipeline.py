@@ -1,7 +1,7 @@
 from pathlib import Path
 from src.utils.io import reset_data_stage, save_to_csv
 from src.data_processing.loading import load_raw_crsp_datasets, load_macro_data
-from src.data_processing.dataset import WFAdjustment
+from src.data_processing.dataset import WFUtilities
 from src.data_processing.preprocess_crsp import (
     clean_inplace,
     Preprocessor
@@ -45,7 +45,7 @@ def run_processing_pipeline(
     train_data, val_data, test_data = clean_inplace(train_data, val_data, test_data)
 
     # -------------------- CRSP Cleaning -------------------- #
-    data_adjuster = WFAdjustment(hparams_config['rolling_windows']['out_size'])
+    data_adjuster = WFUtilities(hparams_config['rolling_windows']['out_size'])
     train_data, val_data = data_adjuster.init_datasets(train_data, val_data)
 
     # -------------------- Split S&P 500 Returns -------------------- #

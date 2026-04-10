@@ -9,7 +9,7 @@ from src.data_processing.dataset import (
     Reshaper,
     ReshapeStyle,
     WindowDataset,
-    WFAdjustment
+    WFUtilities
 )
 
 # -------------------- Tests for Rehsaper -------------------- #
@@ -339,7 +339,7 @@ def test_zero_length_dataset_len_zero_and_indexing_raises():
 def test_calc_walk_steps():
     out_size = 60
     
-    wf = WFAdjustment(out_size)
+    wf = WFUtilities(out_size)
 
     initial_num_rows = 501
     expected_extra_days = initial_num_rows % out_size
@@ -373,7 +373,7 @@ def test_calc_walk_steps():
 def test_init_datasets():
     out_size = 60
     
-    wf = WFAdjustment(out_size)
+    wf = WFUtilities(out_size)
 
     initial_num_rows = 501
     expected_extra_rows = initial_num_rows % out_size
@@ -391,7 +391,7 @@ def test_init_datasets():
         columns=['A_x', 'A_y', 'B_x', 'B_y', 'sprtrn']
     )
 
-    wf = WFAdjustment(out_size)
+    wf = WFUtilities(out_size)
 
     adjusted_train, adjusted_split = wf.init_datasets(test_train, test_split)
 
@@ -407,7 +407,7 @@ def test_init_datasets():
 def test_get_num_steps_extra_days():
     out_size = 50
     
-    wf = WFAdjustment(out_size)
+    wf = WFUtilities(out_size)
 
     # Before calculation
     assert wf.get_num_steps() is None

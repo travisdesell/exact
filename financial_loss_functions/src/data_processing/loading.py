@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from src.utils.io import check_if_files_exist, load_json
+from src.utils.io import check_if_files_exist, load_json, raise_file_not_found
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str
@@ -176,3 +176,15 @@ class ArtifactDataExtractor:
             daily_rets = None
         
         return daily_rets
+
+def load_sp500_rets(path: str) -> pd.DataFrame:
+    sp500_path = Path(path)
+    raise_file_not_found([sp500_path])
+    
+    # Loading only S&P500 from validation split
+    benches = load_csv_files(
+        {'benchmark': sp500_path},
+        index_dt=True
+    )
+
+    return benches['benchmark']

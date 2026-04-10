@@ -231,3 +231,22 @@ def load_path_config(path: str, crsp_data_dir: str | None = None) -> dict:
     config['processed_paths'] = processed_paths
 
     return config
+
+def artifact_paths_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
+    """
+    Create artifact directories based on a configuration dictionary.
+
+    Args:
+        paths_config: Dictionary containing an 'artifacts' key with sub-directory 
+        names and paths.
+
+    Returns:
+        Dictionary mapping artifact names to Path objects.
+    """
+    artifacts_paths = {}
+    for name, path in paths_config['artifacts'].items():
+        dir_path = Path(path)
+        create_directory(dir_path)
+        artifacts_paths[name] = dir_path
+    
+    return artifacts_paths

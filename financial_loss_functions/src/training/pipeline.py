@@ -15,16 +15,16 @@ from src.utils.window import (
 
 )
 from src.training.train_trad import TradModelsTrainer
-from src.data_processing.loading import load_csv_files, ArtifactDataExtractor
+from src.data_processing.loading import load_csv_files, load_sp500_rets
 from src.visualization.plots import (wfv_losses_plot)
 from src.utils.io import (
-    create_directory, save_to_csv, save_to_json, raise_file_not_found
+    artifact_paths_setup, save_to_csv, save_to_json, raise_file_not_found
 )
 from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator, filter_models
 )
-from src.data_processing.dataset import WFAdjustment
+from src.data_processing.dataset import WFUtilities
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
@@ -40,22 +40,6 @@ SP500_NAME = 'S&P500'
 #     """
 #     for dir_path in artifacts_paths.values():
 #         create_directory(dir_path)
-
-def _common_setup(paths_config: dict[str, dict]) -> dict[str, Path]:
-    models_module = paths_config['models_module']
-    # Registering all Traditional models to the library
-    TradModelLibrary.autodiscover(models_module)
-    # Registering all NN models to the library
-    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
-    # No auto discovery needed for Loss library as all functions are in one file
-
-    artifacts_paths = {}
-    for name, path in paths_config['artifacts'].items():
-        dir_path = Path(path)
-        create_directory(dir_path)
-        artifacts_paths[name] = dir_path
-    
-    return artifacts_paths
 
 def _load_processed_data(paths_config: dict) -> tuple:
     
@@ -80,18 +64,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
     # print('Val shape:', val_data.shape)
 
     return train_data, returns_train, val_data, returns_val
-
-def _load_sp500_rets(paths_config: dict):
-    sp500_path = Path(paths_config['processed_paths']['benchmark_val'])
-    raise_file_not_found([sp500_path])
-    
-    # Loading only S&P500 from validation split
-    benches = load_csv_files(
-        {'benchmark_val': sp500_path},
-        index_dt=True
-    )
-
-    return benches['benchmark_val']
 
 def _print_evaludation_info(
         out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
@@ -153,7 +125,7 @@ def run_tuning_pipeline(
     paths_config: dict,
     hparams_config: dict,
     features_config: dict, 
-    grid_mode: str = 'all', 
+    grid_mode: str = 'one_model', 
     loss_mode: str = 'custom',
     model_name: str | None = None,
     loss_name: str | None = None,
@@ -175,19 +147,23 @@ def run_tuning_pipeline(
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
     
-    artifacts_paths = _common_setup(paths_config)
+    artifacts_paths = artifact_paths_setup(paths_config)
+    
+    # Registering all NN models to the library
+    models_module = paths_config['models_module']
+    NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
+    # No auto discovery needed for Loss library as all functions are in one file
     
     # -------------------- Loading Processed Data -------------------- #
     train_data, rets_train, val_data, rets_val = _load_processed_data(
         paths_config
     )
     # Loading S&P 500 for benchmarking
-    sp500_rets = _load_sp500_rets(paths_config)
-
+    sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_val'])
     
     # -------------------- Prepare Validation Sets -------------------- #
     out_size = hparams_config['rolling_windows']['out_size']
-    data_adjuster = WFAdjustment(out_size)
+    data_adjuster = WFUtilities(out_size)
     num_steps, extra_days = data_adjuster.calc_walk_steps(rets_val)
 
     # # y_val for out of sample evaluation
