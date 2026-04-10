@@ -44,9 +44,8 @@ def run_evaluation_pipeline(
         paths_config: dict,
         hparams_config: dict,
         features_config: dict, 
-        grid_mode: str = 'all',
-        model_name: str | None = None,
-        loss_name: str | None = None
+        model_losses: list[str],
+        mpi: bool = False
 ):
     """
     Run Dynamic Walk-Foward Evaluation on the test set to mimic real-life 

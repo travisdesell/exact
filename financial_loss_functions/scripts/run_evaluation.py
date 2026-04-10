@@ -3,7 +3,7 @@ import sys
 import signal
 import argparse
 from src.utils.io import load_path_config, load_json
-from src.training.pipeline import run_wfv_pipeline
+from src.evaluation.pipeline import run_evaluation_pipeline
 
 _interrupted = False
 
@@ -72,48 +72,36 @@ signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
 
 if __name__ == '__main__':
     try:
-        parser = argparse.ArgumentParser(description='Walk-Forward Validation Grid Configuration Script')
+        parser = argparse.ArgumentParser(description='Walk-Forward Evaluation of Test Set')
 
         # Grid mode with a default
         parser.add_argument(
-            '-gm',
-            '--grid_mode', 
-            choices=['all', 'one_model', 'one'], 
-            help='Choose the grid search mode. This must be the same as the grid_mode used to run training.'
+            '-tm',
+            '--test_mode', 
+            choices=['selected', 'one'], 
+            help='Choose, models to evaluate. This can be for selected models or a single model'
         )
 
         parser.add_argument(
             '-m',
-            '--model',
-            help="Model name required if grid_mode is 'one_model' or 'one'"
-        )
-
-        parser.add_argument(
-            '-l',
-            '--loss', 
-            help="Loss name required if grid_mode is 'one_loss' or 'one'"
+            '--model_losses',
+            help="Model Loss combination name must be in the format <ModelName>-<LossName>"
         )
 
         parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')
 
         args = parser.parse_args()
         
-        # Rule: If grid_mode is 'one', model and loss MUST be provided
-        if args.grid_mode == 'one':
-            if not args.loss or not args.model:
-                parser.error("--loss and --model is required when --grid_mode is 'one'")
-        
         paths_config = load_path_config(os.path.join('config', 'paths.json'))
         hparams_config = load_json(os.path.join('config', 'hparams.json'))
         features_config = load_json(os.path.join('config', 'features.json'))
 
-        run_wfv_pipeline(
+        run_evaluation_pipeline(
             paths_config,
             hparams_config,
             features_config,
-            grid_mode = args.grid_mode,
-            model_name = args.model,
-            loss_name = args.loss,
+            test_mode = args.test_mode,
+            model_losses = args.model_losses,
             mpi = args.mpi
         )
 
