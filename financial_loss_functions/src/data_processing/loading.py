@@ -131,6 +131,9 @@ class ArtifactDataExtractor:
     def agg_opti_hparams(
             self, opti_hparams_prefix: str, model_names: list[str]
         ) -> dict:
+        if self.prev_grid_mode == 'one' and len(model_names) > 1:
+            raise ValueError('Provided grid mode is `one`, but more than one model-loss provided.')
+        
         # Build paths
         opti_paths = self.find_artifact_files(
             opti_hparams_prefix,

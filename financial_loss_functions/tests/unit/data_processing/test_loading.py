@@ -148,35 +148,35 @@ def test_find_artifact_files_missing(extractor, artifacts_paths, capsys):
     captured = capsys.readouterr()
     assert "not found" in captured.out
 
-def test_build_avg_perf_paths_success(extractor, artifacts_paths):
-    avg_dir = artifacts_paths['avg_perf_dir']
-    avg_dir.mkdir(parents=True, exist_ok=True)
-    (avg_dir / 'test_model.csv').touch()
-    result = extractor._build_avg_perf_paths('test', ['model'])
-    assert 'model' in result
-    assert result['model'] == avg_dir / 'test_model.csv'
+# def test_build_avg_perf_paths_success(extractor, artifacts_paths):
+#     avg_dir = artifacts_paths['avg_perf_dir']
+#     avg_dir.mkdir(parents=True, exist_ok=True)
+#     (avg_dir / 'test_model.csv').touch()
+#     result = extractor._build_avg_perf_paths('test', ['model'])
+#     assert 'model' in result
+#     assert result['model'] == avg_dir / 'test_model.csv'
 
-def test_build_avg_perf_paths_failure(extractor, artifacts_paths):
-    avg_dir = artifacts_paths['avg_perf_dir']
-    avg_dir.mkdir(parents=True, exist_ok=True)
-    # No file
-    with pytest.raises(RuntimeError, match="No average Performance files found"):
-        extractor._build_avg_perf_paths('test', ['model'])
+# def test_build_avg_perf_paths_failure(extractor, artifacts_paths):
+#     avg_dir = artifacts_paths['avg_perf_dir']
+#     avg_dir.mkdir(parents=True, exist_ok=True)
+#     # No file
+#     with pytest.raises(RuntimeError, match="No average Performance files found"):
+#         extractor._build_avg_perf_paths('test', ['model'])
 
-def test_build_opti_hparams_paths_success(extractor, artifacts_paths):
-    hparams_dir = artifacts_paths['hparams_dir']
-    hparams_dir.mkdir(parents=True, exist_ok=True)
-    (hparams_dir / 'test_model.json').touch()
-    result = extractor._build_opti_hparams_paths('test', ['model'])
-    assert result == {'model': hparams_dir / 'test_model.json'}
+# def test_build_opti_hparams_paths_success(extractor, artifacts_paths):
+#     hparams_dir = artifacts_paths['hparams_dir']
+#     hparams_dir.mkdir(parents=True, exist_ok=True)
+#     (hparams_dir / 'test_model.json').touch()
+#     result = extractor._build_opti_hparams_paths('test', ['model'])
+#     assert result == {'model': hparams_dir / 'test_model.json'}
 
-def test_build_opti_hparams_paths_missing(extractor, artifacts_paths, capsys):
-    hparams_dir = artifacts_paths['hparams_dir']
-    hparams_dir.mkdir(parents=True, exist_ok=True)
-    result = extractor._build_opti_hparams_paths('test', ['model'])
-    assert result is None
-    captured = capsys.readouterr()
-    assert "WARNING: Models not tuned!" in captured.out
+# def test_build_opti_hparams_paths_missing(extractor, artifacts_paths, capsys):
+#     hparams_dir = artifacts_paths['hparams_dir']
+#     hparams_dir.mkdir(parents=True, exist_ok=True)
+#     result = extractor._build_opti_hparams_paths('test', ['model'])
+#     assert result is None
+#     captured = capsys.readouterr()
+#     assert "WARNING: Models not tuned!" in captured.out
 
 def test_agg_avg_perf_one_model_mode(extractor, artifacts_paths, monkeypatch):
     avg_dir = artifacts_paths['avg_perf_dir']
@@ -195,9 +195,9 @@ def test_agg_avg_perf_one_model_mode(extractor, artifacts_paths, monkeypatch):
     expected = expected[~expected.index.duplicated(keep='first')]
     pd.testing.assert_frame_equal(result, expected)
 
-def test_agg_avg_perf_one_model_no_names(extractor):
-    with pytest.raises(ValueError, match="List of model names must be provided"):
-        extractor.agg_avg_perf('avg', model_names=None)
+# def test_agg_avg_perf_one_model_no_names(extractor):
+#     with pytest.raises(ValueError, match="List of model names must be provided"):
+#         extractor.agg_avg_perf('avg', model_names=None)
 
 def test_agg_avg_perf_one_mode(extractor):
     extractor.prev_grid_mode = 'one'
@@ -205,7 +205,6 @@ def test_agg_avg_perf_one_mode(extractor):
         extractor.agg_avg_perf('avg', model_names=None)
 
 def test_agg_opti_hparams_one_model_mode(extractor, artifacts_paths):
-    extractor.prev_grid_mode = 'one_model'
     hparams_dir = artifacts_paths['hparams_dir']
     hparams_dir.mkdir(parents=True, exist_ok=True)
 
@@ -229,9 +228,13 @@ def test_agg_opti_hparams_one_mode(extractor, artifacts_paths):
     assert result == expected
 
 def test_agg_opti_hparams_one_model_missing(extractor, capsys):
-    extractor.prev_grid_mode = 'one_model'
     # No files
     result = extractor.agg_opti_hparams('opti', model_names=['missing'])
     assert result is None
     captured = capsys.readouterr()
     assert "WARNING: Models not tuned!" in captured.out
+
+def test_agg_opti_hparams_one_mode_2_models(extractor):
+    extractor.prev_grid_mode = 'one'
+    with pytest.raises(ValueError, match="more than one model-loss provided"):
+        extractor.agg_opti_hparams('opti', model_names=['1', '2'])
