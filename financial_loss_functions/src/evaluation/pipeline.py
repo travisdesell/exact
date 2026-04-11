@@ -3,8 +3,12 @@ import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
 from src.evaluation.evaluate_nn import WFTester
-from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.data_processing.dataset import WFUtilities
+from src.visualization.plots import wfv_losses_plot
+from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
+from src.evaluation.evaluator import (
+    Evaluator, EqualWeightCalculator
+)
 from src.data_processing.loading import (
     load_csv_files,
     load_sp500_rets,
@@ -70,6 +74,7 @@ def run_evaluation_pipeline(
     # Registering all NN models to the library
     models_module = paths_config['models_module']
     NNModelLibrary.autodiscover(models_module) # MUST be executed for model registration
+    TradModelLibrary.autodiscover(models_module)
     # No auto discovery needed for Loss library as all functions are in one file
 
     # -------------------- Loading Processed Data -------------------- #
@@ -152,22 +157,66 @@ def run_evaluation_pipeline(
             nn_alloc_weights = wf_tester.test_all(
                 selected_combos, train_data, rets_train, test_data, rets_test, None, None, None
             )
-
-            print(nn_alloc_weights)
-
-
-
-
-    # if grid_mode in ['all', 'one_model']:
-    #     nn_alloc_weights = grid_validator.validate_grid(
-    #         init_train, init_rets_train, init_val, init_rets_val, None, None, None
-    #     )
+            results_suffix = 'All'
         
-    #     results_suffix = 'All'
+        elif prev_grid_mode == 'one':
+            nn_alloc_weights = wf_tester.test_all(
+                selected_combos[0][0],
+                selected_combos[0][1],
+                train_data,
+                rets_train,
+                test_data,
+                rets_test
+            )
+            results_suffix = f'{selected_combos[0][0]}-{selected_combos[0][1]}'
 
-    # elif grid_mode == 'one' and model_name is not None and loss_name is not None:
-    #     nn_alloc_weights = grid_validator.validate_one(
-    #         model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
-    #     )
+        else:
+            raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
-    #     results_suffix = f'{model_name}-{loss_name}'
+    # Plot training and validation loss curves
+    nn_train_loss_curves = wf_tester.get_train_val_losses()
+    for model_loss, model_loss_curves in nn_train_loss_curves.items():
+        test_plot_name = model_loss + ' Test WFV Losses'
+        wfv_losses_plot(
+            model_loss_curves['train'],
+            model_loss_curves['eval'],
+            test_plot_name,
+            artifacts_paths['test_plots_dir'] / (test_plot_name + '.png')
+        )
+    
+    # -------------------- Evaluator Setup -------------------- #
+    
+    # Initializing once to compare all models together
+    evaluator = Evaluator(y_val, MetricLibrary.items())
+    
+    # Calculate returns of all predicted portfolio allocation weights
+    # Calling on every models output allocation weights to calculate pf returns
+    for model_loss, alloc_weights in nn_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
+
+    del wf_tester
+
+    # -------------------- Training Tradional Models -------------------- #       
+    print(f'Training All Tradional Models')
+    trad_grid = TradModelsTrainer(
+        TradModelLibrary.items(),
+        hparams_config,
+        num_steps
+    )
+    trad_alloc_weights = trad_grid.train_all(
+        init_rets_train=rets_train,
+        init_rets_split=rets_val
+    )
+
+    for trad_model_name, alloc_weights in trad_alloc_weights.items():
+        evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
+    
+    del trad_grid
+
+    # -------------------- Evaluation on Out-of-Sample data -------------------- # 
+    #### TODO: Continue with evaulation
+
+
+
+    time_taken = round((time.time() - start_time) / 60, 3)
+    print(f'Time taken for pipeline = {time_taken} mins')

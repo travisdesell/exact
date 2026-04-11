@@ -1066,6 +1066,26 @@ class WalkerGridUtilities(ABC):
             raise RuntimeError(
                 'Allocation weights already predicted. Create new instance of this class.'
             )
+        
+    # -------------------- Getter Methods -------------------- #
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        if self.train_eval_losses:
+            reformatted_dict = {}
+            for model_loss, step_losses in self.train_eval_losses.items():
+                train_losses = []
+                eval_losses = []
+                for step in step_losses:
+                    train_losses.append(step['train'])
+                    eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+                
+                reformatted_dict[model_loss] = {
+                    'train': train_losses,
+                    'eval': eval_losses
+                }
+        else:
+            raise RuntimeError('Models not trained yet. Run training first.')
+        
+        return reformatted_dict
     
     # -------------------- Abstract Methods -------------------- #
     @abstractmethod
@@ -1278,8 +1298,6 @@ class CandidatesGrid(WalkerGridUtilities):
 
         train_val_losses = final_walker.get_train_eval_losses()
         
-        
-
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')
             self._memory_diagnostics()
@@ -1599,23 +1617,6 @@ class CandidatesGrid(WalkerGridUtilities):
             traceback.print_exc()
         
         return self.all_alloc_weights
-
-    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
-        reformatted_dict = {}
-        for model_loss, step_losses in self.train_eval_losses.items():
-            train_losses = []
-            eval_losses = []
-            for step in step_losses:
-                train_losses.append(step['train'])
-                eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
-            
-            reformatted_dict[model_loss] = {
-                'train': train_losses,
-                'eval': eval_losses
-            }
-        
-        return reformatted_dict
-    
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
