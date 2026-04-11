@@ -1,6 +1,8 @@
 import time
+import pandas as pd
 from pathlib import Path
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
+from src.data_processing.dataset import WFUtilities
 from src.data_processing.loading import (
     load_csv_files,
     load_sp500_rets,
@@ -40,10 +42,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
     test_data = processed_dfs['processed_test']
     returns_test = processed_dfs['returns_test']
 
-    print('Train shape:', train_data.shape)
-    print('Val shape:', val_data.shape)
-    print('Test shape:', test_data.shape)
-
     return train_data, returns_train, val_data, returns_val, test_data, returns_test
 
 def run_evaluation_pipeline(
@@ -76,18 +74,21 @@ def run_evaluation_pipeline(
     process_data_tuple = _load_processed_data(
         paths_config
     )
-    train_data = process_data_tuple[0]
-    rets_train = process_data_tuple[1]
-    val_data = process_data_tuple[2]
-    rets_val = process_data_tuple[3]
+
+    # Combine train and validation data
+    train_data = pd.concat([process_data_tuple[0], process_data_tuple[2]], axis=0)
+    rets_train = pd.concat([process_data_tuple[1], process_data_tuple[3]], axis=0)
+    
     test_data = process_data_tuple[4]
-    returns_test = process_data_tuple[5]
+    rets_test = process_data_tuple[5]
+
+    print('Train shape:', train_data.shape)
+    print('Test shape:', test_data.shape)
     
     # Loading S&P 500 for benchmarking
     sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_test'])
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
-
     relevant_modl_names = split_combo_names(model_losses, '-')
     
     artifacts_extrator = ArtifactDataExtractor(
@@ -107,4 +108,20 @@ def run_evaluation_pipeline(
             [f'{relevant_modl_names[0][0]}{MODEL_LOSS_SEP}{relevant_modl_names[0][1]}']
         )
 
-    print(opti_hparams)
+    for key in list(opti_hparams.keys()):
+        if key not in model_losses:
+            del opti_hparams[key]
+    
+    # -------------------- Prepare Test Set -------------------- #
+    out_size = hparams_config['rolling_windows']['out_size']
+    wf_utils = WFUtilities(out_size)
+    num_steps, extra_days = wf_utils.calc_walk_steps(rets_test)
+
+    # Use WFUtilities.init_datasets to adjust extra days
+
+    # y_val for out of sample evaluation
+    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_test)
+
+    print(num_steps, extra_days, y_val.shape)
+    
+    # -------------------- Walk-Forward Evaluation -------------------- #

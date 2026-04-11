@@ -8,7 +8,6 @@ from src.utils.device import get_best_device
 from src.utils.formatting import serialize_np_dict
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
-    build_eval_windows,
     extract_oos_dates,
     get_date_index_col,
     extract_sp500_winds,
@@ -17,13 +16,13 @@ from src.utils.window import (
 )
 from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, load_sp500_rets
-from src.visualization.plots import (wfv_losses_plot)
+from src.visualization.plots import wfv_losses_plot
 from src.utils.io import (
     artifact_paths_setup, save_to_csv, save_to_json, raise_file_not_found
 )
 from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
 from src.evaluation.evaluator import (
-    Evaluator, EqualWeightCalculator, filter_models
+    Evaluator, EqualWeightCalculator
 )
 from src.data_processing.dataset import WFUtilities
 # Model and Loss Libraries
@@ -163,11 +162,11 @@ def run_tuning_pipeline(
     
     # -------------------- Prepare Validation Sets -------------------- #
     out_size = hparams_config['rolling_windows']['out_size']
-    data_adjuster = WFUtilities(out_size)
-    num_steps, extra_days = data_adjuster.calc_walk_steps(rets_val)
+    wf_utils = WFUtilities(out_size)
+    num_steps, extra_days = wf_utils.calc_walk_steps(rets_val)
 
     # # y_val for out of sample evaluation
-    y_val, out_wind_idxs = build_eval_windows(rets_val, num_steps, out_size)
+    y_val, out_wind_idxs =wf_utils.build_eval_windows(rets_val)
 
     if extra_days != 0:
         raise RuntimeError(

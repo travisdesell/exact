@@ -4,6 +4,7 @@ import pandas as pd
 from enum import StrEnum
 from torch.utils.data import Dataset
 from src.utils.formatting import split_col
+from src.utils.window import calc_current_idxs
 
 class ReshapeStyle(StrEnum):
     """
@@ -299,6 +300,26 @@ class WFUtilities:
         )
 
         return self.init_train, self.init_split
+
+    def build_eval_windows(
+            self, split: np.ndarray
+        ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
+    
+        if len(split) < self.out_size * self.num_steps:
+            raise ValueError('Provided dataframe is smaller than num_steps * out_size.')
+        
+        eval_windows = []
+        out_wind_idxs = []
+        for step in range(1, self.num_steps+1):
+            current_start, current_end = calc_current_idxs(step, self.out_size)
+
+            walk_rets_eval = split[current_start : current_end]
+
+            eval_windows.append(walk_rets_eval)
+
+            out_wind_idxs.append((current_start, current_end))
+        
+        return np.stack(eval_windows), out_wind_idxs
     
     def get_num_steps(self) -> int:
         return self.num_steps

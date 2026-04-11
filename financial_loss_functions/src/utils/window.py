@@ -10,28 +10,6 @@ def calc_current_idxs(step: int, stride: int):
 
     return current_start, current_end
 
-def build_eval_windows(
-        split: np.ndarray,
-        num_steps: int,
-        out_size: int
-    ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
-    
-    if len(split) < out_size * num_steps:
-        raise ValueError('Provided dataframe is smaller than num_steps * out_size.')
-    
-    eval_windows = []
-    out_wind_idxs = []
-    for step in range(1, num_steps+1):
-        current_start, current_end = calc_current_idxs(step, out_size)
-
-        walk_rets_eval = split[current_start : current_end]
-
-        eval_windows.append(walk_rets_eval)
-
-        out_wind_idxs.append((current_start, current_end))
-    
-    return np.stack(eval_windows), out_wind_idxs
-
 def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
     """
     Get the datetime index columns from the provided dataframe using the 
