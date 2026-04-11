@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import pandas as pd
 from typing import Callable, Type, Any
+from src.utils.constants import MODEL_LOSS_SEP
+from src.utils.formatting import reformat_hparams
 from src.training.train_nn import WalkerGridUtilities, Walker
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
@@ -16,7 +18,8 @@ class WFTester(WalkerGridUtilities):
             torch_device: torch.device | str,
             mpi: bool = False,
             temp_dir: str | None = None,
-            optimized_hparams = None
+            optimized_hparams: dict = None,
+            enable_diagnostics: bool = False
         ):
 
         super().__init__(
@@ -25,6 +28,7 @@ class WFTester(WalkerGridUtilities):
         )
 
         self.optimized_hparams = optimized_hparams
+        self.enable_diagnostics = enable_diagnostics
     
     def _merge_all_results(
             self,
@@ -59,9 +63,10 @@ class WFTester(WalkerGridUtilities):
 
         print('All temp files merged and then deleted.')
 
-    def _collect_req_modl_loss(
+    def _build_combos(
             self, selected_combos: list[tuple[str, str]]
-        ):
+        ) -> list[tuple[str, Type, Callable]]:
+        # Collect models and losses from libraries
         collected_from_libraries = {}
 
         models = set()
@@ -77,8 +82,18 @@ class WFTester(WalkerGridUtilities):
         for loss in losses:
             collected_from_libraries[loss] = self._search_loss_func(loss)
         
-        return collected_from_libraries
-
+        # Build list of combos and their names
+        all_combos = []
+        for modl_loss in selected_combos:
+            # (loss_name, loss_func, model_name, model_class)
+            all_combos.append((
+                f'{modl_loss[0]}{MODEL_LOSS_SEP}{modl_loss[1]}', 
+                collected_from_libraries[modl_loss[0]],
+                collected_from_libraries[modl_loss[1]]
+            ))
+        
+        return all_combos
+        
     def _walker_helper(
         self,
         model_name: str,
@@ -90,7 +105,23 @@ class WFTester(WalkerGridUtilities):
         split_data: np.ndarray,
         rets_split: np.ndarray
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
-        pass
+        
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+        
+        if self.enable_diagnostics:
+            print(f'\n[Before training {model_name} with {loss_name}]')
+            self._memory_diagnostics()
+
+        # Gather best hyperparameters or use defaults
+        if self.optimized_hparams and model_loss_name in self.optimized_hparams:
+            combo_hparams = self.optimized_hparams[model_loss_name]
+            
+        else:
+            print('!No optimized hyperparameters provided, using defaults!')
+            model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
+            loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
+
+            combo_hparams = reformat_hparams(model_cfg, loss_cfg)
     
     def test_all(
             self,
@@ -116,11 +147,15 @@ class WFTester(WalkerGridUtilities):
         )
 
         # Pre-search models and loss functions from library (to avoid redundant searches)
-        collected_modl_parts = self._collect_req_modl_loss(selected_combos)
+        all_combos = self._build_combos(selected_combos)
+        total_train_count = len(all_combos)
         
-
         if self.mpi == False:
-            pass
-
+            for idx, (model_loss_name, model_class, loss_func) in enumerate(all_combos, 1):
+                print(
+                    '\n', '-'*10,
+                    f' Testing {model_loss_name}, {idx}/{total_train_count}',
+                    '-'*10
+                )
         else:
             raise RuntimeError('MPI VERSION NOT IMPLEMENTED YET! EXITING...')

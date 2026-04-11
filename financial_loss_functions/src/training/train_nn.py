@@ -1069,7 +1069,7 @@ class WalkerGridUtilities(ABC):
     
     # -------------------- Abstract Methods -------------------- #
     @abstractmethod
-    def _merge_all_results(self):
+    def _merge_all_results(self) -> None:
         pass
 
     @abstractmethod
@@ -1085,6 +1085,9 @@ class WalkerGridUtilities(ABC):
         rets_split: np.ndarray
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         pass
+
+    @abstractmethod
+    def _build_combos(): pass
 
 
 class CandidatesGrid(WalkerGridUtilities):
