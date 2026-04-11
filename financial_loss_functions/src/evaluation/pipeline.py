@@ -1,6 +1,8 @@
 import time
 import pandas as pd
 from pathlib import Path
+from src.utils.device import get_best_device
+from src.evaluation.evaluate_nn import WFTester
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.data_processing.dataset import WFUtilities
 from src.data_processing.loading import (
@@ -75,7 +77,7 @@ def run_evaluation_pipeline(
         paths_config
     )
 
-    # Combine train and validation data
+    #### Combine train and validation data ####
     train_data = pd.concat([process_data_tuple[0], process_data_tuple[2]], axis=0)
     rets_train = pd.concat([process_data_tuple[1], process_data_tuple[3]], axis=0)
     
@@ -89,7 +91,7 @@ def run_evaluation_pipeline(
     sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_test'])
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
-    relevant_modl_names = split_combo_names(model_losses, '-')
+    selected_combos = split_combo_names(model_losses, '-')
     
     artifacts_extrator = ArtifactDataExtractor(
         prev_grid_mode,
@@ -97,15 +99,15 @@ def run_evaluation_pipeline(
     )
 
     if prev_grid_mode == 'one_model':
-        model_names = list(set(modl_loss[0] for modl_loss in relevant_modl_names))
+        model_names = list(set(modl_loss[0] for modl_loss in selected_combos))
         # all_avg_perf = artifacts_extrator.agg_avg_perf('avg_perf', model_names)
         opti_hparams = artifacts_extrator.agg_opti_hparams('optimized', model_names)
 
     
-    elif prev_grid_mode == 'one' and len(relevant_modl_names) == 1:
+    elif prev_grid_mode == 'one' and len(selected_combos) == 1:
         opti_hparams = artifacts_extrator.agg_opti_hparams(
             'optimized',
-            [f'{relevant_modl_names[0][0]}{MODEL_LOSS_SEP}{relevant_modl_names[0][1]}']
+            [f'{selected_combos[0][0]}{MODEL_LOSS_SEP}{selected_combos[0][1]}']
         )
 
     for key in list(opti_hparams.keys()):
@@ -122,6 +124,48 @@ def run_evaluation_pipeline(
     # y_val for out of sample evaluation
     y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_test)
 
-    print(num_steps, extra_days, y_val.shape)
+    if extra_days > 0:
+        print(f'There are {extra_days} extra days in the test set.')
     
     # -------------------- Walk-Forward Evaluation -------------------- #
+    if mpi:
+        print('MPI VERSION NOT IMPLEMENTED YET! EXITING...')
+        exit(0)
+    
+    else:
+        # Using default MPS or CUDA
+        torch_device = get_best_device()
+
+        wf_tester = WFTester(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            num_steps = num_steps,
+            common_features = features_config['common_features'],
+            torch_device = torch_device,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = opti_hparams
+        )
+
+        if prev_grid_mode == 'one_model':
+            nn_alloc_weights = wf_tester.test_all(
+                selected_combos, train_data, rets_train, test_data, rets_test, None, None, None
+            )
+
+
+
+
+    # if grid_mode in ['all', 'one_model']:
+    #     nn_alloc_weights = grid_validator.validate_grid(
+    #         init_train, init_rets_train, init_val, init_rets_val, None, None, None
+    #     )
+        
+    #     results_suffix = 'All'
+
+    # elif grid_mode == 'one' and model_name is not None and loss_name is not None:
+    #     nn_alloc_weights = grid_validator.validate_one(
+    #         model_name, loss_name,init_train, init_rets_train, init_val, init_rets_val
+    #     )
+
+    #     results_suffix = f'{model_name}-{loss_name}'
