@@ -153,6 +153,8 @@ def run_evaluation_pipeline(
                 selected_combos, train_data, rets_train, test_data, rets_test, None, None, None
             )
 
+            print(nn_alloc_weights)
+
 
 
 

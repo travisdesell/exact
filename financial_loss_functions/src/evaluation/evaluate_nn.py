@@ -1,4 +1,5 @@
 import torch
+import traceback
 import numpy as np
 import pandas as pd
 from typing import Callable, Type, Any
@@ -65,7 +66,7 @@ class WFTester(WalkerGridUtilities):
 
     def _build_combos(
             self, selected_combos: list[tuple[str, str]]
-        ) -> list[tuple[str, Type, Callable]]:
+        ) -> list[tuple[str, Type, str, Callable]]:
         # Collect models and losses from libraries
         collected_from_libraries = {}
 
@@ -77,19 +78,28 @@ class WFTester(WalkerGridUtilities):
             losses.add(modl_loss[1])
 
         for modl in models:
-            collected_from_libraries[modl] = self._search_model(modl)
+            temp_model_cls = self._search_model(modl)
+            
+            if not temp_model_cls: # model not found
+                raise RuntimeError(f'{modl} MODEL NOT FOUND IN LIBRARY!')
+            else:
+                collected_from_libraries[modl] = temp_model_cls
         
         for loss in losses:
-            collected_from_libraries[loss] = self._search_loss_func(loss)
+            temp_loss_func = self._search_loss_func(loss)
+
+            if not temp_loss_func:
+                raise RuntimeError(f'{loss} LOSS FUNCTION NOT FOUND IN LIBRARY!')
+            else:
+                collected_from_libraries[loss] = temp_loss_func
         
         # Build list of combos and their names
         all_combos = []
         for modl_loss in selected_combos:
             # (loss_name, loss_func, model_name, model_class)
             all_combos.append((
-                f'{modl_loss[0]}{MODEL_LOSS_SEP}{modl_loss[1]}', 
-                collected_from_libraries[modl_loss[0]],
-                collected_from_libraries[modl_loss[1]]
+                modl_loss[0], collected_from_libraries[modl_loss[0]],
+                modl_loss[1], collected_from_libraries[modl_loss[1]]
             ))
         
         return all_combos
@@ -102,8 +112,8 @@ class WFTester(WalkerGridUtilities):
         loss_func: Callable,
         train_data: np.ndarray,
         rets_train: np.ndarray, 
-        split_data: np.ndarray,
-        rets_split: np.ndarray
+        test_data: np.ndarray,
+        rets_test: np.ndarray
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
         
         model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
@@ -122,6 +132,35 @@ class WFTester(WalkerGridUtilities):
             loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
 
             combo_hparams = reformat_hparams(model_cfg, loss_cfg)
+
+        #### FOR TESTING ####
+        combo_hparams['train']['epochs'] = 5
+        ####################
+        final_walker = Walker(
+            self.num_steps,
+            model_name,
+            model_class,
+            loss_name,
+            loss_func,
+            combo_hparams,
+            self.torch_device,
+            self.reshaper
+        )
+
+        alloc_weights = final_walker.walk_1_model(
+            train_data,
+            rets_train, 
+            test_data,
+            rets_test
+        )
+
+        train_val_losses = final_walker.get_train_eval_losses()
+        
+        if self.enable_diagnostics:
+            print(f'\n[After training {model_name} with {loss_name}]')
+            self._memory_diagnostics()
+
+        return alloc_weights, train_val_losses
     
     def test_all(
             self,
@@ -151,11 +190,96 @@ class WFTester(WalkerGridUtilities):
         total_train_count = len(all_combos)
         
         if self.mpi == False:
-            for idx, (model_loss_name, model_class, loss_func) in enumerate(all_combos, 1):
+            for idx, (model_name, model_class, loss_name, loss_func) in enumerate(all_combos, 1):
                 print(
                     '\n', '-'*10,
-                    f' Testing {model_loss_name}, {idx}/{total_train_count}',
+                    f' Testing {model_name}-{loss_name}, {idx}/{total_train_count}',
                     '-'*10
                 )
+                try:        
+                    alloc_weights, train_eval_losses = self._walker_helper(
+                        model_name,
+                        model_class, 
+                        loss_name,
+                        loss_func,
+                        train_data,
+                        rets_train, 
+                        test_data,
+                        rets_test
+                    )
+                    self.all_alloc_weights[
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                    ] = alloc_weights
+                    self.train_eval_losses[
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                    ] = train_eval_losses
+
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while testing {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    traceback.print_exc()
+                    continue
+
+            return self.all_alloc_weights
         else:
             raise RuntimeError('MPI VERSION NOT IMPLEMENTED YET! EXITING...')
+    
+    def test_one(
+            self,
+            model_name: str,
+            loss_name: str,
+            train_data: pd.DataFrame,
+            rets_train: pd.DataFrame, 
+            test_data: pd.DataFrame,
+            rets_test: pd.DataFrame,
+        ) -> dict[str, dict[str, np.ndarray]]:
+
+            self._data_check(train_data, rets_test)
+            self._trained_check()
+
+            # Extract feature data
+            self.reshaper.extract_features(train_data.columns)
+            
+            # Convert all dataframes to arrays
+            train_data, rets_train, test_data, rets_test = self._convert_datasets_to_np(
+                train_data, rets_train, test_data, rets_test
+            )
+
+            # Search libraries
+            model_class = self._search_model(model_name)
+            if model_class is None:
+                raise KeyError(f'Model {model_name} not found.')
+            
+            loss_func = self._search_loss_func(loss_name)
+            if loss_func is None:
+                raise KeyError(f'Loss Function {loss_name} not found.')
+            
+            print('\n', '-'*10,f' Testing {model_name}-{loss_name}', '-'*10)
+            try:        
+                alloc_weights, train_eval_losses = self._walker_helper(
+                    model_name,
+                    model_class, 
+                    loss_name,
+                    loss_func,
+                    train_data,
+                    rets_train, 
+                    test_data,
+                    rets_test
+                )
+                self.all_alloc_weights[
+                    f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                ] = alloc_weights
+                self.train_eval_losses[
+                    f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                ] = train_eval_losses
+
+            except Exception as error:
+                print(
+                    f'DEBUG: Error while testing {model_name} with {loss_name}. Skipping.',
+                    error
+                )
+                traceback.print_exc()
+
+            return self.all_alloc_weights
