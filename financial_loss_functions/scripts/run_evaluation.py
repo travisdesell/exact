@@ -76,15 +76,16 @@ if __name__ == '__main__':
 
         # Grid mode with a default
         parser.add_argument(
-            '-tm',
-            '--test_mode', 
-            choices=['selected', 'one'], 
+            '-pm',
+            '--prev_mode', 
+            choices=['one_model', 'one'], 
             help='Choose, models to evaluate. This can be for selected models or a single model'
         )
 
         parser.add_argument(
             '-m',
             '--model_losses',
+            nargs='+',
             help="Model Loss combination name must be in the format <ModelName>-<LossName>"
         )
 
@@ -100,7 +101,7 @@ if __name__ == '__main__':
             paths_config,
             hparams_config,
             features_config,
-            test_mode = args.test_mode,
+            prev_grid_mode = args.prev_mode,
             model_losses = args.model_losses,
             mpi = args.mpi
         )

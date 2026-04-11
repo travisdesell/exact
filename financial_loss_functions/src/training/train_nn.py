@@ -14,6 +14,7 @@ from torch import Tensor
 from abc import ABC, abstractmethod
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
+from src.utils.constants import MODEL_LOSS_SEP
 from sklearn.preprocessing import RobustScaler
 from src.utils.window import calc_current_idxs
 from src.data_processing.dataset import WindowDataset, Reshaper
@@ -775,7 +776,7 @@ class Tuner:
             loss_cfg: dict
         ):
         
-        model_loss_name = f'{model_name}-{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
 
         # # # Calculate equal weight portfolio & its returns as benchmark
         # if self.benchmark_rets is None:
@@ -908,7 +909,6 @@ class Tuner:
 class GridUtilities(ABC):
     mdls_hparams_name = 'nn_models'
     ls_hparams_name = 'losses'
-    model_loss_sep = '-'
 
     def __init__(
             self,
@@ -937,15 +937,6 @@ class GridUtilities(ABC):
     
     def set_temp_directory(self, temp_dir: str):
         self.temp_dir = temp_dir
-    
-    def update_model_loss_sep(self, model_loss_sep: str):
-        """
-        Update the string separator between model name and loss name.
-
-        Args:
-            model_loss_sep (str): string separator like '-'.
-        """
-        self.model_loss_sep = model_loss_sep
     
     # -------------------- Library Searches -------------------- #
     def _search_model(self, model_name: str) -> Type | None:
@@ -1383,13 +1374,13 @@ class CandidatesGrid(GridUtilities):
                         y_val
                     )
                     self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
                     self.train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     self.optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
 
                 except Exception as error:
@@ -1431,13 +1422,13 @@ class CandidatesGrid(GridUtilities):
                     )
                     
                     local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
                     local_train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     local_optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
                 
                 except Exception as e:
@@ -1542,13 +1533,13 @@ class CandidatesGrid(GridUtilities):
                         rets_val
                     )
                     self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
                     self.train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     self.optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
 
                 except Exception as error:
@@ -1590,13 +1581,13 @@ class CandidatesGrid(GridUtilities):
                     )
                     
                     local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
                     local_train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     local_optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
                 
                 except Exception as e:
@@ -1680,13 +1671,13 @@ class CandidatesGrid(GridUtilities):
                 rets_val
             )
             self.all_alloc_weights[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = alloc_weights
             self.train_val_losses[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = train_val_losses
             self.optimized_hparams[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = optimized_hparams
 
         except Exception as e:
@@ -1808,7 +1799,7 @@ class WalkForwardValidator(GridUtilities):
         Args:
             model_loss_name (str): Name of the model loss combination in the format: <Model>-<Loss>.
         """
-        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         if self.optimized_hparams and model_loss_name in self.optimized_hparams:
             median_epochs = self.optimized_hparams[
                 model_loss_name
@@ -1832,7 +1823,7 @@ class WalkForwardValidator(GridUtilities):
             X_train_shape: torch.Size,
             y_train_shape: torch.Size
         ):
-        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
         # Gather best hyperparameters or use defaults
         if self.optimized_hparams and model_loss_name in self.optimized_hparams:
@@ -2038,10 +2029,10 @@ class WalkForwardValidator(GridUtilities):
                     )
 
                     self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_alloc_weights
                     self.train_infer_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_train_infer_losses
                 
                 except Exception as error:
@@ -2083,10 +2074,10 @@ class WalkForwardValidator(GridUtilities):
                     )
 
                     local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_alloc_weights
                     local_train_infer_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_train_infer_losses
                 
                 except Exception as e:
@@ -2156,10 +2147,10 @@ class WalkForwardValidator(GridUtilities):
             )
 
             self.all_alloc_weights[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = steps_alloc_weights
             self.train_infer_losses[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = steps_train_infer_losses
        
         except Exception as e:

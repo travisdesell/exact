@@ -1,0 +1,3 @@
+EQ_WT_NAME = 'Equal_Weight'
+SP500_NAME = 'S&P500'
+MODEL_LOSS_SEP = '-'

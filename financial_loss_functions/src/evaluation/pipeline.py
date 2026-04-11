@@ -1,10 +1,16 @@
 import time
 from pathlib import Path
-from src.data_processing.loading import load_csv_files, load_sp500_rets
+from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
+from src.data_processing.loading import (
+    load_csv_files,
+    load_sp500_rets,
+    ArtifactDataExtractor
+)
 from src.utils.io import (
     artifact_paths_setup,
     raise_file_not_found
 )
+from src.utils.formatting import split_combo_names
 
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
@@ -43,7 +49,8 @@ def _load_processed_data(paths_config: dict) -> tuple:
 def run_evaluation_pipeline(
         paths_config: dict,
         hparams_config: dict,
-        features_config: dict, 
+        features_config: dict,
+        prev_grid_mode: str, 
         model_losses: list[str],
         mpi: bool = False
 ):
@@ -78,3 +85,26 @@ def run_evaluation_pipeline(
     
     # Loading S&P 500 for benchmarking
     sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_test'])
+
+    # -------------------- Loading Relevant Training Artifacts -------------------- #
+
+    relevant_modl_names = split_combo_names(model_losses, '-')
+    
+    artifacts_extrator = ArtifactDataExtractor(
+        prev_grid_mode,
+        artifacts_paths
+    )
+
+    if prev_grid_mode == 'one_model':
+        model_names = list(set(modl_loss[0] for modl_loss in relevant_modl_names))
+        # all_avg_perf = artifacts_extrator.agg_avg_perf('avg_perf', model_names)
+        opti_hparams = artifacts_extrator.agg_opti_hparams('optimized', model_names)
+
+    
+    elif prev_grid_mode == 'one' and len(relevant_modl_names) == 1:
+        opti_hparams = artifacts_extrator.agg_opti_hparams(
+            'optimized',
+            [f'{relevant_modl_names[0][0]}{MODEL_LOSS_SEP}{relevant_modl_names[0][1]}']
+        )
+
+    print(opti_hparams)

@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
 from src.utils.formatting import serialize_np_dict
+from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
     build_eval_windows,
     extract_oos_dates,
@@ -30,8 +31,7 @@ from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-EQ_WT_NAME = 'Equal_Weight'
-SP500_NAME = 'S&P500'
+
 
 
 # def _create_dirs(artifacts_paths: dict[str, Path|str]):
@@ -273,7 +273,7 @@ def run_tuning_pipeline(
                 model_name, loss_name, train_data, rets_train, val_data, rets_val
             )
 
-            results_suffix = f'{model_name}-{loss_name}'
+            results_suffix = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
