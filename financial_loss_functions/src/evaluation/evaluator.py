@@ -172,6 +172,22 @@ class EqualWeightCalculator:
 
         return self.eq_weights_rets
 
+    def get_eq_weights(self) -> np.ndarray | None:
+        """
+        Getter function to get equal weights for the number of stocks in the provideed data.
+
+        Returns:
+            eq_weights (np.ndarray | None): Array containing weights for every window from the data.
+        """
+        if self.eq_weights:
+            return self.eq_weights
+        else:
+            print(
+                'WARNING: No equal weights calculated.',
+                'Run `EqualWeightCalculator.calc_eq_wt_daily_rets()` first.'
+            )
+            return None
+
 def filter_models(
         avg_perf: pd.DataFrame, bench_name: str, bench_met: str, keep: list[str]
     ) -> tuple[pd.DataFrame, list[str]]:

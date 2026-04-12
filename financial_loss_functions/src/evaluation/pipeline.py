@@ -2,12 +2,12 @@ import time
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
-from src.evaluation.evaluate_nn import WFTester
+from src.evaluation.test_nn import WFTester
 from src.data_processing.dataset import WFUtilities
 from src.visualization.plots import wfv_losses_plot
 from src.training.train_trad import TradModelsTrainer
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
-from src.utils.formatting import serialize_np_dict, print_evaluation_info, reformat_w_dates
+from src.utils.formatting import serialize_np_dict, print_evaluation_info, reformat_model_perfs
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator
 )
@@ -204,7 +204,7 @@ def run_evaluation_pipeline(
     for model_loss, alloc_weights in nn_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
 
-    del wf_tester
+    # del wf_testers
 
     # -------------------- Training Tradional Models -------------------- #       
     print(f'Training All Tradional Models')
@@ -220,8 +220,6 @@ def run_evaluation_pipeline(
 
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
-    
-    del trad_grid
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- # 
     # Extract s&p500 returns column sliced for the respective output windows
@@ -239,23 +237,35 @@ def run_evaluation_pipeline(
     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
 
+    # Get all daily returns
+    all_daily_returns = evaluator.get_all_daily_returns()
+
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(rets_test, out_wind_idxs)
+
+    # Combine all allocation weights
+    all_alloc_wts = nn_alloc_weights | trad_alloc_weights
+    
+    # Serialize dicts and combine everything
+    all_daily_returns = reformat_model_perfs(
+        serialize_np_dict(all_daily_returns),
+        serialize_np_dict(all_alloc_wts),
+        out_win_date_cols
+    )
+    # Save all performance information (daily returns and weights)
+    all_rets_file_name = artifacts_paths['test_perf_dir'] \
+        / f'test_performance_{results_suffix}.json'
+    save_to_json(
+        all_daily_returns,
+        all_rets_file_name
+    )
+
+    # Save average performance
     perf_file_name = artifacts_paths['test_perf_dir'] \
         / f'avg_test_perf_{results_suffix}.csv'
     avg_perf_metrics = evaluator.calc_avg_performance()
     save_to_csv(avg_perf_metrics, perf_file_name)
 
-    # Extract dates index columns for the respective output windows
-    out_win_date_cols = get_date_index_col(rets_test, out_wind_idxs)
-
-    all_daily_returns = evaluator.get_all_daily_returns()
-    all_daily_returns = serialize_np_dict(all_daily_returns)
-    all_daily_returns = reformat_w_dates(all_daily_returns, out_win_date_cols)
-    all_rets_file_name = artifacts_paths['test_perf_dir'] \
-        / f'daily_rets_{results_suffix}.json'
-    save_to_json(
-        all_daily_returns,
-        all_rets_file_name
-    )
 
     print_evaluation_info(
         out_win_date_cols=out_win_date_cols,

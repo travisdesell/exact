@@ -100,16 +100,38 @@ def print_evaluation_info(
         title = metric.replace('_', ' ').upper()
         print(f'\n{title.upper()}:\n', df)
 
-def reformat_w_dates(
-        all_daily_returns: dict[str, list[list[float]]], out_win_date_cols
+def reformat_model_perfs(
+        all_daily_returns: dict[str, list[list[float]]],
+        alloc_weights: dict[str, list[list[float]]],
+        out_win_date_cols
     ) -> dict[str, dict[str, list[float]]]:
 
     reformatted_w_dates = {}
     for model, all_winds_ls in all_daily_returns.items():
         reformatted_w_dates.setdefault(model, {})
-        for wind_rets, win_dates in zip(all_winds_ls, out_win_date_cols):
-            start_date = win_dates[0].strftime('%Y-%m-%d')
-            end_date = win_dates[-1].strftime('%Y-%m-%d')
-            reformatted_w_dates[model][f'{start_date}_{end_date}'] = wind_rets
+        all_winds_wts = alloc_weights.get(model)
+        if all_winds_wts:
+            for win_rets, win_wts, win_dates in zip(all_winds_ls, all_winds_wts, out_win_date_cols):
+                start_date = win_dates[0].strftime('%Y-%m-%d')
+                end_date = win_dates[-1].strftime('%Y-%m-%d')
+                date_range = f'{start_date}_{end_date}'
+
+                reformatted_w_dates[model] = {
+                    date_range: {
+                        'returns': win_rets,
+                        'weights': win_wts
+                    }
+                }
+        else:
+            # Equal weight and S&P500 should not have weights
+            for win_rets, win_dates in zip(all_winds_ls, out_win_date_cols):
+                start_date = win_dates[0].strftime('%Y-%m-%d')
+                end_date = win_dates[-1].strftime('%Y-%m-%d')
+                date_range = f'{start_date}_{end_date}'
+                reformatted_w_dates[model] = {
+                    date_range: {
+                        'returns': win_rets
+                    }
+                }
             
     return reformatted_w_dates
