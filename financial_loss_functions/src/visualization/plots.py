@@ -118,7 +118,8 @@ def plot_windowed_comparison(
     cmap = plt.get_cmap('tab20')
     
     # Get number of windows from the first portfolio type
-    n_windows = next(iter(all_daily_returns.values())).shape[0]
+    # n_windows = next(iter(all_daily_returns.values())).shape[0]
+    n_windows = len(next(iter(all_daily_returns.values())))
     n_cols = min(windows_per_row, n_windows)
     n_rows = (n_windows + n_cols - 1) // n_cols
     
