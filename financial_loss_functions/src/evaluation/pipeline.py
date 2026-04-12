@@ -211,7 +211,7 @@ def run_evaluation_pipeline(
                 test_data,
                 rets_test
             )
-            results_suffix = f'{selected_combos[0][0]}-{selected_combos[0][1]}'
+            results_suffix = f'{selected_combos[0][0]}{MODEL_LOSS_SEP}{selected_combos[0][1]}'
 
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
