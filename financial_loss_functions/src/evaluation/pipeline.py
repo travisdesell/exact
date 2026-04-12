@@ -1,7 +1,8 @@
+import sys
 import time
 import pandas as pd
 from pathlib import Path
-from src.utils.device import get_best_device
+from src.utils.device import get_best_device, mpi_setup
 from src.evaluation.test_nn import WFTester
 from src.data_processing.dataset import WFUtilities
 from src.visualization.plots import wfv_losses_plot
@@ -125,6 +126,7 @@ def run_evaluation_pipeline(
             [f'{selected_combos[0][0]}{MODEL_LOSS_SEP}{selected_combos[0][1]}']
         )
 
+    # Remove model+losses that are not relevant
     for key in list(opti_hparams.keys()):
         if key not in model_losses:
             del opti_hparams[key]
@@ -144,8 +146,41 @@ def run_evaluation_pipeline(
     
     # -------------------- Walk-Forward Evaluation -------------------- #
     if mpi:
-        print('MPI VERSION NOT IMPLEMENTED YET! EXITING...')
-        exit(0)
+
+        comm, global_rank, size, gpu_id, _ = mpi_setup()
+        torch_device = get_best_device(gpu_id)
+
+        wf_tester = WFTester(
+            model_lib = NNModelLibrary.items(),
+            loss_lib = LossLibrary.items(),
+            hparams_config = hparams_config,
+            num_steps = num_steps,
+            common_features = features_config['common_features'],
+            torch_device = torch_device,
+            mpi = mpi,
+            temp_dir = artifacts_paths['temp_dir'],
+            optimized_hparams = opti_hparams
+        )
+
+        if prev_grid_mode == 'one_model':
+            nn_alloc_weights = wf_tester.test_all(
+                selected_combos, train_data, rets_train, test_data, 
+                rets_test, comm, global_rank, size
+            )
+            results_suffix = 'all'
+        else:
+            raise RuntimeError(
+                'Incorrect mode arguments while running at entry point.',
+                'If mpi, previous grid mode must be `one_model`.'
+            )
+        
+        # Stop all non zero ranks
+        if global_rank != 0:
+            print(f'Rank {global_rank}: Work complete. Shutting down.')
+            sys.exit(0) # This stops the process for this rank only
+        
+        if nn_alloc_weights is None:
+            print('!!!DEBUG: Rank 0 got empty allocation weights!!!')
     
     else:
         # Using default MPS or CUDA
@@ -167,7 +202,7 @@ def run_evaluation_pipeline(
             nn_alloc_weights = wf_tester.test_all(
                 selected_combos, train_data, rets_train, test_data, rets_test, None, None, None
             )
-            results_suffix = 'All'
+            results_suffix = 'all'
         
         elif prev_grid_mode == 'one':
             nn_alloc_weights = wf_tester.test_all(

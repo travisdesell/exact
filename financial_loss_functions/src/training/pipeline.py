@@ -1,10 +1,7 @@
-import os
 import sys
 import time
-import torch
-import pandas as pd
 from pathlib import Path
-from src.utils.device import get_best_device
+from src.utils.device import get_best_device, mpi_setup
 from src.utils.formatting import serialize_np_dict, print_evaluation_info
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
@@ -14,23 +11,21 @@ from src.utils.window import (
     calc_in_out_idx
 
 )
-from src.training.train_trad import TradModelsTrainer
 from src.data_processing.loading import load_csv_files, load_sp500_rets
 from src.visualization.plots import wfv_losses_plot
 from src.utils.io import (
     artifact_paths_setup, save_to_csv, save_to_json, raise_file_not_found
 )
-from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
+from src.training.train_nn import CandidatesGrid, MetricModel
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator
 )
 from src.data_processing.dataset import WFUtilities
+
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
-from src.models.registry import NNModelLibrary, TradModelLibrary
-
-
+from src.models.registry import NNModelLibrary
 
 
 # def _create_dirs(artifacts_paths: dict[str, Path|str]):
@@ -63,26 +58,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
     # print('Val shape:', val_data.shape)
 
     return train_data, returns_train, val_data, returns_val
-
-def mpi_setup() -> tuple:
-    # Conditional import of MPI
-    from mpi4py import MPI
-    
-    comm = MPI.COMM_WORLD
-    global_rank = comm.Get_rank()  # Unique ID across all
-    size = comm.Get_size()   # Total number of workers
-    
-    local_rank = int(os.environ.get('SLURM_LOCALID', 0))
-    cpus_per_rank = int(os.environ.get('SLURM_CPUS_PER_TASK', 1))
-    
-    if torch.cuda.is_available():
-        num_gpus = torch.cuda.device_count()
-    else:
-        raise RuntimeError('CUDA is required to run MPI version!')
-    
-    gpu_id = local_rank % num_gpus
-    
-    return comm, global_rank, size, gpu_id, cpus_per_rank
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -168,9 +143,6 @@ def run_tuning_pipeline(
         comm, global_rank, size, gpu_id, _ = mpi_setup()
         torch_device = get_best_device(gpu_id)
 
-        # Create artifact directories if the don't exist
-        # Only rank 0 can create if directories don't exist
-
         candidates_grid = CandidatesGrid(
             model_lib = NNModelLibrary.items(),
             loss_lib = LossLibrary.items(),
@@ -203,7 +175,7 @@ def run_tuning_pipeline(
             sys.exit(0) # This stops the process for this rank only
         
         if nn_alloc_weights is None:
-            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+            print('!!!DEBUG: Rank 0 got empty allocation weights!!!')
         
 
     else:

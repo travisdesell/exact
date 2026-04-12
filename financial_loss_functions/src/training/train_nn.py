@@ -1111,6 +1111,9 @@ class WalkerGridUtilities(ABC):
 
 
 class CandidatesGrid(WalkerGridUtilities):
+    temp_wts_prefix_stem = 'temp_alloc_wts'
+    temp_losses_prefix_stem = 'temp_losses'
+    temp_hparams_prefix_stem = 'temp_hparams'
 
     def __init__(
             self,
@@ -1341,6 +1344,7 @@ class CandidatesGrid(WalkerGridUtilities):
         """Merge all results into one dict if rank is 0, i.e., main process."""
         self.all_alloc_weights = {}
         self.train_eval_losses = {}
+        self.optimized_hparams = {}
         for r in range(size):
             # Load all temp alloc wt files
             rank_alloc_weights = load_pickle_temp(
@@ -1526,9 +1530,9 @@ class CandidatesGrid(WalkerGridUtilities):
                     traceback.print_exc()
                     continue
             
-            temp_wts_prefix = f'{model_name}_temp_alloc_wts'
-            temp_losses_prefix = f'{model_name}_temp_losses'
-            temp_hparams_prefix = f'{model_name}_temp_hparams'
+            temp_wts_prefix = f'{model_name}_{self.temp_wts_prefix_stem}'
+            temp_losses_prefix = f'{model_name}_{self.temp_losses_prefix_stem}'
+            temp_hparams_prefix = f'{model_name}_{self.temp_hparams_prefix_stem}'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(

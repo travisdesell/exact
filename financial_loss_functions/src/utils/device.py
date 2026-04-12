@@ -1,3 +1,4 @@
+import os
 import torch
 import random
 import numpy as np
@@ -63,3 +64,23 @@ def set_seed(seed=50):
         # Note: MPS is still maturing; some operations might not be 100% deterministic yet
         
     print(f'Seeds set to {seed} across all available backends.')
+
+def mpi_setup() -> tuple:
+    # Conditional import of MPI
+    from mpi4py import MPI
+    
+    comm = MPI.COMM_WORLD
+    global_rank = comm.Get_rank()  # Unique ID across all
+    size = comm.Get_size()   # Total number of workers
+    
+    local_rank = int(os.environ.get('SLURM_LOCALID', 0))
+    cpus_per_rank = int(os.environ.get('SLURM_CPUS_PER_TASK', 1))
+    
+    if torch.cuda.is_available():
+        num_gpus = torch.cuda.device_count()
+    else:
+        raise RuntimeError('CUDA is required to run MPI version!')
+    
+    gpu_id = local_rank % num_gpus
+    
+    return comm, global_rank, size, gpu_id, cpus_per_rank

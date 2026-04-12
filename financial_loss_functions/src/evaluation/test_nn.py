@@ -1,3 +1,4 @@
+import sys
 import torch
 import traceback
 import numpy as np
@@ -9,6 +10,9 @@ from src.training.train_nn import WalkerGridUtilities, Walker
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 class WFTester(WalkerGridUtilities):
+    temp_wts_prefix = 'test_temp_alloc_wts'
+    temp_losses_prefix = 'test_temp_losses'
+    
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
@@ -224,7 +228,69 @@ class WFTester(WalkerGridUtilities):
 
             return self.all_alloc_weights
         else:
-            raise RuntimeError('MPI VERSION NOT IMPLEMENTED YET! EXITING...')
+            self._mpi_setup_check([comm, global_rank, size])
+
+            this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
+
+            # Print summary on each rank
+            print(f'Rank {global_rank}: Testing {len(this_ranks_combos)} combos.')
+            sys.stdout.flush()
+
+            # Local results dictionary
+            local_alloc_weights = {}
+            local_train_eval_losses = {}
+            for idx, (model_name, model_class, loss_name, loss_func) in enumerate(this_ranks_combos, 1):
+                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
+                try:        
+                    alloc_weights, train_eval_losses = self._walker_helper(
+                        model_name,
+                        model_class, 
+                        loss_name,
+                        loss_func,
+                        train_data,
+                        rets_train, 
+                        test_data,
+                        rets_test
+                    )
+                    local_alloc_weights[
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                    ] = alloc_weights
+                    local_train_eval_losses[
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
+                    ] = train_eval_losses
+
+                except Exception as error:
+                    print(
+                        f'DEBUG: Error while testing {model_name} with {loss_name}. Skipping.',
+                        error
+                    )
+                    traceback.print_exc()
+                    continue
+            
+            # Save local results to a rank‑specific file
+            save_pickle_temp(
+                local_alloc_weights,
+                self.temp_dir / f'{self.temp_wts_prefix}_{global_rank}.pkl'
+            )
+            save_pickle_temp(
+                local_train_eval_losses,
+                self.temp_dir / f'{self.temp_losses_prefix}_{global_rank}.pkl'
+            )
+
+            # Wait for all ranks to finish
+            comm.Barrier()
+
+            # Rank 0 collects and merges all files
+            if global_rank == 0:
+                self._merge_all_results(
+                    size,
+                    self.temp_wts_prefix,
+                    self.temp_losses_prefix
+                )
+                
+                return self.all_alloc_weights
+            else:
+                return None
     
     def test_one(
             self,
