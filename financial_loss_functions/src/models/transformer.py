@@ -111,7 +111,7 @@ class TemporalTransformer(nn.Module):
         return (x * weights).mean(dim=1)
 
 
-@NNModelLibrary.register(category='transformer')
+# @NNModelLibrary.register(category='transformer')
 class TFT(nn.Module):
     def __init__(
             self,
