@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 from pathlib import Path
 from src.utils.device import get_best_device
-from src.utils.formatting import serialize_np_dict
+from src.utils.formatting import serialize_np_dict, print_evaluation_info
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
     extract_oos_dates,
@@ -63,42 +63,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
     # print('Val shape:', val_data.shape)
 
     return train_data, returns_train, val_data, returns_val
-
-def _print_evaludation_info(
-        out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
-    ):
-    if in_win_date_cols:
-        eval_dates_info = {
-            'Input Window Start': [],
-            'Input Window End': [],
-            'Out Window Start': [],
-            'Out Window End': []
-        }
-        
-        for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
-            eval_dates_info['Input Window Start'].append(in_date[0])
-            eval_dates_info['Input Window End'].append(in_date[-1])
-            eval_dates_info['Out Window Start'].append(out_date[0])
-            eval_dates_info['Out Window End'].append(out_date[-1])
-    else:
-        eval_dates_info = {
-            'Out Window Start': [],
-            'Out Window End': []
-        }
-        for out_date in out_win_date_cols:
-            eval_dates_info['Out Window Start'].append(out_date[0])
-            eval_dates_info['Out Window End'].append(out_date[-1])
-        
-    print('\nModels evaluated on:')
-    print(pd.DataFrame(eval_dates_info))
-
-    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-
-    # Loop over provided dataframes and print
-    for metric, df in kwargs.items():
-        # Cleaning up the metric name
-        title = metric.replace('_', ' ').upper()
-        print(f'\n{title.upper()}:\n', df)
 
 def mpi_setup() -> tuple:
     # Conditional import of MPI
@@ -166,7 +130,7 @@ def run_tuning_pipeline(
     num_steps, extra_days = wf_utils.calc_walk_steps(rets_val)
 
     # # y_val for out of sample evaluation
-    y_val, out_wind_idxs =wf_utils.build_eval_windows(rets_val)
+    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_val)
 
     if extra_days != 0:
         raise RuntimeError(
@@ -355,7 +319,7 @@ def run_tuning_pipeline(
         all_rets_file_name
     )
 
-    _print_evaludation_info(
+    print_evaluation_info(
         out_win_date_cols=out_win_date_cols,
         avgerage_performance_metrics=avg_perf_metrics,
     )

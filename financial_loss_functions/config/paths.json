@@ -35,7 +35,8 @@
         "wfv_plots_dir": "artifacts/results/plots/wfv_plots/",
         "wfv_perf_dir": "artifacts/results/wfv_performance/",
         "temp_dir": "artifacts/temp/",
-        "test_plots_dir": "artifacts/results/plots/test_plots/"
+        "test_plots_dir": "artifacts/results/plots/test_plots/",
+        "test_perf_dir": "artifacts/results/test_performance/"
     },
     "models_module": "src.models"
 }

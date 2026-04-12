@@ -1,5 +1,6 @@
 import copy
 import numpy as np
+import pandas as pd
 
 def extract_req_cols(columns_list: list, suffix: str) -> list:
     """
@@ -62,3 +63,53 @@ def serialize_np_dict(obj: dict):
     if isinstance(obj, list):
         return [serialize_np_dict(i) for i in obj]
     return obj
+
+def print_evaluation_info(
+        out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
+    ):
+    if in_win_date_cols:
+        eval_dates_info = {
+            'Input Window Start': [],
+            'Input Window End': [],
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        
+        for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
+            eval_dates_info['Input Window Start'].append(in_date[0])
+            eval_dates_info['Input Window End'].append(in_date[-1])
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+    else:
+        eval_dates_info = {
+            'Out Window Start': [],
+            'Out Window End': []
+        }
+        for out_date in out_win_date_cols:
+            eval_dates_info['Out Window Start'].append(out_date[0])
+            eval_dates_info['Out Window End'].append(out_date[-1])
+        
+    print('\nModels evaluated on:')
+    print(pd.DataFrame(eval_dates_info))
+
+    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
+
+    # Loop over provided dataframes and print
+    for metric, df in kwargs.items():
+        # Cleaning up the metric name
+        title = metric.replace('_', ' ').upper()
+        print(f'\n{title.upper()}:\n', df)
+
+def reformat_w_dates(
+        all_daily_returns: dict[str, list[list[float]]], out_win_date_cols
+    ) -> dict[str, dict[str, list[float]]]:
+
+    reformatted_w_dates = {}
+    for model, all_winds_ls in all_daily_returns.items():
+        reformatted_w_dates.setdefault(model, {})
+        for wind_rets, win_dates in zip(all_winds_ls, out_win_date_cols):
+            start_date = win_dates[0].strftime('%Y-%m-%d')
+            end_date = win_dates[-1].strftime('%Y-%m-%d')
+            reformatted_w_dates[model][f'{start_date}_{end_date}'] = wind_rets
+            
+    return reformatted_w_dates

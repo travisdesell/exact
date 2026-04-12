@@ -134,7 +134,7 @@ class WFTester(WalkerGridUtilities):
             combo_hparams = reformat_hparams(model_cfg, loss_cfg)
 
         #### FOR TESTING ####
-        combo_hparams['train']['epochs'] = 5
+        # combo_hparams['train']['epochs'] = 5
         ####################
         final_walker = Walker(
             self.num_steps,

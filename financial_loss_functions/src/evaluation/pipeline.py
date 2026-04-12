@@ -5,9 +5,17 @@ from src.utils.device import get_best_device
 from src.evaluation.evaluate_nn import WFTester
 from src.data_processing.dataset import WFUtilities
 from src.visualization.plots import wfv_losses_plot
+from src.training.train_trad import TradModelsTrainer
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
+from src.utils.formatting import serialize_np_dict, print_evaluation_info, reformat_w_dates
 from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator
+)
+from src.utils.window import (
+    extract_oos_dates,
+    get_date_index_col,
+    extract_sp500_winds,
+    calc_in_out_idx
 )
 from src.data_processing.loading import (
     load_csv_files,
@@ -15,6 +23,8 @@ from src.data_processing.loading import (
     ArtifactDataExtractor
 )
 from src.utils.io import (
+    save_to_csv,
+    save_to_json,
     artifact_paths_setup,
     raise_file_not_found
 )
@@ -96,7 +106,7 @@ def run_evaluation_pipeline(
     sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_test'])
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
-    selected_combos = split_combo_names(model_losses, '-')
+    selected_combos = split_combo_names(model_losses, MODEL_LOSS_SEP)
     
     artifacts_extrator = ArtifactDataExtractor(
         prev_grid_mode,
@@ -205,7 +215,7 @@ def run_evaluation_pipeline(
     )
     trad_alloc_weights = trad_grid.train_all(
         init_rets_train=rets_train,
-        init_rets_split=rets_val
+        init_rets_split=rets_test
     )
 
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
@@ -214,9 +224,43 @@ def run_evaluation_pipeline(
     del trad_grid
 
     # -------------------- Evaluation on Out-of-Sample data -------------------- # 
-    #### TODO: Continue with evaulation
+    # Extract s&p500 returns column sliced for the respective output windows
+    sp500_rets_winds = extract_sp500_winds(
+        sp500_rets,
+        features_config['sp500_returns'],
+        out_wind_idxs
+    )
+    
+    # Calculate Equal Weight Portfolio's weights
+    eq_wt_calc = EqualWeightCalculator(y_val)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
+    # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
+    evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
+    evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
 
+    perf_file_name = artifacts_paths['test_perf_dir'] \
+        / f'avg_test_perf_{results_suffix}.csv'
+    avg_perf_metrics = evaluator.calc_avg_performance()
+    save_to_csv(avg_perf_metrics, perf_file_name)
+
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(rets_test, out_wind_idxs)
+
+    all_daily_returns = evaluator.get_all_daily_returns()
+    all_daily_returns = serialize_np_dict(all_daily_returns)
+    all_daily_returns = reformat_w_dates(all_daily_returns, out_win_date_cols)
+    all_rets_file_name = artifacts_paths['test_perf_dir'] \
+        / f'daily_rets_{results_suffix}.json'
+    save_to_json(
+        all_daily_returns,
+        all_rets_file_name
+    )
+
+    print_evaluation_info(
+        out_win_date_cols=out_win_date_cols,
+        avgerage_performance_metrics=avg_perf_metrics,
+    )
 
     time_taken = round((time.time() - start_time) / 60, 3)
     print(f'Time taken for pipeline = {time_taken} mins')

@@ -302,7 +302,7 @@ class WFUtilities:
         return self.init_train, self.init_split
 
     def build_eval_windows(
-            self, split: np.ndarray
+            self, split: pd.DataFrame
         ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
     
         if len(split) < self.out_size * self.num_steps:
@@ -313,7 +313,7 @@ class WFUtilities:
         for step in range(1, self.num_steps+1):
             current_start, current_end = calc_current_idxs(step, self.out_size)
 
-            walk_rets_eval = split[current_start : current_end]
+            walk_rets_eval = split.iloc[current_start : current_end]
 
             eval_windows.append(walk_rets_eval)
 
