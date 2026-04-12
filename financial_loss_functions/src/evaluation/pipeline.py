@@ -13,10 +13,8 @@ from src.evaluation.evaluator import (
     Evaluator, EqualWeightCalculator
 )
 from src.utils.window import (
-    extract_oos_dates,
     get_date_index_col,
-    extract_sp500_winds,
-    calc_in_out_idx
+    extract_sp500_winds
 )
 from src.data_processing.loading import (
     load_csv_files,

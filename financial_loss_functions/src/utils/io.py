@@ -79,6 +79,15 @@ def raise_file_not_found(paths_list: list[str | Path]):
             )
 
 def data_dir_check(path: str) -> bool:
+    """
+    Function to check if data directory exists and to overwrite depending on user input.
+
+    Args:
+        path (str): Path to data directory.
+    
+    Returns:
+        run_permission (bool): Bool value to run or stop executing code if user input is N (no).
+    """
     run_permission = False
     if os.path.exists(path):
         print(path, ', Directory Exists!!!!')

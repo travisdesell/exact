@@ -5,10 +5,8 @@ from src.utils.device import get_best_device, mpi_setup
 from src.utils.formatting import serialize_np_dict, print_evaluation_info
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
-    extract_oos_dates,
     get_date_index_col,
-    extract_sp500_winds,
-    calc_in_out_idx
+    extract_sp500_winds
 
 )
 from src.data_processing.loading import load_csv_files, load_sp500_rets
