@@ -163,7 +163,7 @@ class ArtifactDataExtractor:
         rets_paths = self.find_artifact_files(
             rets_prefix,
             model_names,
-            self.artifacts_paths['wfv_perf_dir'],
+            self.artifacts_paths['wfv_rets_dir'],
             '.json'
         )
 

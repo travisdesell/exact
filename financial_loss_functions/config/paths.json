@@ -33,7 +33,7 @@
         "plots_dir": "artifacts/results/plots/",
         "tuned_plots_dir": "artifacts/results/plots/tuned_plots/",
         "wfv_plots_dir": "artifacts/results/plots/wfv_plots/",
-        "wfv_perf_dir": "artifacts/results/wfv_performance/",
+        "wfv_rets_dir": "artifacts/results/wfv_returns/",
         "temp_dir": "artifacts/temp/",
         "test_plots_dir": "artifacts/results/plots/test_plots/",
         "test_perf_dir": "artifacts/results/test_performance/"

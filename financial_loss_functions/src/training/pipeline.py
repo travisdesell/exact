@@ -282,7 +282,7 @@ def run_tuning_pipeline(
 
     # Save daily returns
     all_daily_returns = evaluator.get_all_daily_returns()
-    all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
+    all_rets_file_name = artifacts_paths['wfv_rets_dir'] \
         / f'daily_rets_{results_suffix}.json'
     save_to_json(
         serialize_np_dict(all_daily_returns),
