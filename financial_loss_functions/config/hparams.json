@@ -192,7 +192,7 @@
             "tuning": {
                 "hidden_size": {"type": "categorical", "choices": [16, 32, 64, 128]},
                 "num_layers": {"type": "categorical", "choices": [1, 2, 4]},
-                "nheads":{"type": "categorical", "choices":[1, 2, 4, 8]},
+                "nheads":{"type": "categorical", "choices":[2, 3, 4, 5, 6]},
                 "dropout": {"type": "float", "low": 0.1, "high": 0.5, "log": false},
                 "lr": {"type": "float", "low": 1e-6, "high": 1e-2, "log": true},
                 "weight_decay": {"type": "float", "low": 1e-4, "high": 1e-1, "log": true},
