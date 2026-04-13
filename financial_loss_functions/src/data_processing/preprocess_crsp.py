@@ -275,6 +275,7 @@ def calculate_dema(df, span=20):
 class Preprocessor:
     col_sep = '_'
     return_suffix = '_RET'
+    ba_spread_suffix = '_BA_SPREAD'
     
     def __init__(
             self,
@@ -463,6 +464,19 @@ class Preprocessor:
         else:
             raise RuntimeError('Run `process_train_data` first.')
 
+    def _extract_only_ba(self, data: pd.DataFrame) -> pd.DataFrame:
+        ba_spread_cols = extract_req_cols(data, self.ba_spread_suffix)
+
+        ba_spreads = data[ba_spread_cols]
+
+        return ba_spreads.sort_index(axis=1)
+
+    def _build_ba_spread_cols(self):
+
+        order_ba_spreads = [f'{ticker}{self.ba_spread_suffix}' for ticker in self.all_tickers]
+
+        return order_ba_spreads
+
     def process_train_data(
             self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> tuple[pd.DataFrame, pd.DataFrame]:
@@ -506,7 +520,7 @@ class Preprocessor:
 
     def process_split_data(
             self, split_data: pd.DataFrame, macro_data: pd.DataFrame | None = None
-        ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Preprocesses given validation or test data based on statistics 
         from the training data.
@@ -518,6 +532,7 @@ class Preprocessor:
         """
         
         ret_split = self._extract_only_returns(split_data, 'split')
+        ba_split = self._extract_only_ba(split_data)
 
         # macro_cols: list[str] = []
         if macro_data:
@@ -540,6 +555,7 @@ class Preprocessor:
         # Reorder columns to match train data
         split_data = split_data[self.ordered_cols]
         ret_split = ret_split[self.all_tickers]
+        ba_split = ba_split[self._build_ba_spread_cols()]
         # split_data = self._transform(split_data, 'split')
 
         # Kalman filter for denosining
@@ -551,7 +567,7 @@ class Preprocessor:
         if self.broadcast:
             split_data = self._broadcast_common(split_data, self.common_features)
 
-        return split_data, ret_split
+        return split_data, ret_split, ba_split
 
     def get_common_features(self) -> list:
         """

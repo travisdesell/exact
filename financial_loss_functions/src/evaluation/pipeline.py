@@ -33,6 +33,10 @@ from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
+# TODO:
+# 2. Load and provide relevant classes/functions with the BA_Spread
+# 3. Calculate BA_Spread cost in the Evaluator class
+
 def _load_processed_data(paths_config: dict) -> tuple:
     
     processed_files = {

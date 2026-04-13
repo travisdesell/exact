@@ -107,8 +107,8 @@ def run_processing_pipeline(
         common_features = features_config['common_features']
     )
     processed_train, ret_train = nn_preprocessor.process_train_data(train_data)
-    processed_val, ret_val = nn_preprocessor.process_split_data(val_data)
-    processed_test, ret_test = nn_preprocessor.process_split_data(test_data)
+    processed_val, ret_val, ba_val = nn_preprocessor.process_split_data(val_data)
+    processed_test, ret_test, ba_test = nn_preprocessor.process_split_data(test_data)
 
     print('Shape of train data:', processed_train.shape)
     print('Shape of validation data:', processed_val.shape)
@@ -128,7 +128,19 @@ def run_processing_pipeline(
         Path(paths_config['processed_paths']['returns_test'])
     )
     
-    print('Realized returns extracted and saved.')
+    print('Returns data extracted and saved.')
+
+    save_to_csv(
+        ba_val,
+        Path(paths_config['processed_paths']['ba_val'])
+    )
+
+    save_to_csv(
+        ba_test,
+        Path(paths_config['processed_paths']['ba_test'])
+    )
+
+    print('BA Spread for validation and test saved.')
     
     # Save all features data
     save_to_csv(
