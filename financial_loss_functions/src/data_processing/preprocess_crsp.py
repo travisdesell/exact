@@ -489,6 +489,7 @@ class Preprocessor:
         self.ordered_cols, self.all_tickers = self._build_feats_order()
 
         train = train[self.ordered_cols]
+        ret_train = ret_train[self.all_tickers]
 
         # # kalman for denosining
         # self.kalman_filt.kalman_fit(train)
@@ -538,6 +539,7 @@ class Preprocessor:
 
         # Reorder columns to match train data
         split_data = split_data[self.ordered_cols]
+        ret_split = ret_split[self.all_tickers]
         # split_data = self._transform(split_data, 'split')
 
         # Kalman filter for denosining
