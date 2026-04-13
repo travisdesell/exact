@@ -7,12 +7,25 @@ class Evaluator:
     Class to evaulate and compare all generated weights from all models/methods,
     for all windows againsts each other as well as benchmarks.
     """
-    def __init__(self, eval_returns: np.ndarray, metrics_lib: dict|None=None):
+    spread_costs_factor = 0.5
+    def __init__(
+            self, 
+            eval_returns: np.ndarray, 
+            ba_eval: np.ndarray | None = None, 
+            metrics_lib: dict[str, Callable] | None = None
+        ):
         """
-        Initialize Evaluator instance to evaulate and compare all generated weights.
+        Initialize Evaluator to calculate the portfolio returns, 
+        evaulate them and compare all generated weights.
 
-        @param eval_returns np.ndarray
-            Daily returns which are used to evulate all methods/models
+        Args:
+            eval_windows (np.ndarray): Array of evaluation (out-of-sample)
+                return windows for all stocks.
+            ba_eval (np.ndarray | None): Array of Bid-Ask Spreads for each stock on the 
+                first day of every window. This is used to calculate Bid-Ask Spread trading costs, 
+                if provided. Default = None.
+            metrics_lib (dict[str, Callable] | None): Metrics library dictionary containing metric 
+                name and metric function. Default = None.
         """
         # Returns by window
         self.eval_returns = eval_returns
@@ -21,10 +34,44 @@ class Evaluator:
                 f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
             )
         
+        if isinstance(ba_eval, np.ndarray) and ba_eval.ndim == 2:
+            self.ba_eval = ba_eval
+        else:
+            print(
+                '!Evaluator did not get BA Spread data, or incorrect shape.',
+                'Not accounting for trading costs.!'
+            )
+            self.ba_eval = None
+        
         self.metrics_lib = metrics_lib
         
         # Returns for each window
         self.all_daily_returns = {} # Add all returns for every window
+
+    @staticmethod
+    def _calc_step_ba_costs(
+            prev_weights: np.ndarray | None, 
+            curr_weights: np.ndarray,
+            first_d_bas: np.ndarray
+        ) -> np.float64:
+        
+        # Compute cost
+        if prev_weights is None:
+            delta = curr_weights # For the first step
+        else:
+            delta = np.abs(curr_weights - prev_weights) # For steps after the first step
+
+        # Calculate BA spread costs
+        cost = 0.5 * np.sum(delta * first_d_bas)
+
+        return cost
+    
+    @staticmethod
+    def _calc_net_returns(pf_daily_rets: np.ndarray, cost: float) -> np.ndarray:
+        # Apply cost to the first  to get Net returns
+        pf_daily_rets[0] = (1 + pf_daily_rets[0]) * (1 - cost) - 1
+
+        return pf_daily_rets
 
     def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
         """
@@ -40,15 +87,39 @@ class Evaluator:
         pf_daily_returns = []
 
         if eval_weights.ndim == 2:
-            # Iterating over window samples
-            for i in range(eval_weights.shape[0]):
-                weights = eval_weights[i]  # Shape: (50,)
-                returns = self.eval_returns[i]  # Shape: (50, 50) - time steps x assets
+            if self.ba_eval is not None:
                 
-                # Calculate daily portfolio returns (dot product at each time step)
-                daily_returns = np.dot(returns, weights)
-                pf_daily_returns.append(daily_returns) # Shape: (50,)
-                
+                prev_weights = None 
+                # Initialized to None because the first step will not have previous weights
+
+                # Iterating over window samples
+                for i in range(eval_weights.shape[0]):
+                    weights = eval_weights[i]  # Shape: (50,)
+                    returns_matrix = self.eval_returns[i]  # Shape: (60, 50) - time steps x assets
+                    first_d_bas = self.ba_eval[i] # Shape: (50,) 1 stime step x assets
+
+                    cost = self._calc_step_ba_costs(prev_weights, weights, first_d_bas)
+                    
+                    # Calculate daily gross portfolio returns (dot product at each time step)
+                    daily_returns = np.dot(returns_matrix, weights) # Shape: (60,)
+                    
+                    # Calculate net returns
+                    daily_returns = self._calc_net_returns(daily_returns, cost)
+                    
+                    pf_daily_returns.append(daily_returns)
+
+                    prev_weights = weights # update previous weights
+            
+            else:
+                # Iterating over window samples
+                for i in range(eval_weights.shape[0]):
+                    weights = eval_weights[i]  # Shape: (50,)
+                    returns_matrix = self.eval_returns[i]  # Shape: (60, 50) - time steps x assets
+                    
+                    # Calculate daily portfolio returns (dot product at each time step)
+                    daily_returns = np.dot(returns_matrix, weights)
+                    pf_daily_returns.append(daily_returns) # Shape: (50,)
+             
             self.all_daily_returns[model_name] = np.array(pf_daily_returns)
         else:
             print(
@@ -126,18 +197,29 @@ class Evaluator:
             print('No metrics library or dict provided. Cannot run average performance over metrics.')
             return None
 
-
     def get_all_daily_returns(self):
         return self.all_daily_returns
     
 
 class EqualWeightCalculator:
+    """
+    Class to calculate weights and daily returns for an equal weight portfolio.
+    """
     def __init__(self, eval_returns: np.ndarray):
+        """
+        Initialize EqualWeightCalculator to calculate equal weights for the 
+        given stocks and calculate its returns.
+
+        Args:
+            eval_windows (np.ndarray): Array of evaluation (out-of-sample)
+                return windows for all stocks.
+        """
         self.eval_returns = eval_returns
         
-        # Different Weights
+        # Equal weight for all stocks
         self.eq_weights = None
 
+        # Returns for the equal weight portfolio
         self.eq_weights_rets = None
     
     @staticmethod

@@ -2,15 +2,21 @@ import sys
 import time
 import pandas as pd
 from pathlib import Path
-from src.utils.device import get_best_device, mpi_setup
 from src.evaluation.test_nn import WFTester
 from src.data_processing.dataset import WFUtilities
 from src.visualization.plots import wfv_losses_plot
 from src.training.train_trad import TradModelsTrainer
+from src.utils.device import get_best_device, mpi_setup
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
-from src.utils.formatting import serialize_np_dict, print_evaluation_info, reformat_model_perfs
+from src.utils.formatting import (
+    serialize_np_dict,
+    print_evaluation_info,
+    reformat_model_perfs,
+    split_combo_names
+)
 from src.evaluation.evaluator import (
-    Evaluator, EqualWeightCalculator
+    Evaluator, 
+    EqualWeightCalculator
 )
 from src.utils.window import (
     get_date_index_col,
@@ -18,7 +24,6 @@ from src.utils.window import (
 )
 from src.data_processing.loading import (
     load_csv_files,
-    load_single_csv,
     ArtifactDataExtractor
 )
 from src.utils.io import (
@@ -26,38 +31,12 @@ from src.utils.io import (
     save_to_json,
     artifact_paths_setup
 )
-from src.utils.formatting import split_combo_names
 
+# Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-# TODO:
-# 2. Load and provide relevant classes/functions with the BA_Spread
-# 3. Calculate BA_Spread cost in the Evaluator class
-
-def _load_processed_data(paths_config: dict) -> tuple:
-    
-    processed_files = {
-        'processed_train': Path(paths_config['processed_paths']['processed_train']),
-        'processed_val': Path(paths_config['processed_paths']['processed_val']),
-        'processed_test': Path(paths_config['processed_paths']['processed_test']),
-        'returns_train': Path(paths_config['processed_paths']['returns_train']),
-        'returns_val': Path(paths_config['processed_paths']['returns_val']),
-        'returns_test': Path(paths_config['processed_paths']['returns_test'])
-    }
-
-    processed_dfs = load_csv_files(processed_files, index_dt=True)
-    train_data = processed_dfs['processed_train']
-    returns_train = processed_dfs['returns_train']
-
-    val_data = processed_dfs['processed_val']
-    returns_val = processed_dfs['returns_val']
-
-    test_data = processed_dfs['processed_test']
-    returns_test = processed_dfs['returns_test']
-
-    return train_data, returns_train, val_data, returns_val, test_data, returns_test
 
 def run_evaluation_pipeline(
         paths_config: dict,
@@ -87,22 +66,53 @@ def run_evaluation_pipeline(
     # No auto discovery needed for Loss library as all functions are in one file
 
     # -------------------- Loading Processed Data -------------------- #
-    process_data_tuple = _load_processed_data(
-        paths_config
-    )
+
+    processed_files = {
+        'processed_train': Path(paths_config['processed_paths']['processed_train']),
+        'processed_val': Path(paths_config['processed_paths']['processed_val']),
+        'processed_test': Path(paths_config['processed_paths']['processed_test']),
+        'returns_train': Path(paths_config['processed_paths']['returns_train']),
+        'returns_val': Path(paths_config['processed_paths']['returns_val']),
+        'returns_test': Path(paths_config['processed_paths']['returns_test']),
+        'ba_test': Path(paths_config['processed_paths']['ba_test']),
+        'benchmark_test': Path(paths_config['processed_paths']['benchmark_test'])
+    }
+
+    processed_dfs = load_csv_files(processed_files, index_dt=True)
+
 
     #### Combine train and validation data ####
-    train_data = pd.concat([process_data_tuple[0], process_data_tuple[2]], axis=0)
-    rets_train = pd.concat([process_data_tuple[1], process_data_tuple[3]], axis=0)
+    train_data = pd.concat(
+        [processed_dfs['processed_train'],processed_dfs['processed_val']],
+        axis=0
+    )
+    rets_train = pd.concat([
+        processed_dfs['returns_train'], processed_dfs['returns_val']],
+        axis=0
+    )
     
-    test_data = process_data_tuple[4]
-    rets_test = process_data_tuple[5]
+    test_data = processed_dfs['processed_test']
+    rets_test = processed_dfs['returns_test']
 
-    print('Train shape:', train_data.shape)
-    print('Test shape:', test_data.shape)
+    # Loaded BA Spread data for trading costs
+    ba_test = processed_dfs['ba_test']
     
-    # Loading S&P 500 for benchmarking
-    sp500_rets = load_single_csv(paths_config['processed_paths']['benchmark_test'])
+    # Loaded S&P 500 for benchmarking
+    sp500_rets = processed_dfs['benchmark_test']
+
+    print(
+        'Train Shape:', train_data.shape, ','
+        'Train Returns Shape:', rets_train.shape
+    )
+    print(
+        'Test Shape:', test_data.shape, ','
+        'Test Returns Shape:', rets_test.shape
+    )
+    print(
+        'Test BA Spread Shape:', ba_test.shape, ','
+        'S&P500 Returns Shape:', sp500_rets.shape
+    )
+    
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
     selected_combos = split_combo_names(model_losses, MODEL_LOSS_SEP)
@@ -130,14 +140,16 @@ def run_evaluation_pipeline(
             del opti_hparams[key]
     
     # -------------------- Prepare Test Set -------------------- #
+    print('Rolling Windows Configuration:', hparams_config['rolling_windows'])
     out_size = hparams_config['rolling_windows']['out_size']
     wf_utils = WFUtilities(out_size)
     num_steps, extra_days = wf_utils.calc_walk_steps(rets_test)
 
-    # Use WFUtilities.init_datasets to adjust extra days
+    ## Use WFUtilities.init_datasets to adjust extra days if needed ##
 
     # y_val for out of sample evaluation
-    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_test)
+    y_test, out_wind_idxs = wf_utils.build_eval_windows(rets_test)
+    y_ba_test = wf_utils.build_ba_for_eval(ba_test, out_wind_idxs)
 
     if extra_days > 0:
         print(f'There are {extra_days} extra days in the test set.')
@@ -230,7 +242,7 @@ def run_evaluation_pipeline(
     # -------------------- Evaluator Setup -------------------- #
     
     # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    evaluator = Evaluator(y_test, y_ba_test, MetricLibrary.items())
     
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
@@ -263,7 +275,7 @@ def run_evaluation_pipeline(
     )
     
     # Calculate Equal Weight Portfolio's weights
-    eq_wt_calc = EqualWeightCalculator(y_val)
+    eq_wt_calc = EqualWeightCalculator(y_test)
     eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks

@@ -618,15 +618,14 @@ class Tuner:
             n_warmup_steps: int, 
             n_jobs: int,
             reshaper: Reshaper,
-            torch_device: torch.device | str
+            torch_device: torch.device | str,
+            ba_eval_winds: np.ndarray | None
         ):
-        if tune_metric is not None:
-            self.tune_metric = TypeAdapter(
-                Dict[str, MetricModel]
-            ).validate_python(tune_metric)
-        else:
-            self.tune_metric = tune_metric
-        
+
+        self.tune_metric = TypeAdapter(
+            Dict[str, MetricModel]
+        ).validate_python(tune_metric)
+
         self.tune_bench_rets = tune_bench_rets # benchmark returns for information ratio style metrics
         self.eval_winds = eval_winds
         self.n_steps = n_steps
@@ -635,13 +634,13 @@ class Tuner:
         self.n_jobs = n_jobs
         self.reshaper = reshaper
         self.torch_device = torch_device
+        self.ba_eval_winds = ba_eval_winds
 
         self.n_startup_trials = max(
             int(self.n_trials * self.n_startup_perc),
             self.min_n_startup
         )
 
-    
     def _calc_pf_metrics_for_seed(
             self, model_name: str, loss_name: str, seed: int,
             alloc_weights: np.ndarray, y_val: np.ndarray
@@ -658,10 +657,10 @@ class Tuner:
     
     def _calc_composite_scores(
             self, model_loss_name,
-            alloc_weights: np.ndarray , y_val: np.ndarray
+            alloc_weights: np.ndarray , y_val: np.ndarray, ba_y_val: np.ndarray
         ) -> np.ndarray:
         
-        evaluator = Evaluator(y_val, None)
+        evaluator = Evaluator(y_val, ba_y_val, None)
         # Calculate daily returns for this particular portfolio
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
         model_rets = evaluator.get_rets_for_one(model_loss_name)
@@ -716,7 +715,6 @@ class Tuner:
         calculate tuing objective from statistics of composite scores across seeds
         and gap penalty from train - val losses.
         """
-
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
         if n < 2:
@@ -744,7 +742,6 @@ class Tuner:
         calculate tuing objective from statistics of composite scores across seeds
         and gap penalty from train - val losses.
         """
-
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
         if n < 2:
@@ -840,7 +837,8 @@ class Tuner:
             composite_scores = self._calc_composite_scores(
                 model_loss_name,
                 alloc_weights,
-                self.eval_winds
+                self.eval_winds,
+                self.ba_eval_winds
             )
 
             final_objective = self._calc_tuning_objective_no_gap(
@@ -1157,12 +1155,15 @@ class CandidatesGrid(WalkerGridUtilities):
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def _tuner_setup(self, tuner_eval_items) -> Tuner | None:
+    def _tuner_setup(self, tuner_eval_items: dict) -> Tuner | None:
 
         if self.tune:
             tune_metric = tuner_eval_items.get('metric')
             tune_bench_rets = tuner_eval_items.get('bench_rets')
             tune_eval_winds = tuner_eval_items.get('eval_winds')
+            tune_ba_eval_winds = tuner_eval_items.get('ba_eval_winds')
+            if tune_ba_eval_winds is None:
+                print('No BA Spread data provided. Tuner not accounting for trading costs.')
             
             # Tuner configuration
             if tune_metric and tune_bench_rets is not None and tune_eval_winds is not None:
@@ -1184,7 +1185,8 @@ class CandidatesGrid(WalkerGridUtilities):
                     n_warmup_steps,
                     n_jobs,
                     self.reshaper,
-                    self.torch_device
+                    self.torch_device,
+                    tune_ba_eval_winds
                 )
             
             elif not tune_metric:

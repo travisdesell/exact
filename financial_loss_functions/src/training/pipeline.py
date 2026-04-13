@@ -9,14 +9,17 @@ from src.utils.window import (
     extract_sp500_winds
 
 )
-from src.data_processing.loading import load_csv_files, load_single_csv
+from src.data_processing.loading import load_csv_files
 from src.visualization.plots import wfv_losses_plot
 from src.utils.io import (
-    artifact_paths_setup, save_to_csv, save_to_json
+    artifact_paths_setup,
+    save_to_csv,
+    save_to_json
 )
 from src.training.train_nn import CandidatesGrid, MetricModel
 from src.evaluation.evaluator import (
-    Evaluator, EqualWeightCalculator
+    Evaluator,
+    EqualWeightCalculator
 )
 from src.data_processing.dataset import WFUtilities
 
@@ -32,27 +35,6 @@ from src.models.registry import NNModelLibrary
 #     """
 #     for dir_path in artifacts_paths.values():
 #         create_directory(dir_path)
-
-def _load_processed_data(paths_config: dict) -> tuple:
-    
-    processed_files = {
-        'processed_train': Path(paths_config['processed_paths']['processed_train']),
-        'processed_val': Path(paths_config['processed_paths']['processed_val']),
-        'returns_train': Path(paths_config['processed_paths']['returns_train']),
-        'returns_val': Path(paths_config['processed_paths']['returns_val'])
-    }
-
-    processed_dfs = load_csv_files(processed_files, index_dt=True)
-    train_data = processed_dfs['processed_train']
-    returns_train = processed_dfs['returns_train']
-
-    val_data = processed_dfs['processed_val']
-    returns_val = processed_dfs['returns_val']
-
-    # print('Train shape:', train_data.shape)
-    # print('Val shape:', val_data.shape)
-
-    return train_data, returns_train, val_data, returns_val
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -88,15 +70,40 @@ def run_tuning_pipeline(
     # No auto discovery needed for Loss library as all functions are in one file
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, rets_train, val_data, rets_val = _load_processed_data(
-        paths_config
+    processed_files = {
+        'processed_train': Path(paths_config['processed_paths']['processed_train']),
+        'processed_val': Path(paths_config['processed_paths']['processed_val']),
+        'returns_train': Path(paths_config['processed_paths']['returns_train']),
+        'returns_val': Path(paths_config['processed_paths']['returns_val']),
+        'ba_val': Path(paths_config['processed_paths']['ba_val']),
+        'benchmark_val': Path(paths_config['processed_paths']['benchmark_val'])
+    }
+
+    processed_dfs = load_csv_files(processed_files, index_dt=True)
+    train_data = processed_dfs['processed_train']
+    rets_train = processed_dfs['returns_train']
+
+    val_data = processed_dfs['processed_val']
+    rets_val = processed_dfs['returns_val']
+
+    # Loaded BA Spread data for trading costs
+    ba_val = processed_dfs['ba_val']
+
+    # Loaded S&P 500 for benchmarking
+    sp500_rets = processed_dfs['benchmark_val']
+
+    print(
+        'Train Shape:', train_data.shape,
+        'Train Returns Shape:', rets_train.shape
     )
-
-    # Loading S&P 500 for benchmarking
-    sp500_rets = load_single_csv(paths_config['processed_paths']['benchmark_val'])
-
-    # Loading BA Spread data for trading costs
-    ba_val = load_single_csv(paths_config['processed_paths']['ba_val'])
+    print(
+        'Test Shape:', val_data.shape,
+        'Test Returns Shape:', rets_val.shape
+    )
+    print(
+        'Test BA Spread Shape:', ba_val.shape,
+        'S&P500 Returns Shape:', sp500_rets.shape
+    )
     
     # -------------------- Prepare Validation Sets -------------------- #
     out_size = hparams_config['rolling_windows']['out_size']
@@ -110,9 +117,7 @@ def run_tuning_pipeline(
 
     # y_val and the ba_spreads for the same windows for out of sample evaluation
     y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_val)
-    y_ba_val, ba_out_wind_idxs = wf_utils.build_ba_for_eval(ba_val)
-    # print(y_ba_val)
-
+    y_ba_val = wf_utils.build_ba_for_eval(ba_val, out_wind_idxs)
     # -------------------- Training Neural Network Models -------------------- #
 
     # Calculate Equal Weight Portfolio's weights
@@ -134,7 +139,8 @@ def run_tuning_pipeline(
         tuner_eval_items = {
             'metric': tune_metric,
             'bench_rets': eq_wt_rets,
-            'eval_winds': y_val
+            'eval_winds': y_val,
+            'ba_eval_winds': y_ba_val
         }
     else:
         tuner_eval_items = None
@@ -237,7 +243,7 @@ def run_tuning_pipeline(
     # -------------------- Evaluator Setup -------------------- #
     
     # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    evaluator = Evaluator(y_val, y_ba_val, MetricLibrary.items())
     
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
