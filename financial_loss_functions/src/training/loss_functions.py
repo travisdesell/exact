@@ -1224,7 +1224,7 @@ def custom_loss_9(
     # print('RP:', risk_parity)
     return log_sortino + (lambda1 * cvar) + (lambda2 * risk_parity)
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_6(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
     cvar_lambda: float, risk_p_lambda: float, **kwargs
@@ -1281,7 +1281,7 @@ def custom_loss_11(
             (risk_p_lambda * risk_parity)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_12(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float
@@ -1298,7 +1298,7 @@ def custom_loss_12(
             (risk_p_lambda * risk_parity)
     return loss
 
-# @LossLibrary.register(category='custom')
+@LossLibrary.register(category='custom')
 def custom_loss_13(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
@@ -1322,7 +1322,7 @@ def custom_loss_13(
                 (ent_lambda + entropy)
     return loss
 
-# @LossLibrary.register(category='custom')
+@LossLibrary.register(category='custom')
 def custom_loss_14(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
