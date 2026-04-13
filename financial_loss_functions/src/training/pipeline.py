@@ -9,10 +9,10 @@ from src.utils.window import (
     extract_sp500_winds
 
 )
-from src.data_processing.loading import load_csv_files, load_sp500_rets
+from src.data_processing.loading import load_csv_files, load_single_csv
 from src.visualization.plots import wfv_losses_plot
 from src.utils.io import (
-    artifact_paths_setup, save_to_csv, save_to_json, raise_file_not_found
+    artifact_paths_setup, save_to_csv, save_to_json
 )
 from src.training.train_nn import CandidatesGrid, MetricModel
 from src.evaluation.evaluator import (
@@ -41,9 +41,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
         'returns_train': Path(paths_config['processed_paths']['returns_train']),
         'returns_val': Path(paths_config['processed_paths']['returns_val'])
     }
-
-    # Check if all files exist
-    raise_file_not_found(list(processed_files.values()))
 
     processed_dfs = load_csv_files(processed_files, index_dt=True)
     train_data = processed_dfs['processed_train']
@@ -94,8 +91,12 @@ def run_tuning_pipeline(
     train_data, rets_train, val_data, rets_val = _load_processed_data(
         paths_config
     )
+
     # Loading S&P 500 for benchmarking
-    sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_val'])
+    sp500_rets = load_single_csv(paths_config['processed_paths']['benchmark_val'])
+
+    # Loading BA Spread data for trading costs
+    ba_val = load_single_csv(paths_config['processed_paths']['ba_val'])
     
     # -------------------- Prepare Validation Sets -------------------- #
     out_size = hparams_config['rolling_windows']['out_size']

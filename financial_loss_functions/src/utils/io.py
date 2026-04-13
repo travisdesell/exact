@@ -61,20 +61,9 @@ def check_if_files_exist(
     
     return existence
 
-def raise_file_not_found(paths_list: list[str | Path]):
-    """
-    Raise a FileNotFoundError if any provided file doesn't exist.
-    
-    Args:
-        paths_list (List[str | Path]): List of file path strings to be checked for existence.
-    
-    Raises:
-        FileNotFoundError: Raised if any file in the provided list doesn't exist.
-    """
-    existence = check_if_files_exist(paths_list)
-    for path, status in existence.items():
-        if not status:
-            raise FileNotFoundError(
+def raise_file_not_found(path: str | Path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(
                 f'Required file not found: {path}'
             )
 

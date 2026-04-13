@@ -18,14 +18,13 @@ from src.utils.window import (
 )
 from src.data_processing.loading import (
     load_csv_files,
-    load_sp500_rets,
+    load_single_csv,
     ArtifactDataExtractor
 )
 from src.utils.io import (
     save_to_csv,
     save_to_json,
-    artifact_paths_setup,
-    raise_file_not_found
+    artifact_paths_setup
 )
 from src.utils.formatting import split_combo_names
 
@@ -47,9 +46,6 @@ def _load_processed_data(paths_config: dict) -> tuple:
         'returns_val': Path(paths_config['processed_paths']['returns_val']),
         'returns_test': Path(paths_config['processed_paths']['returns_test'])
     }
-
-    # Check if all files exist
-    raise_file_not_found(list(processed_files.values()))
 
     processed_dfs = load_csv_files(processed_files, index_dt=True)
     train_data = processed_dfs['processed_train']
@@ -106,7 +102,7 @@ def run_evaluation_pipeline(
     print('Test shape:', test_data.shape)
     
     # Loading S&P 500 for benchmarking
-    sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_test'])
+    sp500_rets = load_single_csv(paths_config['processed_paths']['benchmark_test'])
 
     # -------------------- Loading Relevant Training Artifacts -------------------- #
     selected_combos = split_combo_names(model_losses, MODEL_LOSS_SEP)

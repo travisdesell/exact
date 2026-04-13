@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from src.utils.io import check_if_files_exist, load_json, raise_file_not_found
+from src.utils.io import check_if_files_exist, load_json
 
 def load_raw_crsp_datasets(
         train_path: str, val_path: str, test_path: str
@@ -9,11 +9,13 @@ def load_raw_crsp_datasets(
     Load all CRSP datasets files from a directory which are split into train,
     validation and test.
 
-    @param train_path str Path to raw train data file
-    @param val_path str Path to raw validation data file
-    @param test_path str Path to raw test data file
+    Args:
+        train_path (str): Path to raw train data file
+        val_path (str): Path to raw validation data file
+        test_path (str): Path to raw test data file
     
-    @return Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] Raw train, val and test data
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: Raw train, val and test data
     """ 
     # Load split datasets
     train_data = pd.read_csv(train_path)
@@ -22,21 +24,42 @@ def load_raw_crsp_datasets(
     
     return train_data, val_data, test_data
 
-def load_csv_files(paths_dict: dict[str, str], index_dt: bool = False) -> dict[str, pd.DataFrame]:
+def load_single_csv(file_path: str | Path, index_dt: bool = True) -> pd.DataFrame:
     """
-    Loads csv data files. Provide dictionary of 
-    name key and path strings value to be loaded.
+    Load a single CSV file.
 
-    @param paths_dict dict[str, str] dictionary of name key and path strings value to be loaded
+    Args:
+        file_path (str | Path): Path to csv file to be loaded.
+        index_dt (bool): Convert index to Pandas DateTime if index is a date. Default = True.
     
-    @return dict[str, pd.DataFrame] dictionary of name key and loaded dataframe as value
+    Returns:
+        df (pd.DataFrame): Loaded csv file as a pandas dataframe.
+    """
+    df = pd.read_csv(file_path, index_col=0)
+    if index_dt:
+        df.index = pd.to_datetime(df.index)
+    
+    return df
+
+def load_csv_files(
+        paths_dict: dict[str, str | Path], index_dt: bool = True
+    ) -> dict[str, pd.DataFrame]:
+    """
+    Loads a collection of csv data files. Provide dictionary of 
+    name key and path strings value to be loaded. 
+    This is done to maintain strict ordering of input and output of files.
+
+    Args:
+        paths_dict (dict[str, str | Path]): Dictionary of name key and path strings value to be loaded.
+        index_dt (bool): Convert index of each file to Pandas DateTime if index is a date. Default = True.
+
+    Returns:
+        loaded_dfs (dict[str, pd.DataFrame]): Dictionary of name key and loaded dataframe as value.
     """
         
     loaded_dfs = {}
     for name, f_path in paths_dict.items():
-        temp_df = pd.read_csv(f_path, index_col=0) # Can use parse_dates=True here,but
-        if index_dt:
-            temp_df.index = pd.to_datetime(temp_df.index) #.but pd.to_datetime for control.
+        temp_df = load_single_csv(f_path, index_dt)
         loaded_dfs[name] = temp_df
 
     return loaded_dfs
@@ -179,15 +202,3 @@ class ArtifactDataExtractor:
             daily_rets = None
         
         return daily_rets
-
-def load_sp500_rets(path: str) -> pd.DataFrame:
-    sp500_path = Path(path)
-    raise_file_not_found([sp500_path])
-    
-    # Loading only S&P500 from validation split
-    benches = load_csv_files(
-        {'benchmark': sp500_path},
-        index_dt=True
-    )
-
-    return benches['benchmark']
