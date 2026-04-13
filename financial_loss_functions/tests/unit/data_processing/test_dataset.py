@@ -12,7 +12,7 @@ from src.data_processing.dataset import (
     WFUtilities
 )
 
-# -------------------- Tests for Rehsaper -------------------- #
+# -------------------- Tests for Reshaper -------------------- #
 def test_extract_features_excludes_common_and_date():
     """
     Test for Reshaper.extract_features(). Should extract all tickers and features in each column,
@@ -335,7 +335,7 @@ def test_zero_length_dataset_len_zero_and_indexing_raises():
     with pytest.raises(IndexError):
         _ = ds[0]
 
-# -------------------- Tests for WFAdjustment -------------------- #
+# -------------------- Tests for WFUtilities -------------------- #
 def test_calc_walk_steps():
     out_size = 60
     
@@ -436,3 +436,33 @@ def test_get_num_steps_extra_days():
 
     assert wf.get_num_steps() is expected_steps
     assert wf.get_extra_days() is expected_extra_days
+
+# -------------------- Tests for build_eval_windows -------------------- #
+def test_build_eval_windows_typical():
+    out_size = 4
+    
+    wf = WFUtilities(out_size)
+    wf.num_steps = 3
+    
+    split = pd.DataFrame(np.arange(100).reshape(20, 5))  # 20 rows, 5 cols
+
+    windows, idxs = wf.build_eval_windows(split)
+    # Expected shapes: 3 windows of shape (4,5)
+    assert windows.shape == (3, 4, 5)
+    # Check indices
+    assert idxs == [(0,4), (4,8), (8,12)]
+    # Check content: first window should be rows 0-3
+    np.testing.assert_array_equal(windows[0], split[0:4])
+
+def test_build_eval_windows_small_df():
+
+    out_size = 10
+    wf = WFUtilities(out_size)
+    wf.num_steps = 3
+    
+    split = pd.DataFrame(np.arange(100).reshape(20, 5))  # 20 rows, 5 cols
+
+    with pytest.raises(ValueError) as excinfo:
+        windows, idxs = wf.build_eval_windows(split)
+    
+    assert 'smaller than num_steps * out_size' in str(excinfo)

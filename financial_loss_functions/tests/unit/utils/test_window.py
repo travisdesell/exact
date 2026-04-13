@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from src.utils.window import (
     calc_current_idxs,
-    build_eval_windows,
     get_date_index_col,
     extract_oos_dates,
     extract_sp500_winds,
@@ -24,28 +23,6 @@ def test_calc_current_idxs_step_one():
 def test_calc_current_idxs_step_zero_raises():
     with pytest.raises(ValueError, match='Got step 0'):
         calc_current_idxs(step=0, stride=10)
-
-# -------------------- Tests for build_eval_windows -------------------- #
-def test_build_eval_windows_typical():
-    split = np.arange(100).reshape(20, 5)  # 20 rows, 5 cols
-    num_steps = 3
-    out_size = 4
-    windows, idxs = build_eval_windows(split, num_steps, out_size)
-    # Expected shapes: 3 windows of shape (4,5)
-    assert windows.shape == (3, 4, 5)
-    # Check indices
-    assert idxs == [(0,4), (4,8), (8,12)]
-    # Check content: first window should be rows 0-3
-    np.testing.assert_array_equal(windows[0], split[0:4])
-
-def test_build_eval_windows_small_df():
-    split = np.arange(100).reshape(20, 5)  # 20 rows, 5 cols
-    num_steps = 3
-    out_size = 10
-    with pytest.raises(ValueError) as excinfo:
-        windows, idxs = build_eval_windows(split, num_steps, out_size)
-    
-    assert 'smaller than num_steps * out_size' in str(excinfo)
 
 # ------------------- Tests for get_date_index_col -------------------- #
 def test_get_date_index_col():

@@ -291,14 +291,16 @@ def test_broadcast_common_features(preprocessor):
     dates = pd.date_range('2020-01-01', periods=n)
     df = pd.DataFrame({
         'A_VOL_CHANGE': rng.normal(size=n),
+        'A_RET': rng.normal(size=n),
         'A_TURNOVER': rng.uniform(0.1, 5.0, size=n),
         'B_VOL_CHANGE': rng.normal(loc=0.5, size=n),
+        'B_RET': rng.normal(size=n),
         'B_TURNOVER': rng.uniform(0.2, 8.0, size=n),
         'sp500r': np.linspace(2.0, 3.0, n),
     }, index=dates)
     preprocessor.broadcast = True # Set to true, since default is false
     processed, _ = preprocessor.process_train_data(df.copy())
-    processed
+    # processed
 
     # Original macro column 'GDP' must be removed
     assert 'sp500r' not in processed.columns
