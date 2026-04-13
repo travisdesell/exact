@@ -656,11 +656,10 @@ class Tuner:
         return seed_metrics
     
     def _calc_composite_scores(
-            self, model_loss_name,
-            alloc_weights: np.ndarray , y_val: np.ndarray, ba_y_val: np.ndarray
+            self, model_loss_name,alloc_weights: np.ndarray
         ) -> np.ndarray:
-        
-        evaluator = Evaluator(y_val, ba_y_val, None)
+                
+        evaluator = Evaluator(self.eval_winds, self.ba_eval_winds, None)
         # Calculate daily returns for this particular portfolio
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
         model_rets = evaluator.get_rets_for_one(model_loss_name)
@@ -834,16 +833,10 @@ class Tuner:
             # train_val_losses = final_walker.get_train_eval_losses()
 
             # Calculate composite scores from allocation weights
-            composite_scores = self._calc_composite_scores(
-                model_loss_name,
-                alloc_weights,
-                self.eval_winds,
-                self.ba_eval_winds
-            )
+            composite_scores = self._calc_composite_scores(model_loss_name, alloc_weights)
 
-            final_objective = self._calc_tuning_objective_no_gap(
-                composite_scores
-            )
+            # Calculate final objective score for the trial
+            final_objective = self._calc_tuning_objective_no_gap(composite_scores)
         
             print(
                 f'Composite Score for trial {trial.number} = {final_objective}'
