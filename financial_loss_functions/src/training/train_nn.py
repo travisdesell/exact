@@ -559,12 +559,12 @@ class Walker:
             walk_val = val[current_start : current_end] # To be added to train data later
             walk_rets_val = rets_val[current_start : current_end]
 
-            # Median Scale at every walk step
-            robust_scaler = RobustScaler()
-            walk_train_scaled = robust_scaler.fit_transform(walk_train)
+            # # Median Scale at every walk step
+            # robust_scaler = RobustScaler()
+            # walk_train_scaled = robust_scaler.fit_transform(walk_train)
             
             X_train, y_train, infer_in, infer_out = self._reshape_step_data(
-                walk_train_scaled, walk_rets_train, walk_rets_val
+                walk_train, walk_rets_train, walk_rets_val
             )
 
             train_ds = WindowDataset(X_train, y_train)
