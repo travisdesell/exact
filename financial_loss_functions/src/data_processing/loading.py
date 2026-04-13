@@ -64,14 +64,16 @@ def load_csv_files(
 
     return loaded_dfs
 
-def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
+def load_macro_data(macro_dir_path: str | Path) -> dict[str, pd.DataFrame]:
     """
     Loads macro-economic data csv files from given directory path.
 
-    @param macro_dir_path str 
-        Path to directory where macro-ecnomic data is store as separate csv files
+    Args:
+        macro_dir_path (str | Path): Path to directory where macro-economic data 
+        is stored as separate csv files.
 
-    @return dict[str, pd.DataFrame] Contains category name as key and dataframe as value
+    Returns:
+        macro_data_dict (dict[str, pd.DataFrame]): Contains category name as key and dataframe as value.
     """
     
     file_paths = list(macro_dir_path.glob('*.csv')) # since data is collected as csv files
@@ -88,6 +90,10 @@ def load_macro_data(macro_dir_path: str) -> dict[str, pd.DataFrame]:
 
 
 class ArtifactDataExtractor:
+    """
+    Class to extract artifacts data from the artificats directory. Can extract, average performances,
+    optimized hyperparameters and daily return performances.
+    """
     def __init__(
             self,
             prev_grid_mode: str,

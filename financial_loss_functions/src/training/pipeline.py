@@ -103,13 +103,15 @@ def run_tuning_pipeline(
     wf_utils = WFUtilities(out_size)
     num_steps, extra_days = wf_utils.calc_walk_steps(rets_val)
 
-    # # y_val for out of sample evaluation
-    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_val)
-
     if extra_days != 0:
         raise RuntimeError(
             'Validation data incorrectly adjusted. Number of days must be divisible by out_size.'
         )
+
+    # y_val and the ba_spreads for the same windows for out of sample evaluation
+    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_val)
+    y_ba_val, ba_out_wind_idxs = wf_utils.build_ba_for_eval(ba_val)
+    # print(y_ba_val)
 
     # -------------------- Training Neural Network Models -------------------- #
 

@@ -321,6 +321,22 @@ class WFUtilities:
         
         return np.stack(eval_windows), out_wind_idxs
     
+    def build_ba_for_eval(self, ba_split: pd.DataFrame) -> tuple[np.ndarray, list[int]]:
+        if len(ba_split) < self.out_size * self.num_steps:
+            raise ValueError('Provided ba spread dataframe is smaller than num_steps * out_size.')
+        
+        first_day_bas_winds = []
+        ba_out_wind_idxs = []
+        for step in range(1, self.num_steps+1):
+            current_start, current_end = calc_current_idxs(step, self.out_size)
+
+            first_day_bas = ba_split.iloc[current_start]
+
+            first_day_bas_winds.append(first_day_bas)
+            ba_out_wind_idxs.append(current_start)
+        
+        return np.stack(first_day_bas_winds), ba_out_wind_idxs
+    
     def get_num_steps(self) -> int:
         return self.num_steps
     
