@@ -37,6 +37,8 @@ from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
+# TODO:
+# Refactor pipeline to evaluate multi seed testing
 
 def run_evaluation_pipeline(
         paths_config: dict,
