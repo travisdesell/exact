@@ -11,10 +11,10 @@ import numpy as np
 import pandas as pd
 from torch import Tensor
 from abc import ABC, abstractmethod
+from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
 from src.utils.constants import MODEL_LOSS_SEP
-from sklearn.preprocessing import RobustScaler
 from src.utils.window import calc_current_idxs
 from src.data_processing.dataset import WindowDataset, Reshaper
 from src.utils.formatting import reformat_hparams, split_combo_names
@@ -448,7 +448,8 @@ class Walker:
             loss_func: Callable,
             hparams: dict,
             torch_device: torch.device | str,
-            reshaper: Reshaper
+            reshaper: Reshaper,
+            seed: int | None = None
         ):
         self.num_steps = num_steps
         self.model_name = model_name
@@ -458,6 +459,7 @@ class Walker:
         self.hparams = hparams
         self.torch_device = torch_device
         self.reshaper = reshaper
+        self.seed = seed
 
         # get window sizes from reshaper object
         self.in_size = reshaper.in_size
@@ -534,6 +536,10 @@ class Walker:
             val: np.ndarray,
             rets_val: np.ndarray
         ):
+
+        if self.seed: # set a fixed seed if provided
+            set_seed(self.seed)
+        
         walk_train = train.copy()
         walk_rets_train = rets_train.copy()
         walk_val = None

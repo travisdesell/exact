@@ -12,6 +12,7 @@ from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 class WFTester(WalkerGridUtilities):
     temp_wts_prefix = 'test_temp_alloc_wts'
     temp_losses_prefix = 'test_temp_losses'
+    seed_list_key = 'seed_list'
     
     def __init__(
             self,
@@ -118,7 +119,10 @@ class WFTester(WalkerGridUtilities):
         rets_train: np.ndarray, 
         test_data: np.ndarray,
         rets_test: np.ndarray
-    ) -> tuple[np.ndarray, dict[str, list], dict | None]:
+    ) -> tuple[
+        np.ndarray | dict[str, np.ndarray], 
+        dict[str, list] | dict[str, dict[str, list]]
+        ]:
         
         model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
@@ -140,25 +144,60 @@ class WFTester(WalkerGridUtilities):
         #### FOR TESTING ####
         # combo_hparams['train']['epochs'] = 5
         ####################
-        final_walker = Walker(
-            self.num_steps,
-            model_name,
-            model_class,
-            loss_name,
-            loss_func,
-            combo_hparams,
-            self.torch_device,
-            self.reshaper
-        )
+        seed_list = self.hparams_config.get(self.seed_list_key)
+        if seed_list:
+            seed_ls_len = len(seed_list)
+            alloc_weights = {}
+            train_val_losses = {}
+            for idx, seed in enumerate(seed_list, 1):
+                print(
+                    '='*20,
+                    f'Running WF for {model_name}-{loss_name}, seed {seed}, {idx}/{seed_ls_len}',
+                    '='*20
+                )
+                final_walker = Walker(
+                    self.num_steps,
+                    model_name,
+                    model_class,
+                    loss_name,
+                    loss_func,
+                    combo_hparams,
+                    self.torch_device,
+                    self.reshaper,
+                    seed
+                )
+                seed_alloc_weights = final_walker.walk_1_model(
+                    train_data,
+                    rets_train, 
+                    test_data,
+                    rets_test
+                )
 
-        alloc_weights = final_walker.walk_1_model(
-            train_data,
-            rets_train, 
-            test_data,
-            rets_test
-        )
+                seed_train_val_losses = final_walker.get_train_eval_losses()
 
-        train_val_losses = final_walker.get_train_eval_losses()
+                alloc_weights[seed] = seed_alloc_weights
+                train_val_losses[seed] = seed_train_val_losses
+        else:
+            print(f'No seed list provided. Running {model_name} only once.')
+            final_walker = Walker(
+                self.num_steps,
+                model_name,
+                model_class,
+                loss_name,
+                loss_func,
+                combo_hparams,
+                self.torch_device,
+                self.reshaper
+            )
+
+            alloc_weights = final_walker.walk_1_model(
+                train_data,
+                rets_train, 
+                test_data,
+                rets_test
+            )
+
+            train_val_losses = final_walker.get_train_eval_losses()
         
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')

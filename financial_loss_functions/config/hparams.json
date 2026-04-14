@@ -10,6 +10,7 @@
         "out_size": 60,
         "stride": 1
     },
+    "seed_list": [],
     "nn_models": {
         "BaseLSTM": {
             "model": {
