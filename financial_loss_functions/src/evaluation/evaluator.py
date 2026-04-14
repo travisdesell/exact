@@ -7,7 +7,8 @@ class Evaluator:
     Class to evaulate and compare all generated weights from all models/methods,
     for all windows againsts each other as well as benchmarks.
     """
-    spread_costs_factor = 0.5
+    spread_cost_factor = 0.5
+    
     def __init__(
             self, 
             eval_returns: np.ndarray, 
@@ -48,8 +49,8 @@ class Evaluator:
         # Returns for each window
         self.all_daily_returns = {} # Add all returns for every window
 
-    @staticmethod
     def _calc_step_ba_costs(
+            self,
             prev_weights: np.ndarray | None, 
             curr_weights: np.ndarray,
             first_d_bas: np.ndarray
@@ -62,7 +63,7 @@ class Evaluator:
             delta = np.abs(curr_weights - prev_weights) # For steps after the first step
 
         # Calculate BA spread costs
-        cost = 0.5 * np.sum(delta * first_d_bas)
+        cost = self.spread_cost_factor * np.sum(delta * first_d_bas)
 
         return cost
     
