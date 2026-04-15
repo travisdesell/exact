@@ -228,8 +228,15 @@ def run_evaluation_pipeline(
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
-    # # Plot training and validation loss curves
-    # nn_train_loss_curves = wf_tester.get_train_val_losses()
+    # Plot training and validation loss curves
+    nn_train_loss_curves = wf_tester.get_train_val_losses()
+    loss_curves_file = artifacts_paths['test_perf_dir'] \
+        / f'test_loss_curves_{results_suffix}.json'
+    save_to_json(
+        nn_train_loss_curves,
+        loss_curves_file
+    )
+    
     # for model_loss, model_loss_curves in nn_train_loss_curves.items():
     #     test_plot_name = model_loss + ' Test WFV Losses'
     #     wfv_losses_plot(
@@ -323,7 +330,6 @@ def run_evaluation_pipeline(
     
     # -------------------- Combining and Savining All Returns -------------------- # 
     all_daily_rets_w_dates = nn_daily_rets_w_dates | bench_daily_rets_w_dates
-
 
     all_rets_file_name = artifacts_paths['test_perf_dir'] \
         / f'test_returns_{results_suffix}.json'

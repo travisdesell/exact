@@ -35,6 +35,12 @@ class WFTester(WalkerGridUtilities):
 
         self.optimized_hparams = optimized_hparams
         self.enable_diagnostics = enable_diagnostics
+
+        self.seed_list = self.hparams_config.get(self.seed_list_key)
+        if self.seed_list:
+            self.multi_seed = True
+        else:
+            self.multi_seed = False
     
     def _merge_all_results(
             self,
@@ -142,14 +148,14 @@ class WFTester(WalkerGridUtilities):
             combo_hparams = reformat_hparams(model_cfg, loss_cfg)
 
         #### FOR TESTING ####
-        combo_hparams['train']['epochs'] = 1
+        # combo_hparams['train']['epochs'] = 1
         ####################
-        seed_list = self.hparams_config.get(self.seed_list_key)
-        if seed_list:
-            seed_ls_len = len(seed_list)
+        
+        if self.multi_seed:
+            seed_ls_len = len(self.seed_list)
             alloc_weights = {}
             train_val_losses = {}
-            for idx, seed in enumerate(seed_list, 1):
+            for idx, seed in enumerate(self.seed_list, 1):
                 print(
                     '\n','-'*20,
                     f'Running WF for {model_name}-{loss_name}, seed {seed}, {idx}/{seed_ls_len}',
@@ -388,3 +394,39 @@ class WFTester(WalkerGridUtilities):
                 traceback.print_exc()
 
             return self.all_alloc_weights
+    
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        if self.train_eval_losses:
+            reformatted_dict = {}
+            
+            if self.multi_seed:
+                for model_loss, seeds_dict in self.train_eval_losses.items():
+                    reformatted_dict.setdefault(model_loss, {})
+                    for seed, step_losses in seeds_dict.items():
+                        train_losses = []
+                        eval_losses = []
+                        for step in step_losses:
+                            train_losses.append(step['train'])
+                            eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+                        
+                        reformatted_dict[model_loss][seed] = {
+                            'train': train_losses,
+                            'eval': eval_losses
+                        }
+            else:
+                for model_loss, step_losses in self.train_eval_losses.items():
+                    train_losses = []
+                    eval_losses = []
+                    for step in step_losses:
+                        train_losses.append(step['train'])
+                        eval_losses.append(step['eval'][0])
+                    
+                    reformatted_dict[model_loss] = {
+                        'train': train_losses,
+                        'eval': eval_losses
+                    }
+
+        else:
+            raise RuntimeError('Models not trained yet. Run training first.')
+        
+        return reformatted_dict

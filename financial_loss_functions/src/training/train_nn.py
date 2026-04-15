@@ -1064,26 +1064,6 @@ class WalkerGridUtilities(ABC):
                 'Allocation weights already predicted. Create new instance of this class.'
             )
         
-    # -------------------- Getter Methods -------------------- #
-    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
-        if self.train_eval_losses:
-            reformatted_dict = {}
-            for model_loss, step_losses in self.train_eval_losses.items():
-                train_losses = []
-                eval_losses = []
-                for step in step_losses:
-                    train_losses.append(step['train'])
-                    eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
-                
-                reformatted_dict[model_loss] = {
-                    'train': train_losses,
-                    'eval': eval_losses
-                }
-        else:
-            raise RuntimeError('Models not trained yet. Run training first.')
-        
-        return reformatted_dict
-    
     # -------------------- Abstract Methods -------------------- #
     @abstractmethod
     def _merge_all_results(self) -> None:
@@ -1104,7 +1084,10 @@ class WalkerGridUtilities(ABC):
         pass
 
     @abstractmethod
-    def _build_combos(): pass
+    def _build_combos() ->list[tuple]: pass
+
+    @abstractmethod
+    def get_train_val_losses(self) -> dict: pass
 
 
 class CandidatesGrid(WalkerGridUtilities):
@@ -1625,6 +1608,26 @@ class CandidatesGrid(WalkerGridUtilities):
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
+    
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        if self.train_eval_losses:
+            reformatted_dict = {}
+            for model_loss, step_losses in self.train_eval_losses.items():
+                train_losses = []
+                eval_losses = []
+                for step in step_losses:
+                    train_losses.append(step['train'])
+                    eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+                
+                reformatted_dict[model_loss] = {
+                    'train': train_losses,
+                    'eval': eval_losses
+                }
+        else:
+            raise RuntimeError('Models not trained yet. Run training first.')
+        
+        return reformatted_dict
+    
 
 
 class WalkForwardValidator(WalkerGridUtilities):
