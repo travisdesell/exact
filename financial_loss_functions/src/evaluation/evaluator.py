@@ -11,44 +11,57 @@ class Evaluator:
     
     def __init__(
             self, 
-            eval_returns: np.ndarray, 
+            eval_returns: np.ndarray | None, 
             ba_eval: np.ndarray | None = None, 
-            metrics_lib: dict[str, Callable] | None = None
+            metrics_lib: dict[str, Callable] | None = None,
+            all_daily_returns: dict[str, np.ndarray] | None = None
         ):
         """
         Initialize Evaluator to calculate the portfolio returns, 
         evaulate them and compare all generated weights.
 
         Args:
-            eval_windows (np.ndarray): Array of evaluation (out-of-sample)
-                return windows for all stocks.
+            eval_windows (np.ndarray | None): Array of evaluation (out-of-sample)
+                return windows for all stocks. Must provide array or None.
             ba_eval (np.ndarray | None): Array of Bid-Ask Spreads for each stock on the 
                 first day of every window. This is used to calculate Bid-Ask Spread trading costs, 
                 if provided. Default = None.
             metrics_lib (dict[str, Callable] | None): Metrics library dictionary containing metric 
                 name and metric function. Default = None.
         """
-        # Returns by window
-        self.eval_returns = eval_returns
-        if self.eval_returns.ndim != 3:
-            raise ValueError(
-                f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
-            )
-        
-        if isinstance(ba_eval, np.ndarray) and ba_eval.ndim == 2:
-            self.ba_eval = ba_eval
-        else:
-            print(
-                '!Evaluator did not get BA Spread data, or incorrect shape.',
-                'Not accounting for trading costs.!'
-            )
-            self.ba_eval = None
-        
-        self.metrics_lib = metrics_lib
-        
-        # Returns for each window
-        self.all_daily_returns = {} # Add all returns for every window
 
+        if eval_returns is not None and isinstance(eval_returns, np.ndarray):
+            if eval_returns.ndim != 3:
+                raise ValueError(
+                    f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
+                )
+            
+            self.eval_returns = eval_returns
+                
+            if isinstance(ba_eval, np.ndarray) and ba_eval.ndim == 2:
+                self.ba_eval = ba_eval
+            else:
+                print(
+                    '!Evaluator did not get BA Spread data, or incorrect shape.',
+                    'Not accounting for trading costs.!'
+                )
+                self.ba_eval = None
+            
+            # Returns for each window
+            self.all_daily_returns = {} # Add all returns for every window
+        
+        else:
+            if all_daily_returns is None:
+                raise ValueError(
+                    'If out-of-sample evaluation data is not provided, daily returns of all models must be provided.'
+                )
+            else:
+                self.eval_returns = None
+                self.ba_eval = None
+                self.all_daily_returns = all_daily_returns
+
+        self.metrics_lib = metrics_lib
+    
     def _calc_step_ba_costs(
             self,
             prev_weights: np.ndarray | None, 
@@ -201,6 +214,11 @@ class Evaluator:
     def get_all_daily_returns(self):
         return self.all_daily_returns
     
+    def update_spread_cost_factor(self, spread_cost_factor: float):
+        if spread_cost_factor > 1.0:
+            raise ValueError('Spread Cost factor cannot be greater than 1.')
+        else:
+            self.spread_cost_factor = spread_cost_factor
 
 class EqualWeightCalculator:
     """

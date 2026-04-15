@@ -148,6 +148,22 @@ def print_evaluation_info(
         title = metric.replace('_', ' ').upper()
         print(f'\n{title.upper()}:\n', df)
 
+def reform_returns_w_dates(
+        daily_returns: dict[str, list[list[float]]],
+        out_win_date_cols: list[pd.DatetimeIndex]
+) -> dict[str, dict[str, list[float]]]:
+    reformatted_w_dates = {}
+    for model, all_winds_ls in daily_returns.items():
+        reformatted_w_dates.setdefault(model, {})
+        for win_rets, win_dates in zip(all_winds_ls, out_win_date_cols):
+            start_date = win_dates[0].strftime('%Y-%m-%d')
+            end_date = win_dates[-1].strftime('%Y-%m-%d')
+            date_range = f'{start_date}_{end_date}'
+            
+            reformatted_w_dates[model][date_range] = win_rets
+    
+    return reformatted_w_dates
+
 def reformat_model_perfs(
         all_daily_returns: dict[str, list[list[float]]],
         alloc_weights: dict[str, list[list[float]]],

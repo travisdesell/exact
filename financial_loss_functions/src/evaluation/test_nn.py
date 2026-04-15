@@ -142,7 +142,7 @@ class WFTester(WalkerGridUtilities):
             combo_hparams = reformat_hparams(model_cfg, loss_cfg)
 
         #### FOR TESTING ####
-        # combo_hparams['train']['epochs'] = 5
+        combo_hparams['train']['epochs'] = 1
         ####################
         seed_list = self.hparams_config.get(self.seed_list_key)
         if seed_list:
@@ -151,11 +151,11 @@ class WFTester(WalkerGridUtilities):
             train_val_losses = {}
             for idx, seed in enumerate(seed_list, 1):
                 print(
-                    '='*20,
+                    '\n','-'*20,
                     f'Running WF for {model_name}-{loss_name}, seed {seed}, {idx}/{seed_ls_len}',
-                    '='*20
+                    '-'*20
                 )
-                final_walker = Walker(
+                walker = Walker(
                     self.num_steps,
                     model_name,
                     model_class,
@@ -166,20 +166,20 @@ class WFTester(WalkerGridUtilities):
                     self.reshaper,
                     seed
                 )
-                seed_alloc_weights = final_walker.walk_1_model(
+                seed_alloc_weights = walker.walk_1_model(
                     train_data,
                     rets_train, 
                     test_data,
                     rets_test
                 )
 
-                seed_train_val_losses = final_walker.get_train_eval_losses()
+                seed_train_val_losses = walker.get_train_eval_losses()
 
                 alloc_weights[seed] = seed_alloc_weights
                 train_val_losses[seed] = seed_train_val_losses
         else:
             print(f'No seed list provided. Running {model_name} only once.')
-            final_walker = Walker(
+            walker = Walker(
                 self.num_steps,
                 model_name,
                 model_class,
@@ -190,14 +190,14 @@ class WFTester(WalkerGridUtilities):
                 self.reshaper
             )
 
-            alloc_weights = final_walker.walk_1_model(
+            alloc_weights = walker.walk_1_model(
                 train_data,
                 rets_train, 
                 test_data,
                 rets_test
             )
 
-            train_val_losses = final_walker.get_train_eval_losses()
+            train_val_losses = walker.get_train_eval_losses()
         
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')

@@ -11,8 +11,8 @@ from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.formatting import (
     serialize_np_dict,
     print_evaluation_info,
-    reformat_model_perfs,
-    split_combo_names
+    split_combo_names,
+    reform_returns_w_dates
 )
 from src.evaluation.evaluator import (
     Evaluator, 
@@ -32,13 +32,11 @@ from src.utils.io import (
     artifact_paths_setup
 )
 
-# Model and Loss Libraries
-from src.training.loss_functions import LossLibrary
+# Model, Loss and Metrics Libraries
 from src.evaluation.metrics import MetricLibrary
+from src.training.loss_functions import LossLibrary
 from src.models.registry import NNModelLibrary, TradModelLibrary
 
-# TODO:
-# Refactor pipeline to evaluate multi seed testing
 
 def run_evaluation_pipeline(
         paths_config: dict,
@@ -156,7 +154,7 @@ def run_evaluation_pipeline(
     if extra_days > 0:
         print(f'There are {extra_days} extra days in the test set.')
     
-    # -------------------- Walk-Forward Evaluation -------------------- #
+    # -------------------- Neural Networks Walk-Forward Evaluation -------------------- #
     if mpi:
 
         comm, global_rank, size, gpu_id, _ = mpi_setup()
@@ -230,30 +228,62 @@ def run_evaluation_pipeline(
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
 
-    # Plot training and validation loss curves
-    nn_train_loss_curves = wf_tester.get_train_val_losses()
-    for model_loss, model_loss_curves in nn_train_loss_curves.items():
-        test_plot_name = model_loss + ' Test WFV Losses'
-        wfv_losses_plot(
-            model_loss_curves['train'],
-            model_loss_curves['eval'],
-            test_plot_name,
-            artifacts_paths['test_plots_dir'] / (test_plot_name + '.png')
-        )
+    # # Plot training and validation loss curves
+    # nn_train_loss_curves = wf_tester.get_train_val_losses()
+    # for model_loss, model_loss_curves in nn_train_loss_curves.items():
+    #     test_plot_name = model_loss + ' Test WFV Losses'
+    #     wfv_losses_plot(
+    #         model_loss_curves['train'],
+    #         model_loss_curves['eval'],
+    #         test_plot_name,
+    #         artifacts_paths['test_plots_dir'] / (test_plot_name + '.png')
+    #     )
     
-    # -------------------- Evaluator Setup -------------------- #
+    # -------------------- Neural Networks Returns -------------------- #
+    # Extract dates index columns for the respective output windows
+    out_win_date_cols = get_date_index_col(rets_test, out_wind_idxs) # For reformatting
     
-    # Initializing once to compare all models together
-    evaluator = Evaluator(y_test, y_ba_test, MetricLibrary.items())
+    nn_daily_returns = {} # store without dates, for evaluation
+    nn_daily_rets_w_dates = {} # store with dates
+    seed_list = hparams_config.get('seed_list')
+    if seed_list:
+        for seed in seed_list:
+            # Initializing once for ever seed
+            evaluator = Evaluator(y_test, y_ba_test)
     
-    # Calculate returns of all predicted portfolio allocation weights
-    # Calling on every models output allocation weights to calculate pf returns
-    for model_loss, alloc_weights in nn_alloc_weights.items():
-        evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
+            # Calculate returns of all predicted portfolio allocation weights
+            # Calling on every models output allocation weights to calculate pf returns
+            for model_loss, alloc_weights in nn_alloc_weights.items():
+                evaluator.calc_pf_daily_rets(alloc_weights[seed], model_loss)
+            
+            seed_returns = evaluator.get_all_daily_returns()
+            nn_daily_returns[seed] = seed_returns
+            
+            seed_rets_reform = reform_returns_w_dates(
+                serialize_np_dict(seed_returns),
+                out_win_date_cols
+            )
+
+            nn_daily_rets_w_dates[seed] = seed_rets_reform
+    else:
+        # Initializing once for ever seed
+        evaluator = Evaluator(y_test, y_ba_test)
+
+        # Calculate returns of all predicted portfolio allocation weights
+        # Calling on every models output allocation weights to calculate pf returns
+        for model_loss, alloc_weights in nn_alloc_weights.items():
+            evaluator.calc_pf_daily_rets(alloc_weights, model_loss)
+
+            nn_daily_returns = evaluator.get_all_daily_returns()
+
+            nn_daily_rets_w_dates = reform_returns_w_dates(
+                serialize_np_dict(nn_daily_returns),
+                out_win_date_cols
+            )
 
     # del wf_testers
 
-    # -------------------- Training Tradional Models -------------------- #       
+    # -------------------- Tradional Models Walk-Forward Evaluation -------------------- #      
     print(f'Training All Tradional Models')
     trad_grid = TradModelsTrainer(
         TradModelLibrary.items(),
@@ -265,54 +295,83 @@ def run_evaluation_pipeline(
         init_rets_split=rets_test
     )
 
+    # -------------------- Benchmark Returns -------------------- # 
+    evaluator = Evaluator(y_test, y_ba_test)
     for trad_model_name, alloc_weights in trad_alloc_weights.items():
         evaluator.calc_pf_daily_rets(alloc_weights, trad_model_name)
 
-    # -------------------- Evaluation on Out-of-Sample data -------------------- # 
-    # Extract s&p500 returns column sliced for the respective output windows
+    # Calculate Equal Weight Portfolio's weights
+    eq_wt_calc = EqualWeightCalculator(y_test)
+    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
+
+     # Extract s&p500 returns column sliced for the respective output windows
     sp500_rets_winds = extract_sp500_winds(
         sp500_rets,
         features_config['sp500_returns'],
         out_wind_idxs
     )
-    
-    # Calculate Equal Weight Portfolio's weights
-    eq_wt_calc = EqualWeightCalculator(y_test)
-    eq_wt_rets = eq_wt_calc.calc_eq_wt_daily_rets()
 
     # Adding s&p500 & equal weight returns to the evaluator as a benchmarks
     evaluator.add_benchmark_rets(EQ_WT_NAME, eq_wt_rets)
     evaluator.add_benchmark_rets(SP500_NAME, sp500_rets_winds)
-
-    # Get all daily returns
-    all_daily_returns = evaluator.get_all_daily_returns()
-
-    # Extract dates index columns for the respective output windows
-    out_win_date_cols = get_date_index_col(rets_test, out_wind_idxs)
-
-    # Combine all allocation weights
-    all_alloc_wts = nn_alloc_weights | trad_alloc_weights
     
-    # Serialize dicts and combine everything
-    all_daily_returns = reformat_model_perfs(
-        serialize_np_dict(all_daily_returns),
-        serialize_np_dict(all_alloc_wts),
+    bench_daily_returns = evaluator.get_all_daily_returns()
+    bench_daily_rets_w_dates = reform_returns_w_dates(
+        serialize_np_dict(bench_daily_returns),
         out_win_date_cols
     )
-    # Save all performance information (daily returns and weights)
+    
+    # -------------------- Combining and Savining All Returns -------------------- # 
+    all_daily_rets_w_dates = nn_daily_rets_w_dates | bench_daily_rets_w_dates
+
+
     all_rets_file_name = artifacts_paths['test_perf_dir'] \
-        / f'test_performance_{results_suffix}.json'
+        / f'test_returns_{results_suffix}.json'
     save_to_json(
-        all_daily_returns,
+        all_daily_rets_w_dates,
         all_rets_file_name
     )
 
-    # Save average performance
-    perf_file_name = artifacts_paths['test_perf_dir'] \
-        / f'avg_test_perf_{results_suffix}.csv'
-    avg_perf_metrics = evaluator.calc_avg_performance()
-    save_to_csv(avg_perf_metrics, perf_file_name)
+    # # -------------------- Overall Evaluation on Out-of-Sample data -------------------- # 
 
+    if seed_list:
+        seed_metric_dfs = []
+        for seed, seed_returns in nn_daily_returns.items():
+            # Initializing once for ever seed
+            evaluator = Evaluator(
+                eval_returns=None,
+                ba_eval=None,
+                all_daily_returns=seed_returns,
+                metrics_lib=MetricLibrary.items()
+            )
+            seed_metric_dfs.append(evaluator.calc_avg_performance())
+        
+        evaluator = Evaluator(
+            eval_returns=None,
+            ba_eval=None,
+            all_daily_returns=bench_daily_returns,
+            metrics_lib=MetricLibrary.items()
+        )
+        seed_metric_dfs.append(evaluator.calc_avg_performance())
+
+        avg_perf_metrics = pd.concat(seed_metric_dfs).groupby(level=0).mean()
+        perf_file_name = artifacts_paths['test_perf_dir'] \
+            / f'avg_test_perf_{results_suffix}_{len(seed_list)}_seeds.csv'
+    
+    else:
+        evaluator = Evaluator(
+            eval_returns=None,
+            ba_eval=None,
+            all_daily_returns = nn_daily_returns | bench_daily_returns,
+            metrics_lib = MetricLibrary.items()
+        )
+        avg_perf_metrics = evaluator.calc_avg_performance()
+
+        perf_file_name = artifacts_paths['test_perf_dir'] \
+            / f'avg_test_perf_{results_suffix}_no_seeds.csv'
+    
+    
+    save_to_csv(avg_perf_metrics, perf_file_name)
 
     print_evaluation_info(
         out_win_date_cols=out_win_date_cols,
