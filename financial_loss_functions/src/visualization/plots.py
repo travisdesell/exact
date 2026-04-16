@@ -1,10 +1,12 @@
 import os
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import plotly.graph_objects as go
 
-
+# -------------------- Train - Val Loss Curves Plots -------------------- #
 def train_val_losses_plot(
     train_losses: list[float],
     val_losses: list[float],
@@ -108,6 +110,7 @@ def wfv_losses_plot(
     plt.clf()
     plt.cla()
 
+# -------------------- Windowed Returns Plots -------------------- #
 def plot_windowed_comparison(
     all_daily_returns: dict,
     window_dates: list,  # Add this parameter (list of DatetimeIndex)
@@ -194,6 +197,7 @@ def plot_windowed_comparison(
     
     plt.close('all')
 
+# -------------------- Model vs Metric Boxplot Plots -------------------- #
 def plot_models_comparison(
         eval_metrics: pd.DataFrame,
         title: str,
@@ -213,3 +217,203 @@ def plot_models_comparison(
         plt.show()
 
     plt.close('all')
+
+# -------------------- Correlation Plots -------------------- #
+def plot_corr(corr: pd.DataFrame, title: str):
+    # Plot heatmap
+    plt.figure()
+    sns.heatmap(corr, annot=True, cmap='coolwarm', center=0)
+    plt.title(title)
+    plt.xticks(rotation=45)
+    plt.show()
+
+# -------------------- Pareto Frontier Plots -------------------- #
+def plot_3d_pareto(
+    df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    z_col: str,
+    dominated_col: str = 'dominated',
+    title: str = None,
+    x_title: str = None,
+    y_title: str = None,
+    z_title: str = None,
+    marker_size_dominated: int = 5,
+    marker_size_frontier: int = 10,
+    show_line: bool = True,
+    line_color: str = 'green',
+    line_width: int = 2,
+    line_dash: str = 'dash'
+) -> go.Figure:
+    """
+    Create an interactive 3D Pareto frontier plot.
+
+    Parameters:
+        df: DataFrame containing models as index and metric columns.
+        x_col, y_col, z_col: Names of the three metrics to plot.
+        dominated_col: Column name that indicates dominated models (boolean).
+        title: Plot title.
+        x_title, y_title, z_title: Axis labels (defaults to column names).
+        marker_size_dominated, marker_size_frontier: Marker sizes.
+        show_line: Whether to connect frontier points with a line.
+        line_color, line_width, line_dash: Line styling.
+
+    Returns:
+        plotly.graph_objects.Figure
+    """
+    # Create a copy to avoid modifying original
+    plot_df = df.copy()
+    # Ensure dominated_col exists
+    if dominated_col not in plot_df.columns:
+        raise ValueError(f"Column '{dominated_col}' not found in DataFrame. Run Pareto dominance first.")
+    
+    # Extract frontier and dominated
+    frontier = plot_df[~plot_df[dominated_col]]
+    dominated = plot_df[plot_df[dominated_col]]
+    
+    fig = go.Figure()
+    
+    # 1. Dominated models
+    fig.add_trace(go.Scatter3d(
+        x=dominated[x_col],
+        y=dominated[y_col],
+        z=dominated[z_col],
+        mode='markers',
+        marker=dict(size=marker_size_dominated, color='gray', opacity=0.6),
+        text=dominated.index,
+        hovertemplate='<b>%{text}</b><br>' +
+                      f'{x_col}: %{{x:.3f}}<br>' +
+                      f'{y_col}: %{{y:.3f}}<br>' +
+                      f'{z_col}: %{{z:.3f}}<extra></extra>',
+        name='Dominated'
+    ))
+    
+    # 2. Frontier models
+    fig.add_trace(go.Scatter3d(
+        x=frontier[x_col],
+        y=frontier[y_col],
+        z=frontier[z_col],
+        mode='markers',
+        marker=dict(size=marker_size_frontier, color='green', symbol='diamond'),
+        text=frontier.index,
+        hovertemplate='<b>%{text}</b><br>' +
+                      f'{x_col}: %{{x:.3f}}<br>' +
+                      f'{y_col}: %{{y:.3f}}<br>' +
+                      f'{z_col}: %{{z:.3f}}<extra></extra>',
+        name='Pareto Frontier'
+    ))
+    
+    # 3. Optional line connecting frontier points (sorted by x_col)
+    if show_line and not frontier.empty:
+        frontier_sorted = frontier.sort_values(x_col, ascending=False)
+        fig.add_trace(go.Scatter3d(
+            x=frontier_sorted[x_col],
+            y=frontier_sorted[y_col],
+            z=frontier_sorted[z_col],
+            mode='lines',
+            line=dict(color=line_color, width=line_width, dash=line_dash),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+    
+    # Layout
+    fig.update_layout(
+        title=title or f'3D Pareto Frontier ({x_col}, {y_col}, {z_col})',
+        scene=dict(
+            xaxis_title=x_title or x_col,
+            yaxis_title=y_title or y_col,
+            zaxis_title=z_title or z_col
+        ),
+        legend=dict(x=0.8, y=0.9)
+    )
+    
+    return fig
+
+def plot_2d_pareto(
+    df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    dominated_col: str = 'dominated',
+    title: str = None,
+    xlabel: str = None,
+    ylabel: str = None,
+    figsize: tuple = (8, 6),
+    color_dominated: str = 'gray',
+    color_frontier: str = 'green',
+    alpha_dominated: float = 0.6,
+    size_dominated: int = 80,
+    size_frontier: int = 120,
+    edgecolor_frontier: str = 'black',
+    show_line: bool = True,
+    line_style: str = '--',
+    line_width: int = 2,
+    annotate: bool = True,
+    annotation_fontsize: int = 9,
+    annotation_alpha: float = 0.8,
+    grid: bool = True,
+    grid_alpha: float = 0.3
+) -> plt.Figure:
+    """
+    Plot a 2D Pareto frontier with optional frontier line and annotations.
+
+    Parameters:
+        df: DataFrame containing models as index and metric columns.
+        x_col, y_col: Column names for the two metrics.
+        dominated_col: Column name indicating dominated models (boolean).
+        title, xlabel, ylabel: Plot labels.
+        figsize: Figure size.
+        marker_dominated, marker_frontier: Marker styles.
+        color_dominated, color_frontier: Colors.
+        alpha_dominated: Opacity for dominated points.
+        size_dominated, size_frontier: Marker sizes.
+        edgecolor_frontier: Edge color for frontier markers.
+        show_line: Whether to draw a line connecting frontier points.
+        line_style, line_width: Line style.
+        annotate: Whether to add text labels for frontier points.
+        annotation_fontsize, annotation_alpha: Text label styling.
+        grid, grid_alpha: Grid settings.
+
+    Returns:
+        matplotlib.figure.Figure
+    """
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    # Extract dominated and frontier
+    dominated = df[df[dominated_col]]
+    frontier = df[~df[dominated_col]]
+    
+    # Plot dominated
+    ax.scatter(dominated[x_col], dominated[y_col],
+               c=color_dominated, marker='o', s=size_dominated,
+               alpha=alpha_dominated, label='Dominated')
+    
+    # Plot frontier
+    ax.scatter(frontier[x_col], frontier[y_col],
+               c=color_frontier, marker='X', s=size_frontier,
+               edgecolors=edgecolor_frontier, label='Pareto Frontier')
+    
+    # Optional frontier line (sorted by x_col)
+    if show_line and not frontier.empty:
+        frontier_sorted = frontier.sort_values(x_col, ascending=False)
+        ax.plot(frontier_sorted[x_col], frontier_sorted[y_col],
+                linestyle=line_style, color=color_frontier, linewidth=line_width,
+                label='Frontier Line')
+    
+    # Annotations for frontier points
+    if annotate:
+        for _, row in frontier.iterrows():
+            ax.annotate(row.name, (row[x_col], row[y_col]),
+                        xytext=(5, 5), textcoords='offset points',
+                        fontsize=annotation_fontsize, alpha=annotation_alpha)
+    
+    # Labels and title
+    ax.set_xlabel(xlabel if xlabel else x_col, fontsize=12)
+    ax.set_ylabel(ylabel if ylabel else y_col, fontsize=12)
+    ax.set_title(title if title else f'Pareto Frontier - {x_col} vs {y_col}', fontsize=14)
+    ax.legend()
+    if grid:
+        ax.grid(True, alpha=grid_alpha)
+    
+    fig.tight_layout()
+    return fig

@@ -60,7 +60,7 @@ class MetricLibrary:
 
 
 @MetricLibrary.register()
-def compounded_return(returns_arr: np.ndarray) -> np.float64:
+def compunded_return(returns_arr: np.ndarray) -> np.float64:
     """Calculate cummulative returns for given window"""
     return np.prod(1 + returns_arr) - 1
 

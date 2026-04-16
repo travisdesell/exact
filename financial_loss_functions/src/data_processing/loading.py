@@ -146,7 +146,7 @@ class ArtifactDataExtractor:
                 )
             
             # Load CSV files
-            avg_perf_dfs = load_csv_files(avg_perf_paths)
+            avg_perf_dfs = load_csv_files(avg_perf_paths, index_dt=False)
 
             # Combine all files into one dataframe
             all_avg_perf = pd.concat(avg_perf_dfs.values(), axis=0)
