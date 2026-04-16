@@ -97,6 +97,33 @@ def serialize_np_dict(obj: dict):
         return [serialize_np_dict(i) for i in obj]
     return obj
 
+def deserialize_np_dict(obj):
+    """
+    Recursively convert lists back to NumPy arrays where appropriate.
+    """
+    if isinstance(obj, dict):
+        return {k: deserialize_np_dict(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        # If the list is empty, leave as list (or could become empty array)
+        if not obj:
+            return np.array([])
+        # Check if the list contains only numbers or lists (nested)
+        # Try to convert to array; if it fails (e.g., mixed types), leave as list and recurse.
+        try:
+            # Attempt to create a NumPy array
+            arr = np.array(obj)
+            # If the array has object dtype, it means the conversion didn't produce a numeric array
+            if arr.dtype == object:
+                # Recursively process each element
+                return [deserialize_np_dict(item) for item in obj]
+            else:
+                return arr
+        except (ValueError, TypeError):
+            # Not convertible to array, so process elements recursively
+            return [deserialize_np_dict(item) for item in obj]
+    else:
+        return obj
+
 def print_evaluation_info(
         out_win_date_cols: list[pd.DatetimeIndex],
         in_win_date_cols: list[pd.DatetimeIndex] | None = None,

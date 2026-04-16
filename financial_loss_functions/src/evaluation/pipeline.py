@@ -329,7 +329,7 @@ def run_evaluation_pipeline(
     )
     
     # -------------------- Combining and Savining All Returns -------------------- # 
-    all_daily_rets_w_dates = nn_daily_rets_w_dates | bench_daily_rets_w_dates
+    all_daily_rets_w_dates = nn_daily_rets_w_dates | bench_daily_rets_w_dates # TODO: Refactor to include "nn_models" as key
 
     all_rets_file_name = artifacts_paths['test_perf_dir'] \
         / f'test_returns_{results_suffix}.json'
