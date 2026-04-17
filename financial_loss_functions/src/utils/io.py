@@ -61,24 +61,22 @@ def check_if_files_exist(
     
     return existence
 
-def raise_file_not_found(paths_list: list[str | Path]):
-    """
-    Raise a FileNotFoundError if any provided file doesn't exist.
-    
-    Args:
-        paths_list (List[str | Path]): List of file path strings to be checked for existence.
-    
-    Raises:
-        FileNotFoundError: Raised if any file in the provided list doesn't exist.
-    """
-    existence = check_if_files_exist(paths_list)
-    for path, status in existence.items():
-        if not status:
-            raise FileNotFoundError(
+def raise_file_not_found(path: str | Path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(
                 f'Required file not found: {path}'
             )
 
 def data_dir_check(path: str) -> bool:
+    """
+    Function to check if data directory exists and to overwrite depending on user input.
+
+    Args:
+        path (str): Path to data directory.
+    
+    Returns:
+        run_permission (bool): Bool value to run or stop executing code if user input is N (no).
+    """
     run_permission = False
     if os.path.exists(path):
         print(path, ', Directory Exists!!!!')

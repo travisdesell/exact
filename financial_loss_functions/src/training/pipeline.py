@@ -1,37 +1,32 @@
-import os
 import sys
 import time
-import torch
-import pandas as pd
 from pathlib import Path
-from src.utils.device import get_best_device
-from src.utils.formatting import serialize_np_dict
+from src.utils.device import get_best_device, mpi_setup
+from src.utils.formatting import serialize_np_dict, print_evaluation_info
+from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
 from src.utils.window import (
-    build_eval_windows,
-    extract_oos_dates,
     get_date_index_col,
-    extract_sp500_winds,
-    calc_in_out_idx
+    extract_sp500_winds
 
 )
-from src.training.train_trad import TradModelsTrainer
-from src.data_processing.loading import load_csv_files, load_sp500_rets
-from src.visualization.plots import (wfv_losses_plot)
+from src.data_processing.loading import load_csv_files
+from src.visualization.plots import wfv_losses_plot
 from src.utils.io import (
-    artifact_paths_setup, save_to_csv, save_to_json, raise_file_not_found
+    artifact_paths_setup,
+    save_to_csv,
+    save_to_json
 )
-from src.training.train_nn import CandidatesGrid, MetricModel, WalkForwardValidator
+from src.training.train_nn import CandidatesGrid, MetricModel
 from src.evaluation.evaluator import (
-    Evaluator, EqualWeightCalculator, filter_models
+    Evaluator,
+    EqualWeightCalculator
 )
 from src.data_processing.dataset import WFUtilities
+
 # Model and Loss Libraries
 from src.training.loss_functions import LossLibrary
 from src.evaluation.metrics import MetricLibrary
-from src.models.registry import NNModelLibrary, TradModelLibrary
-
-EQ_WT_NAME = 'Equal_Weight'
-SP500_NAME = 'S&P500'
+from src.models.registry import NNModelLibrary
 
 
 # def _create_dirs(artifacts_paths: dict[str, Path|str]):
@@ -40,86 +35,6 @@ SP500_NAME = 'S&P500'
 #     """
 #     for dir_path in artifacts_paths.values():
 #         create_directory(dir_path)
-
-def _load_processed_data(paths_config: dict) -> tuple:
-    
-    processed_files = {
-        'processed_train': Path(paths_config['processed_paths']['processed_train']),
-        'processed_val': Path(paths_config['processed_paths']['processed_val']),
-        'returns_train': Path(paths_config['processed_paths']['returns_train']),
-        'returns_val': Path(paths_config['processed_paths']['returns_val'])
-    }
-
-    # Check if all files exist
-    raise_file_not_found(list(processed_files.values()))
-
-    processed_dfs = load_csv_files(processed_files, index_dt=True)
-    train_data = processed_dfs['processed_train']
-    returns_train = processed_dfs['returns_train']
-
-    val_data = processed_dfs['processed_val']
-    returns_val = processed_dfs['returns_val']
-
-    # print('Train shape:', train_data.shape)
-    # print('Val shape:', val_data.shape)
-
-    return train_data, returns_train, val_data, returns_val
-
-def _print_evaludation_info(
-        out_win_date_cols, in_win_date_cols: list|None=None, **kwargs
-    ):
-    if in_win_date_cols:
-        eval_dates_info = {
-            'Input Window Start': [],
-            'Input Window End': [],
-            'Out Window Start': [],
-            'Out Window End': []
-        }
-        
-        for in_date, out_date in zip(in_win_date_cols, out_win_date_cols):
-            eval_dates_info['Input Window Start'].append(in_date[0])
-            eval_dates_info['Input Window End'].append(in_date[-1])
-            eval_dates_info['Out Window Start'].append(out_date[0])
-            eval_dates_info['Out Window End'].append(out_date[-1])
-    else:
-        eval_dates_info = {
-            'Out Window Start': [],
-            'Out Window End': []
-        }
-        for out_date in out_win_date_cols:
-            eval_dates_info['Out Window Start'].append(out_date[0])
-            eval_dates_info['Out Window End'].append(out_date[-1])
-        
-    print('\nModels evaluated on:')
-    print(pd.DataFrame(eval_dates_info))
-
-    print('\n', '-'*10, ' Portfolio Perfomance Metrics ', '-'*10)
-
-    # Loop over provided dataframes and print
-    for metric, df in kwargs.items():
-        # Cleaning up the metric name
-        title = metric.replace('_', ' ').upper()
-        print(f'\n{title.upper()}:\n', df)
-
-def mpi_setup() -> tuple:
-    # Conditional import of MPI
-    from mpi4py import MPI
-    
-    comm = MPI.COMM_WORLD
-    global_rank = comm.Get_rank()  # Unique ID across all
-    size = comm.Get_size()   # Total number of workers
-    
-    local_rank = int(os.environ.get('SLURM_LOCALID', 0))
-    cpus_per_rank = int(os.environ.get('SLURM_CPUS_PER_TASK', 1))
-    
-    if torch.cuda.is_available():
-        num_gpus = torch.cuda.device_count()
-    else:
-        raise RuntimeError('CUDA is required to run MPI version!')
-    
-    gpu_id = local_rank % num_gpus
-    
-    return comm, global_rank, size, gpu_id, cpus_per_rank
 
 def run_tuning_pipeline(
     paths_config: dict,
@@ -155,25 +70,54 @@ def run_tuning_pipeline(
     # No auto discovery needed for Loss library as all functions are in one file
     
     # -------------------- Loading Processed Data -------------------- #
-    train_data, rets_train, val_data, rets_val = _load_processed_data(
-        paths_config
+    processed_files = {
+        'processed_train': Path(paths_config['processed_paths']['processed_train']),
+        'processed_val': Path(paths_config['processed_paths']['processed_val']),
+        'returns_train': Path(paths_config['processed_paths']['returns_train']),
+        'returns_val': Path(paths_config['processed_paths']['returns_val']),
+        'ba_val': Path(paths_config['processed_paths']['ba_val']),
+        'benchmark_val': Path(paths_config['processed_paths']['benchmark_val'])
+    }
+
+    processed_dfs = load_csv_files(processed_files, index_dt=True)
+    train_data = processed_dfs['processed_train']
+    rets_train = processed_dfs['returns_train']
+
+    val_data = processed_dfs['processed_val']
+    rets_val = processed_dfs['returns_val']
+
+    # Loaded BA Spread data for trading costs
+    ba_val = processed_dfs['ba_val']
+
+    # Loaded S&P 500 for benchmarking
+    sp500_rets = processed_dfs['benchmark_val']
+
+    print(
+        'Train Shape:', train_data.shape,
+        'Train Returns Shape:', rets_train.shape
     )
-    # Loading S&P 500 for benchmarking
-    sp500_rets = load_sp500_rets(paths_config['processed_paths']['benchmark_val'])
+    print(
+        'Test Shape:', val_data.shape,
+        'Test Returns Shape:', rets_val.shape
+    )
+    print(
+        'Test BA Spread Shape:', ba_val.shape,
+        'S&P500 Returns Shape:', sp500_rets.shape
+    )
     
     # -------------------- Prepare Validation Sets -------------------- #
     out_size = hparams_config['rolling_windows']['out_size']
-    data_adjuster = WFUtilities(out_size)
-    num_steps, extra_days = data_adjuster.calc_walk_steps(rets_val)
-
-    # # y_val for out of sample evaluation
-    y_val, out_wind_idxs = build_eval_windows(rets_val, num_steps, out_size)
+    wf_utils = WFUtilities(out_size)
+    num_steps, extra_days = wf_utils.calc_walk_steps(rets_val)
 
     if extra_days != 0:
         raise RuntimeError(
             'Validation data incorrectly adjusted. Number of days must be divisible by out_size.'
         )
 
+    # y_val and the ba_spreads for the same windows for out of sample evaluation
+    y_val, out_wind_idxs = wf_utils.build_eval_windows(rets_val)
+    y_ba_val = wf_utils.build_ba_for_eval(ba_val, out_wind_idxs)
     # -------------------- Training Neural Network Models -------------------- #
 
     # Calculate Equal Weight Portfolio's weights
@@ -195,7 +139,8 @@ def run_tuning_pipeline(
         tuner_eval_items = {
             'metric': tune_metric,
             'bench_rets': eq_wt_rets,
-            'eval_winds': y_val
+            'eval_winds': y_val,
+            'ba_eval_winds': y_ba_val
         }
     else:
         tuner_eval_items = None
@@ -204,9 +149,6 @@ def run_tuning_pipeline(
 
         comm, global_rank, size, gpu_id, _ = mpi_setup()
         torch_device = get_best_device(gpu_id)
-
-        # Create artifact directories if the don't exist
-        # Only rank 0 can create if directories don't exist
 
         candidates_grid = CandidatesGrid(
             model_lib = NNModelLibrary.items(),
@@ -240,7 +182,7 @@ def run_tuning_pipeline(
             sys.exit(0) # This stops the process for this rank only
         
         if nn_alloc_weights is None:
-            print('!!!Rank 0 got empty allocation weights. Needs debug!!!')
+            print('!!!DEBUG: Rank 0 got empty allocation weights!!!')
         
 
     else:
@@ -273,7 +215,7 @@ def run_tuning_pipeline(
                 model_name, loss_name, train_data, rets_train, val_data, rets_val
             )
 
-            results_suffix = f'{model_name}-{loss_name}'
+            results_suffix = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
         else:
             raise RuntimeError('Incorrect mode arguments while running at entry point.')
@@ -301,7 +243,7 @@ def run_tuning_pipeline(
     # -------------------- Evaluator Setup -------------------- #
     
     # Initializing once to compare all models together
-    evaluator = Evaluator(y_val, MetricLibrary.items())
+    evaluator = Evaluator(y_val, y_ba_val, MetricLibrary.items())
     
     # Calculate returns of all predicted portfolio allocation weights
     # Calling on every models output allocation weights to calculate pf returns
@@ -349,14 +291,14 @@ def run_tuning_pipeline(
 
     # Save daily returns
     all_daily_returns = evaluator.get_all_daily_returns()
-    all_rets_file_name = artifacts_paths['wfv_perf_dir'] \
+    all_rets_file_name = artifacts_paths['wfv_rets_dir'] \
         / f'daily_rets_{results_suffix}.json'
     save_to_json(
         serialize_np_dict(all_daily_returns),
         all_rets_file_name
     )
 
-    _print_evaludation_info(
+    print_evaluation_info(
         out_win_date_cols=out_win_date_cols,
         avgerage_performance_metrics=avg_perf_metrics,
     )

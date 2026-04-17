@@ -111,151 +111,152 @@ class SSA:
     def __init__(self, window_len: int, variance_thres: float = 0.90):
         self.window_len = window_len
         self.variance_thres = variance_thres
-        self.U_dict = {}
-        
-        # U_r: eigenvectors of the trajectory matrix (L x r)
-        # r: number of components kept
-        # s: singular values (for reference)
+        self.U_dict = {}          # stores U_r for each column index
+        self._input_is_df = False
+        self._column_names = None
 
-    def ssa_fit(self, dataframe):
+    def ssa_fit(self, data):
         """
-        Fit Singular Spectrum Analysis on a single training series, automatically choosing r.
-        Args:
-            series: 1D numpy array of length N_train
-            L: window length (e.g., 60)
-            variance_threshold: fraction of variance to keep (e.g., 0.90)
-        
-        Returns:
-            U_r: eigenvectors of the trajectory matrix (L x r)
-            r: number of components kept
-            s: singular values (for reference)
+        Fit SSA on each column/feature.
+        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
         """
-        N = len(dataframe)
+        if isinstance(data, pd.DataFrame):
+            self._input_is_df = True
+            self._column_names = data.columns.tolist()
+            arr = data.values.astype(np.float64)
+        else:
+            self._input_is_df = False
+            arr = np.asarray(data, dtype=np.float64)
+            self._column_names = list(range(arr.shape[1]))
 
-        for col_name, col in dataframe.items():
-            K = N - self.window_len + 1
-            # Build trajectory matrix (Hankel matrix)
-            X = hankel(col[:self.window_len], col[self.window_len-1:])  # shape (L, K)
-        
-            # Singular Value Decomposition
+        N, n_features = arr.shape
+        L = self.window_len
+        K = N - L + 1
+
+        for j in range(n_features):
+            col = arr[:, j]
+            # Build trajectory matrix
+            X = hankel(col[:L], col[L-1:])   # shape (L, K)
+            # SVD
             U, s, Vt = svd(X, full_matrices=False)
-        
-            # Compute explained variance and choose r
-            explained_variance = (s**2) / (s**2).sum()
-            cumulative_variance = np.cumsum(explained_variance)
-            
-            r = np.searchsorted(cumulative_variance, self.variance_thres) + 1
-            # Ensure at least 1 component
-            r = min(r, self.window_len)
+            # Determine r from explained variance
+            var_explained = (s**2) / (s**2).sum()
+            cum_var = np.cumsum(var_explained)
+            r = np.searchsorted(cum_var, self.variance_thres) + 1
+            r = min(r, L)
             U_r = U[:, :r]
-
-            self.U_dict[col_name] = {
+            self.U_dict[j] = {
                 'U_r': U_r,
                 'r': r,
                 's': s
             }
 
-    def ssa_transform(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+    def ssa_transform(self, data):
         """
-        Denoise a new series using the pre-computed subspace U_r.
-        Args:
-            series: 1D numpy array of length N_val
-            U_r: eigenvectors from training (L x r)
-            L: same window length used in fit
-        Returns:
-            denoised_series: 1D array of length N_val
+        Denoise new data using the pre‑computed subspaces.
+        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
+        Returns same type as input.
         """
         if not self.U_dict:
-            raise ValueError('Run `fit` on the train data before transforming!')
-        
-        N = len(dataframe)
+            raise ValueError('Run `ssa_fit` before calling `ssa_transform`!')
 
-        denoised_dict = {}
-        for col_name, col in dataframe.items():
-            K = N - self.window_len + 1
-            # Build trajectory matrix for the new series
-            X = hankel(col[:self.window_len], col[self.window_len-1:])   # (L, K)
-            # Project each column onto the signal subspace
-            coeff = self.U_dict[col_name]['U_r'].T @ X                        # (r, K)
-            X_rec = self.U_dict[col_name]['U_r'] @ coeff                       # (L, K) reconstructed trajectory
-            
-            # Vectorized diagonal averaging (your method)
-            denoised = np.zeros(N)
+        if isinstance(data, pd.DataFrame):
+            arr = data.values.astype(np.float64)
+            out_index = data.index
+            out_columns = data.columns
+        else:
+            arr = np.asarray(data, dtype=np.float64)
+            out_index = None
+            out_columns = None
+
+        N, n_features = arr.shape
+        L = self.window_len
+        K = N - L + 1
+        denoised = np.empty_like(arr)
+
+        for j in range(n_features):
+            if j not in self.U_dict:
+                raise KeyError(f'Column {j} not seen in training.')
+            col = arr[:, j]
+            # Build trajectory matrix for new series
+            X = hankel(col[:L], col[L-1:])        # (L, K)
+            U_r = self.U_dict[j]['U_r']
+            coeff = U_r.T @ X                     # (r, K)
+            X_rec = U_r @ coeff                   # (L, K)
+            # Diagonal averaging (vectorized)
+            denoised_col = np.zeros(N)
             count = np.zeros(N)
-            for i in range(self.window_len):
-                denoised[i:i+K] += X_rec[i, :]
+            for i in range(L):
+                denoised_col[i:i+K] += X_rec[i, :]
                 count[i:i+K] += 1
-            denoised = denoised / count
-            denoised_dict[col_name] = denoised
-        
-        return pd.DataFrame(denoised_dict, index=dataframe.index)
+            denoised[:, j] = denoised_col / count
+
+        if out_columns is not None:
+            return pd.DataFrame(denoised, index=out_index, columns=out_columns)
+        else:
+            return denoised
 
 class KalmanDenoise:
-    """
-    Denoise each column of a DataFrame using a local level Kalman filter.
-    
-    In 'fit', a separate model is estimated for each column via maximum
-    likelihood (MLE). The estimated parameter vectors are stored.
-    In 'transform', those parameters are used to filter new data causally,
-    producing denoised series.
-
-    Args:
-        method (str): Optimisation method passed to `statsmodels` when fitting.
-            default='powell'
-        maxiter (int): Maximum number of iterations for the MLE optimizer.
-            default=50
-    """
     def __init__(self, method: str = 'powell', maxiter: int = 100):
         self.method = method
         self.maxiter = maxiter
-        self.params_dict = {}   # stores fitted parameters per column
+        self.params_dict = {}          # key: column index
+        self._input_is_df = False
+        self._column_names = None
 
-    def kalman_fit(self, dataframe: pd.DataFrame) -> None:
+    def kalman_fit(self, data):
         """
-        Fit a local level model to each column of the training DataFrame.
-        Parameters are estimated via MLE and stored internally.
+        Fit local level model to each column/feature.
+        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
+        """
+        if isinstance(data, pd.DataFrame):
+            self._input_is_df = True
+            self._column_names = data.columns.tolist()
+            arr = data.values.astype(np.float64)
+        else:
+            self._input_is_df = False
+            arr = np.asarray(data, dtype=np.float64)
+            self._column_names = list(range(arr.shape[1]))
 
-        Args:
-            dataframe: training data (rows = time, columns = features)
-        """
-        for col_name, col in dataframe.items():
-            series = col.values.astype(np.float64)
+        n_features = arr.shape[1]
+        for j in range(n_features):
+            series = arr[:, j]
             model = sm.tsa.UnobservedComponents(series, 'local level')
             res = model.fit(method=self.method, maxiter=self.maxiter, disp=False)
-            self.params_dict[col_name] = res.params   # store parameter vector
+            self.params_dict[j] = res.params   # store by index
 
-    def kalman_transform(self, dataframe: pd.DataFrame) -> pd.DataFrame:
+    def kalman_transform(self, data):
         """
-        Apply the fitted Kalman filter to new data (validation/test).
-        For each column, create a new model for the new series and filter
-        using the parameters estimated from the corresponding training column.
-        The filtered level estimates (denoised series) are returned.
-
-        Args:
-            dataframe: new data (same columns as training)
-
-        Returns:
-            denoised_df: DataFrame with same index/columns, containing the
-                         filtered (causal) estimate of the true signal.
+        Apply fitted Kalman filter to new data.
+        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
+        Returns same type as input.
         """
         if not self.params_dict:
             raise ValueError('Run `kalman_fit` on training data before transforming!')
 
-        denoised_dict = {}
-        for col_name, col in dataframe.items():
-            if col_name not in self.params_dict:
-                raise KeyError(f'Column {col_name} not seen in training.')
+        if isinstance(data, pd.DataFrame):
+            arr = data.values.astype(np.float64)
+            out_index = data.index
+            out_columns = data.columns
+        else:
+            arr = np.asarray(data, dtype=np.float64)
+            out_index = None
+            out_columns = None
 
-            series = col.values.astype(np.float64)
-            # Create a new model for the new series
+        n_features = arr.shape[1]
+        denoised = np.empty_like(arr)
+        for j in range(n_features):
+            if j not in self.params_dict:
+                raise KeyError(f'Column {j} not seen in training.')
+            series = arr[:, j]
             model = sm.tsa.UnobservedComponents(series, 'local level')
-            # Filter using the pre‑estimated parameters from training
-            filtered_result = model.filter(self.params_dict[col_name])
-            # Extract the filtered level (first state component)
-            denoised = filtered_result.filtered_state[0]
-            denoised_dict[col_name] = denoised
+            filtered_result = model.filter(self.params_dict[j])
+            denoised[:, j] = filtered_result.filtered_state[0]
 
-        return pd.DataFrame(denoised_dict, index=dataframe.index)
+        if out_columns is not None:
+            return pd.DataFrame(denoised, index=out_index, columns=out_columns)
+        else:
+            return denoised
 
 def calculate_dema(df, span=20):
     """
@@ -274,6 +275,7 @@ def calculate_dema(df, span=20):
 class Preprocessor:
     col_sep = '_'
     return_suffix = '_RET'
+    ba_spread_suffix = '_BA_SPREAD'
     
     def __init__(
             self,
@@ -296,7 +298,7 @@ class Preprocessor:
         # self.ssa = SSA(window_len=90)
         # self.kalman_filt = KalmanDenoise()
 
-        # self._robust_scaler = RobustScaler()
+        self._robust_scaler = RobustScaler()
 
         self.unordered_cols = None
         self.all_tickers = None
@@ -462,6 +464,19 @@ class Preprocessor:
         else:
             raise RuntimeError('Run `process_train_data` first.')
 
+    def _extract_only_ba(self, data: pd.DataFrame) -> pd.DataFrame:
+        ba_spread_cols = extract_req_cols(data, self.ba_spread_suffix)
+
+        ba_spreads = data[ba_spread_cols]
+
+        return ba_spreads.sort_index(axis=1)
+
+    def _build_ba_spread_cols(self):
+
+        order_ba_spreads = [f'{ticker}{self.ba_spread_suffix}' for ticker in self.all_tickers]
+
+        return order_ba_spreads
+
     def process_train_data(
             self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> tuple[pd.DataFrame, pd.DataFrame]:
@@ -488,13 +503,14 @@ class Preprocessor:
         self.ordered_cols, self.all_tickers = self._build_feats_order()
 
         train = train[self.ordered_cols]
+        ret_train = ret_train[self.all_tickers]
 
         # # kalman for denosining
         # self.kalman_filt.kalman_fit(train)
         # train = self.kalman_filt.kalman_transform(train)
 
         # train = self._transform(train, 'fit')
-        # train = self._normalize(train, 'fit')
+        train = self._normalize(train, 'fit')
 
         # Broadcast common features only if needed
         if self.broadcast:
@@ -504,7 +520,7 @@ class Preprocessor:
 
     def process_split_data(
             self, split_data: pd.DataFrame, macro_data: pd.DataFrame | None = None
-        ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Preprocesses given validation or test data based on statistics 
         from the training data.
@@ -516,6 +532,7 @@ class Preprocessor:
         """
         
         ret_split = self._extract_only_returns(split_data, 'split')
+        ba_split = self._extract_only_ba(split_data)
 
         # macro_cols: list[str] = []
         if macro_data:
@@ -537,18 +554,20 @@ class Preprocessor:
 
         # Reorder columns to match train data
         split_data = split_data[self.ordered_cols]
+        ret_split = ret_split[self.all_tickers]
+        ba_split = ba_split[self._build_ba_spread_cols()]
         # split_data = self._transform(split_data, 'split')
 
         # Kalman filter for denosining
         # split_data = self.kalman_filt.kalman_transform(split_data)
 
-        # split_data = self._normalize(split_data, 'split')
+        split_data = self._normalize(split_data, 'split')
 
         # Broadcast common features only if needed
         if self.broadcast:
             split_data = self._broadcast_common(split_data, self.common_features)
 
-        return split_data, ret_split
+        return split_data, ret_split, ba_split
 
     def get_common_features(self) -> list:
         """

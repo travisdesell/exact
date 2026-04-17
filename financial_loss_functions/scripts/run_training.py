@@ -79,7 +79,8 @@ if __name__ == '__main__':
         parser.add_argument(
             '-gm',
             '--grid_mode', 
-            choices=['one_model', 'one'], 
+            choices=['one_model', 'one'],
+            default='one_model', 
             help='Choose the grid mode to run training and tuning'
         )
 
@@ -110,11 +111,8 @@ if __name__ == '__main__':
         args = parser.parse_args()
 
         # # Rule 1: If grid_mode is 'one_model', model MUST be provided
-        if args.grid_mode =='all':
-            print('DERECATED: use `one_model` or `one` modes. Exiting.')
-            exit(0)
-        
-        elif args.grid_mode == 'one_model':
+
+        if args.grid_mode == 'one_model':
             if not args.model:
                 parser.error("--model is required when --grid_mode is 'one_model'")
                 

@@ -6,15 +6,15 @@ import copy
 import torch
 import optuna
 import psutil
-import random
 import traceback
 import numpy as np
 import pandas as pd
 from torch import Tensor
 from abc import ABC, abstractmethod
+from src.utils.device import set_seed
 from typing import Callable, Type, Any
 from torch.utils.data import DataLoader
-from sklearn.preprocessing import RobustScaler
+from src.utils.constants import MODEL_LOSS_SEP
 from src.utils.window import calc_current_idxs
 from src.data_processing.dataset import WindowDataset, Reshaper
 from src.utils.formatting import reformat_hparams, split_combo_names
@@ -448,7 +448,8 @@ class Walker:
             loss_func: Callable,
             hparams: dict,
             torch_device: torch.device | str,
-            reshaper: Reshaper
+            reshaper: Reshaper,
+            seed: int | None = None
         ):
         self.num_steps = num_steps
         self.model_name = model_name
@@ -458,6 +459,7 @@ class Walker:
         self.hparams = hparams
         self.torch_device = torch_device
         self.reshaper = reshaper
+        self.seed = seed
 
         # get window sizes from reshaper object
         self.in_size = reshaper.in_size
@@ -534,6 +536,10 @@ class Walker:
             val: np.ndarray,
             rets_val: np.ndarray
         ):
+
+        if self.seed: # set a fixed seed if provided
+            set_seed(self.seed)
+        
         walk_train = train.copy()
         walk_rets_train = rets_train.copy()
         walk_val = None
@@ -559,12 +565,12 @@ class Walker:
             walk_val = val[current_start : current_end] # To be added to train data later
             walk_rets_val = rets_val[current_start : current_end]
 
-            # Median Scale at every walk step
-            robust_scaler = RobustScaler()
-            walk_train_scaled = robust_scaler.fit_transform(walk_train)
+            # # Median Scale at every walk step
+            # robust_scaler = RobustScaler()
+            # walk_train_scaled = robust_scaler.fit_transform(walk_train)
             
             X_train, y_train, infer_in, infer_out = self._reshape_step_data(
-                walk_train_scaled, walk_rets_train, walk_rets_val
+                walk_train, walk_rets_train, walk_rets_val
             )
 
             train_ds = WindowDataset(X_train, y_train)
@@ -618,15 +624,14 @@ class Tuner:
             n_warmup_steps: int, 
             n_jobs: int,
             reshaper: Reshaper,
-            torch_device: torch.device | str
+            torch_device: torch.device | str,
+            ba_eval_winds: np.ndarray | None
         ):
-        if tune_metric is not None:
-            self.tune_metric = TypeAdapter(
-                Dict[str, MetricModel]
-            ).validate_python(tune_metric)
-        else:
-            self.tune_metric = tune_metric
-        
+
+        self.tune_metric = TypeAdapter(
+            Dict[str, MetricModel]
+        ).validate_python(tune_metric)
+
         self.tune_bench_rets = tune_bench_rets # benchmark returns for information ratio style metrics
         self.eval_winds = eval_winds
         self.n_steps = n_steps
@@ -635,13 +640,13 @@ class Tuner:
         self.n_jobs = n_jobs
         self.reshaper = reshaper
         self.torch_device = torch_device
+        self.ba_eval_winds = ba_eval_winds
 
         self.n_startup_trials = max(
             int(self.n_trials * self.n_startup_perc),
             self.min_n_startup
         )
 
-    
     def _calc_pf_metrics_for_seed(
             self, model_name: str, loss_name: str, seed: int,
             alloc_weights: np.ndarray, y_val: np.ndarray
@@ -657,11 +662,10 @@ class Tuner:
         return seed_metrics
     
     def _calc_composite_scores(
-            self, model_loss_name,
-            alloc_weights: np.ndarray , y_val: np.ndarray
+            self, model_loss_name,alloc_weights: np.ndarray
         ) -> np.ndarray:
-        
-        evaluator = Evaluator(y_val, None)
+                
+        evaluator = Evaluator(self.eval_winds, self.ba_eval_winds, None)
         # Calculate daily returns for this particular portfolio
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
         model_rets = evaluator.get_rets_for_one(model_loss_name)
@@ -716,7 +720,6 @@ class Tuner:
         calculate tuing objective from statistics of composite scores across seeds
         and gap penalty from train - val losses.
         """
-
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
         if n < 2:
@@ -744,7 +747,6 @@ class Tuner:
         calculate tuing objective from statistics of composite scores across seeds
         and gap penalty from train - val losses.
         """
-
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
         if n < 2:
@@ -775,7 +777,7 @@ class Tuner:
             loss_cfg: dict
         ):
         
-        model_loss_name = f'{model_name}-{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
 
         # # # Calculate equal weight portfolio & its returns as benchmark
         # if self.benchmark_rets is None:
@@ -837,15 +839,10 @@ class Tuner:
             # train_val_losses = final_walker.get_train_eval_losses()
 
             # Calculate composite scores from allocation weights
-            composite_scores = self._calc_composite_scores(
-                model_loss_name,
-                alloc_weights,
-                self.eval_winds
-            )
+            composite_scores = self._calc_composite_scores(model_loss_name, alloc_weights)
 
-            final_objective = self._calc_tuning_objective_no_gap(
-                composite_scores
-            )
+            # Calculate final objective score for the trial
+            final_objective = self._calc_tuning_objective_no_gap(composite_scores)
         
             print(
                 f'Composite Score for trial {trial.number} = {final_objective}'
@@ -905,16 +902,17 @@ class Tuner:
         self.direction = direction
 
 
-class GridUtilities(ABC):
+class WalkerGridUtilities(ABC):
     mdls_hparams_name = 'nn_models'
     ls_hparams_name = 'losses'
-    model_loss_sep = '-'
 
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
             hparams_config: dict[str, dict[str, Any]],
+            num_steps: int,
+            common_features: list[str],
             torch_device: torch.device | str,
             mpi: bool = False,
             temp_dir: str | None = None
@@ -922,11 +920,19 @@ class GridUtilities(ABC):
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config # Default config. Not optimized
+        self.num_steps = num_steps
         self.torch_device = torch_device
         self.mpi = mpi
         self.temp_dir = temp_dir
         
         self._temp_dir_check()
+
+        # Reshaper setup
+        self.reshaper = self._reshaper_setup(common_features)
+
+        # Initialize training data storage
+        self.all_alloc_weights: dict[str, np.ndarray] = {}
+        self.train_eval_losses: dict[str, dict[str, list[float]]] = {}
 
     def _temp_dir_check(self):
         if self.mpi:
@@ -937,15 +943,6 @@ class GridUtilities(ABC):
     
     def set_temp_directory(self, temp_dir: str):
         self.temp_dir = temp_dir
-    
-    def update_model_loss_sep(self, model_loss_sep: str):
-        """
-        Update the string separator between model name and loss name.
-
-        Args:
-            model_loss_sep (str): string separator like '-'.
-        """
-        self.model_loss_sep = model_loss_sep
     
     # -------------------- Library Searches -------------------- #
     def _search_model(self, model_name: str) -> Type | None:
@@ -972,6 +969,7 @@ class GridUtilities(ABC):
         
         return None
     
+    # -------------------- Monitoring Methods -------------------- #
     def _memory_diagnostics(self):
         """Print memory usage diagnostics"""
         process = psutil.Process(os.getpid())
@@ -1009,14 +1007,93 @@ class GridUtilities(ABC):
         this_ranks_combos = all_combos[start:end]
 
         return this_ranks_combos
+
+    # -------------------- Setup Methods -------------------- #
+    def _reshaper_setup(self, common_features) -> Reshaper:
+        return Reshaper(
+            self.hparams_config['rolling_windows']['in_size'],
+            self.hparams_config['rolling_windows']['out_size'],
+            self.hparams_config['rolling_windows']['stride'],
+            common_features
+        )
     
+    @staticmethod
+    def _convert_datasets_to_np(
+        train_data: pd.DataFrame,
+        rets_train: pd.DataFrame,
+        val_data: pd.DataFrame,
+        rets_val: pd.DataFrame
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Convert all dataframes to arrays"""
+        return train_data.values, rets_train.values, val_data.values, rets_val.values
+    
+    # -------------------- Integrity Check Methods -------------------- #
+    def _data_check(self, train: pd.DataFrame, rets_val: pd.DataFrame):
+        """
+        Checks data consistency to ensure number of steps in the 
+        walk forward is correctly divides given evaluation data.
+        """
+        walk_stride = self.hparams_config['rolling_windows']['out_size']
+        total_val_days = len(rets_val)
+        expected_steps = total_val_days // walk_stride
+        if expected_steps != self.num_steps:
+            raise ValueError(
+                f'Provided num_steps ({self.num_steps}) does not match actual '
+                f'number of full windows of length {walk_stride} in validation set '
+                f'({expected_steps}). Adjust num_steps or data.'
+            )
+        if total_val_days < walk_stride:
+            raise ValueError(
+                f'Validation set too short: need at least {walk_stride} days, '
+                f'got {total_val_days}.'
+            )
+        # Eensure initial training set has at least in_size days for first inference
+        if len(train) < walk_stride:
+            raise ValueError(
+                f'Initial training set must have at least {walk_stride} days to form the first inference window, '
+                f'got {len(train)} days.'
+            )
+    
+    def _trained_check(self):
+        """
+        Check if training has been run before. 
+        New instance of the class must be created for every training grid.
+        """
+        if len(self.all_alloc_weights) != 0:
+            raise RuntimeError(
+                'Allocation weights already predicted. Create new instance of this class.'
+            )
+        
     # -------------------- Abstract Methods -------------------- #
     @abstractmethod
-    def _merge_all_results(self):
+    def _merge_all_results(self) -> None:
         pass
 
+    @abstractmethod
+    def _walker_helper(
+        self,
+        model_name: str,
+        model_class: Type,
+        loss_name: str,
+        loss_func: Callable,
+        train_data: np.ndarray,
+        rets_train: np.ndarray, 
+        split_data: np.ndarray,
+        rets_split: np.ndarray
+    ) -> tuple[np.ndarray, dict[str, list], dict | None]:
+        pass
 
-class CandidatesGrid(GridUtilities):
+    @abstractmethod
+    def _build_combos() ->list[tuple]: pass
+
+    @abstractmethod
+    def get_train_val_losses(self) -> dict: pass
+
+
+class CandidatesGrid(WalkerGridUtilities):
+    temp_wts_prefix_stem = 'temp_alloc_wts'
+    temp_losses_prefix_stem = 'temp_losses'
+    temp_hparams_prefix_stem = 'temp_hparams'
 
     def __init__(
             self,
@@ -1042,10 +1119,9 @@ class CandidatesGrid(GridUtilities):
         """
 
         super().__init__(
-            model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
+            model_lib, loss_lib, hparams_config, num_steps, 
+            common_features, torch_device, mpi, temp_dir
         )
-
-        self.num_steps = num_steps
 
         if loss_mode not in ['all', 'custom']:
             raise ValueError('Incorrect Loss Mode. Mode must be `all` or `custom`')
@@ -1054,25 +1130,22 @@ class CandidatesGrid(GridUtilities):
         
         self.tune = tune
         
-        # Rehaper setup
-        self.reshaper = self._reshaper_setup(common_features)
-
         # Tuner setup
         self.tuner = self._tuner_setup(tuner_eval_items)
         
         self.enable_diagnostics = enable_diagnostics
 
-        self.all_alloc_weights: dict[str, np.ndarray] = {}
-        self.train_val_losses: dict[str, dict[str, list[float]]] = {}
-
         self.optimized_hparams = {} # Will be filled if tuned
     
-    def _tuner_setup(self, tuner_eval_items) -> Tuner | None:
+    def _tuner_setup(self, tuner_eval_items: dict) -> Tuner | None:
 
         if self.tune:
             tune_metric = tuner_eval_items.get('metric')
             tune_bench_rets = tuner_eval_items.get('bench_rets')
             tune_eval_winds = tuner_eval_items.get('eval_winds')
+            tune_ba_eval_winds = tuner_eval_items.get('ba_eval_winds')
+            if tune_ba_eval_winds is None:
+                print('No BA Spread data provided. Tuner not accounting for trading costs.')
             
             # Tuner configuration
             if tune_metric and tune_bench_rets is not None and tune_eval_winds is not None:
@@ -1094,7 +1167,8 @@ class CandidatesGrid(GridUtilities):
                     n_warmup_steps,
                     n_jobs,
                     self.reshaper,
-                    self.torch_device
+                    self.torch_device,
+                    tune_ba_eval_winds
                 )
             
             elif not tune_metric:
@@ -1119,13 +1193,6 @@ class CandidatesGrid(GridUtilities):
         
         return tuner
     
-    def _reshaper_setup(self, common_features) -> Reshaper:
-        return Reshaper(
-            self.hparams_config['rolling_windows']['in_size'],
-            self.hparams_config['rolling_windows']['out_size'],
-            self.hparams_config['rolling_windows']['stride'],
-            common_features
-        )
     
     def _map_new_params(self, best_config: dict, new_hparams: dict) -> dict:
         
@@ -1218,30 +1285,18 @@ class CandidatesGrid(GridUtilities):
 
         train_val_losses = final_walker.get_train_eval_losses()
         
-        
-
         if self.enable_diagnostics:
             print(f'\n[After training {model_name} with {loss_name}]')
             self._memory_diagnostics()
 
         return alloc_weights, train_val_losses, optimized_hparams
 
-    def _trained_check(self):
-        """
-        Check if training has been run before. 
-        New instance of the class must be created for every training grid.
-        """
-        if len(self.all_alloc_weights) != 0:
-            raise RuntimeError(
-                'Allocation weights already predicted. Create new instance of this class.'
-            )
-
     def _count_only_models(self) -> int:
         n_models = sum(len(models_dict) for models_dict in self.model_lib.values())
         return n_models
 
     def _build_losses_to_use(self) -> dict[str, Callable]:
-        # Build losses that should be used base on loss_mode
+        # Build losses that should be used based on loss_mode
         losses_to_use = {}
         custom_combos = self.loss_lib['custom']['__default__'] # Custom combos have no category
         # Grid with custom loss functions
@@ -1272,7 +1327,8 @@ class CandidatesGrid(GridUtilities):
         ):
         """Merge all results into one dict if rank is 0, i.e., main process."""
         self.all_alloc_weights = {}
-        self.train_val_losses = {}
+        self.train_eval_losses = {}
+        self.optimized_hparams = {}
         for r in range(size):
             # Load all temp alloc wt files
             rank_alloc_weights = load_pickle_temp(
@@ -1287,7 +1343,7 @@ class CandidatesGrid(GridUtilities):
             )
             # Merge into self.train_val_losses
             for model_loss, losses_dict in rank_losses.items():
-                self.train_val_losses[model_loss] = losses_dict
+                self.train_eval_losses[model_loss] = losses_dict
             
             rank_hparams = load_pickle_temp(
                 self.temp_dir / f'{temp_hparams_prefix}_{r}.pkl'
@@ -1332,153 +1388,7 @@ class CandidatesGrid(GridUtilities):
             )
 
         return all_combos
-
-    def train_eval_grid(
-            self, X_train: np.ndarray, y_train: np.ndarray, 
-            X_val: np.ndarray, y_val: np.ndarray,
-            comm = None,
-            global_rank = None,
-            size = None
-        ) -> dict[str, dict[str, np.ndarray]]:
-        """Loops over Loss functions first with a nested loop for models"""
-        self._trained_check()
-
-        # Converting to pytorch tensors
-        train_ds = WindowDataset(X_train, y_train)
-        val_ds   = WindowDataset(X_val, y_val)
-
-        X_train_shape, y_train_shape = train_ds.get_X_y_shapes()
-        losses_to_use = self._build_losses_to_use()
-        
-        # Calculate number of models to train (model + loss combinations)
-        n_models = self._count_only_models()
-        total_train_count = len(losses_to_use) * n_models
-        
-        print(
-            f'\nTraining {total_train_count} models.',
-            f'Running all models with {self.loss_mode} losses.'
-        )
-
-        all_combos = self._build_combos(losses_to_use, 'all')
-        
-        # Not using MPI for distributed computing
-        if self.mpi == False:
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(all_combos, 1):
-                print(
-                    '\n', '-'*10,
-                    f' Training {model_name} - {loss_name}, {idx}/{total_train_count}',
-                    '-'*10
-                )
-                try: 
-                            
-                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
-                        model_name,
-                        model_class, 
-                        loss_name,
-                        loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
-                    )
-                    self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = alloc_weights
-                    self.train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = train_val_losses
-                    self.optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = optimized_hparams
-
-                except Exception as error:
-                    print(
-                        f'DEBUG: Error while training {model_name} with {loss_name}. Skipping.', error
-                    )
-                    traceback.print_exc()
-                    continue
-            
-            return self.all_alloc_weights
-        
-        # If MPI is true for distributed computing
-        else:
-            self._mpi_setup_check([comm, global_rank, size])
-            
-            this_ranks_combos = self._select_ranks_combos(all_combos, global_rank, size)
-
-            # Print summary on each rank
-            print(f'Rank {global_rank}: tuning & training {len(this_ranks_combos)} combos.')
-            sys.stdout.flush()
-
-            # Local results dictionary
-            local_alloc_weights = {}
-            local_train_val_losses = {}
-            local_optimized_hparams = {}
-            for idx, (loss_name, loss_func, model_name, model_class) in enumerate(this_ranks_combos, 1):
-                print(f'\nRank {global_rank}: {idx}/{len(this_ranks_combos)} - {model_name} - {loss_name}')
-                try:
-                    alloc_weights, train_val_losses, optimized_hparams = self._walker_helper(
-                        model_name,
-                        model_class,
-                        loss_name,
-                        loss_func,
-                        train_ds,
-                        val_ds,
-                        X_train_shape,
-                        y_train_shape,
-                        y_val
-                    )
-                    
-                    local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = alloc_weights
-                    local_train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = train_val_losses
-                    local_optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
-                    ] = optimized_hparams
-                
-                except Exception as e:
-                    print(f'Rank {global_rank}: Error on {model_name} - {loss_name}: {e}')
-                    traceback.print_exc()
-                    continue
-            
-            temp_wts_prefix = 'all_temp_alloc_wts'
-            temp_losses_prefix = 'all_temp_losses'
-            temp_hparams_prefix = 'all_temp_hparams'
-            
-            # Save local results to a rank‑specific file
-            save_pickle_temp(
-                local_alloc_weights,
-                self.temp_dir / f'{temp_wts_prefix}_{global_rank}.pkl'
-            )
-            save_pickle_temp(
-                local_train_val_losses,
-                self.temp_dir / f'{temp_losses_prefix}_{global_rank}.pkl'
-            )
-            save_pickle_temp(
-                local_optimized_hparams,
-                self.temp_dir / f'{temp_hparams_prefix}_{global_rank}.pkl'
-            )
-            
-            # Wait for all ranks to finish
-            comm.Barrier()
-
-            # Rank 0 collects and merges all files
-            if global_rank == 0:
-                self._merge_all_results(
-                    size,
-                    temp_wts_prefix,
-                    temp_losses_prefix,
-                    temp_hparams_prefix
-                )
-                
-                return self.all_alloc_weights
-            else:
-                return None    
-
+    
     def train_eval_one_model(
             self,
             model_name: str,
@@ -1490,17 +1400,17 @@ class CandidatesGrid(GridUtilities):
             global_rank = None,
             size = None
         ) -> dict[str, dict[str, np.ndarray]]:
-
+        
+        self._data_check(train_data, rets_val)
         self._trained_check()
 
         # Extract feature data
         self.reshaper.extract_features(train_data.columns)
         
         # Convert all dataframes to arrays
-        train_data = train_data.values
-        rets_train = rets_train.values
-        val_data = val_data.values
-        rets_val = rets_val.values
+        train_data, rets_train, val_data, rets_val = self._convert_datasets_to_np(
+            train_data, rets_train, val_data, rets_val
+        )
 
         # Search for model
         model_class = self._search_model(model_name)
@@ -1542,13 +1452,13 @@ class CandidatesGrid(GridUtilities):
                         rets_val
                     )
                     self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
-                    self.train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                    self.train_eval_losses[
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     self.optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
 
                 except Exception as error:
@@ -1590,13 +1500,13 @@ class CandidatesGrid(GridUtilities):
                     )
                     
                     local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = alloc_weights
                     local_train_val_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = train_val_losses
                     local_optimized_hparams[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = optimized_hparams
                 
                 except Exception as e:
@@ -1604,9 +1514,9 @@ class CandidatesGrid(GridUtilities):
                     traceback.print_exc()
                     continue
             
-            temp_wts_prefix = f'{model_name}_temp_alloc_wts'
-            temp_losses_prefix = f'{model_name}_temp_losses'
-            temp_hparams_prefix = f'{model_name}_temp_hparams'
+            temp_wts_prefix = f'{model_name}_{self.temp_wts_prefix_stem}'
+            temp_losses_prefix = f'{model_name}_{self.temp_losses_prefix_stem}'
+            temp_hparams_prefix = f'{model_name}_{self.temp_hparams_prefix_stem}'
             
             # Save local results to a rank‑specific file
             save_pickle_temp(
@@ -1648,6 +1558,7 @@ class CandidatesGrid(GridUtilities):
             rets_val: pd.DataFrame,
         ):
 
+        self._data_check(train_data, rets_val)
         self._trained_check()
 
         # Extract feature data
@@ -1680,13 +1591,13 @@ class CandidatesGrid(GridUtilities):
                 rets_val
             )
             self.all_alloc_weights[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = alloc_weights
-            self.train_val_losses[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+            self.train_eval_losses[
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = train_val_losses
             self.optimized_hparams[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = optimized_hparams
 
         except Exception as e:
@@ -1694,29 +1605,32 @@ class CandidatesGrid(GridUtilities):
             traceback.print_exc()
         
         return self.all_alloc_weights
-
-    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
-        reformatted_dict = {}
-        for model_loss, step_losses in self.train_val_losses.items():
-            train_losses = []
-            eval_losses = []
-            for step in step_losses:
-                train_losses.append(step['train'])
-                eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
-            
-            reformatted_dict[model_loss] = {
-                'train': train_losses,
-                'eval': eval_losses
-            }
-        
-        return reformatted_dict
-    
     
     def get_optimized_hparams(self) -> dict:
         return self.optimized_hparams
+    
+    def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        if self.train_eval_losses:
+            reformatted_dict = {}
+            for model_loss, step_losses in self.train_eval_losses.items():
+                train_losses = []
+                eval_losses = []
+                for step in step_losses:
+                    train_losses.append(step['train'])
+                    eval_losses.append(step['eval'][0]) # 0 since all evaulation is done on single windows
+                
+                reformatted_dict[model_loss] = {
+                    'train': train_losses,
+                    'eval': eval_losses
+                }
+        else:
+            raise RuntimeError('Models not trained yet. Run training first.')
+        
+        return reformatted_dict
+    
 
 
-class WalkForwardValidator(GridUtilities):
+class WalkForwardValidator(WalkerGridUtilities):
     def __init__(
             self,
             model_lib: dict[str, dict[str, Type]],
@@ -1808,7 +1722,7 @@ class WalkForwardValidator(GridUtilities):
         Args:
             model_loss_name (str): Name of the model loss combination in the format: <Model>-<Loss>.
         """
-        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         if self.optimized_hparams and model_loss_name in self.optimized_hparams:
             median_epochs = self.optimized_hparams[
                 model_loss_name
@@ -1832,7 +1746,7 @@ class WalkForwardValidator(GridUtilities):
             X_train_shape: torch.Size,
             y_train_shape: torch.Size
         ):
-        model_loss_name = f'{model_name}{self.model_loss_sep}{loss_name}'
+        model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
         # Gather best hyperparameters or use defaults
         if self.optimized_hparams and model_loss_name in self.optimized_hparams:
@@ -1940,63 +1854,7 @@ class WalkForwardValidator(GridUtilities):
 
         return np.vstack(steps_alloc_weights), steps_train_infer_losses
 
-    def _data_check(self, init_train: pd.DataFrame, init_rets_val: pd.DataFrame):
-        """
-        Checks data consistency to ensure number of steps in the 
-        walk forward is correctly divides given evaluation data.
-        """
-        total_val_days = len(init_rets_val)
-        expected_steps = total_val_days // self.stride
-        if expected_steps != self.num_steps:
-            raise ValueError(
-                f'Provided num_steps ({self.num_steps}) does not match actual '
-                f'number of full windows of length {self.stride} in validation set '
-                f'({expected_steps}). Adjust num_steps or data.'
-            )
-        if total_val_days < self.stride:
-            raise ValueError(
-                f'Validation set too short: need at least {self.stride} days, '
-                f'got {total_val_days}.'
-            )
-        # Eensure initial training set has at least in_size days for first inference
-        if len(init_train) < self.in_size:
-            raise ValueError(
-                f'Initial training set must have at least {self.in_size} days to form the first inference window, '
-                f'got {len(init_train)} days.'
-            )
-
-    def _merge_all_results(
-            self,
-            size,
-            temp_wts_prefix,
-            temp_losses_prefix
-        ):
-        """Merge all results into one dict if rank is 0, i.e., main process."""
-        self.all_alloc_weights = {}
-        self.train_infer_losses = {}
-                
-        for r in range(size):
-            # Load all temp alloc wt files
-            rank_alloc_weights = load_pickle_temp(
-                self.temp_dir / f'{temp_wts_prefix}_{r}.pkl'
-            )
-            # Merge into self.all_alloc_weights
-            for model_loss, models_dict in rank_alloc_weights.items():
-                self.all_alloc_weights[model_loss] = models_dict
-            
-            rank_losses = load_pickle_temp(
-                self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
-            )
-            # Merge into self.train_val_losses
-            for model_loss, losses_dict in rank_losses.items():
-                self.train_infer_losses[model_loss] = losses_dict
-
-        # Delete all temp files
-        for r in range(size):
-            delete_file(self.temp_dir / f'{temp_wts_prefix}_{r}.pkl')
-            delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
-
-        print('All temp files merged and then deleted.')
+    
             
     def validate_grid(
             self,
@@ -2038,10 +1896,10 @@ class WalkForwardValidator(GridUtilities):
                     )
 
                     self.all_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_alloc_weights
                     self.train_infer_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_train_infer_losses
                 
                 except Exception as error:
@@ -2083,10 +1941,10 @@ class WalkForwardValidator(GridUtilities):
                     )
 
                     local_alloc_weights[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_alloc_weights
                     local_train_infer_losses[
-                        f'{model_name}{self.model_loss_sep}{loss_name}'
+                        f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
                     ] = steps_train_infer_losses
                 
                 except Exception as e:
@@ -2156,10 +2014,10 @@ class WalkForwardValidator(GridUtilities):
             )
 
             self.all_alloc_weights[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = steps_alloc_weights
             self.train_infer_losses[
-                f'{model_name}{self.model_loss_sep}{loss_name}'
+                f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
             ] = steps_train_infer_losses
        
         except Exception as e:

@@ -23,7 +23,9 @@
         "benchmark_train": "data/processed/benchmark_train.csv",
         "benchmark_val": "data/processed/benchmark_val.csv",
         "benchmark_test": "data/processed/benchmark_test.csv",
-        "updated_common_features": "data/processed/updated_common_features.json"
+        "updated_common_features": "data/processed/updated_common_features.json",
+        "ba_val": "data/processed/ba_val.csv",
+        "ba_test": "data/processed/ba_test.csv"
     },
     "artifacts": {
         "artifacts_dir": "artifacts/",
@@ -33,8 +35,10 @@
         "plots_dir": "artifacts/results/plots/",
         "tuned_plots_dir": "artifacts/results/plots/tuned_plots/",
         "wfv_plots_dir": "artifacts/results/plots/wfv_plots/",
-        "wfv_perf_dir": "artifacts/results/wfv_performance/",
-        "temp_dir": "artifacts/temp/"
+        "wfv_rets_dir": "artifacts/results/wfv_returns/",
+        "temp_dir": "artifacts/temp/",
+        "test_plots_dir": "artifacts/results/plots/test_plots/",
+        "test_perf_dir": "artifacts/results/test_performance/"
     },
     "models_module": "src.models"
 }

@@ -1,7 +1,18 @@
 import numpy as np
 import pandas as pd
 
-def calc_current_idxs(step: int, stride: int):
+def calc_current_idxs(step: int, stride: int) -> tuple[int, int]:
+    """
+    Calculate current window's start and end indices based on current step and walk stride.
+    
+    Args:
+        step (int): step count. Must be > 1.
+        stride (int): Stride size for the walk.
+    
+    Returns:
+        tuple[current_start, current_end] (tuple[int, int]): Tuple containing the start and end 
+        indices for the current step.
+    """
     if step == 0:
         raise ValueError('Got step 0. Must be > 0')
     
@@ -10,32 +21,19 @@ def calc_current_idxs(step: int, stride: int):
 
     return current_start, current_end
 
-def build_eval_windows(
-        split: np.ndarray,
-        num_steps: int,
-        out_size: int
-    ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
-    
-    if len(split) < out_size * num_steps:
-        raise ValueError('Provided dataframe is smaller than num_steps * out_size.')
-    
-    eval_windows = []
-    out_wind_idxs = []
-    for step in range(1, num_steps+1):
-        current_start, current_end = calc_current_idxs(step, out_size)
-
-        walk_rets_eval = split[current_start : current_end]
-
-        eval_windows.append(walk_rets_eval)
-
-        out_wind_idxs.append((current_start, current_end))
-    
-    return np.stack(eval_windows), out_wind_idxs
-
-def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> list:
+def get_date_index_col(
+        split: pd.DataFrame, wind_strt_stops: list[tuple[int, int]]
+    ) -> list[pd.DatetimeIndex]:
     """
     Get the datetime index columns from the provided dataframe using the 
     start and stop indexes.
+
+    Args:
+        split (pd.DataFrame): Evaluation split of the data.
+        wind_strt_stops (list[tuple[int, int]]): Output window indices in the format, [(start, end),..].
+
+    Returns:
+        date_idx_cols (list[pd.DatetimeIndex]): List containing the date indices for each output window.
     """
     date_idx_cols = []
     for idxs in wind_strt_stops:
@@ -44,8 +42,22 @@ def get_date_index_col(split: pd.DataFrame, wind_strt_stops: list[tuple]) -> lis
     return date_idx_cols
 
 def extract_oos_dates(
-        split: pd.DataFrame, in_wind_idxs: list[tuple], out_wind_idxs: list[tuple]
-    ) -> tuple[list[tuple], list[tuple]]:
+        split: pd.DataFrame, 
+        in_wind_idxs: list[tuple[int, int]], 
+        out_wind_idxs: list[tuple[int, int]]
+    ) -> tuple[list[pd.DatetimeIndex], list[pd.DatetimeIndex]]:
+    """
+    Extract Out-of-Sample dates from the evaluation data.
+
+    Args:
+        split (pd.DataFrame): Evaluation split of the data.
+        in_wind_idxs (list[tuple[int, int]]): Input window indices in the format, [(start, end),..].
+        out_wind_idxs (list[tuple[int, int]]): Output window indices in the format, [(start, end),..].
+    
+    Returns:
+        tuple[list[pd.DatetimeIndex], list[pd.DatetimeIndex]]: Tuple containing input and output 
+            date indices.
+    """
     in_win_date_cols = get_date_index_col(split, in_wind_idxs)
     out_win_date_cols = get_date_index_col(split, out_wind_idxs)
 
@@ -54,6 +66,9 @@ def extract_oos_dates(
 def extract_sp500_winds(
         benchmark_split: pd.DataFrame, col_name: str, out_win_idxs: list[tuple]
     ) -> np.ndarray:
+    """
+    Reshape 2D dataframe into into windows based on the given output window indices.
+    """
     sp500_col = benchmark_split[col_name]
 
     sp500_windows = []
