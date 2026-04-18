@@ -92,7 +92,7 @@ class NNModelLibrary:
         return list(cls._registry.get(category, {}).keys())
 
     @classmethod
-    def get(cls, category: str, name: str) -> Type:
+    def get(cls, category: str, name: str) -> Type | None:
         """
         Get a particular model for the given category name.
 
@@ -101,9 +101,12 @@ class NNModelLibrary:
             name (str): Name of the required model.
         
         Returns:
-            Class of the required neural network model.    
+            Type | None: Class of the required neural network model.    
         """
-        return cls._registry[category].get(name)
+        category_dict = cls._registry.get(category)
+        if category_dict is None:
+            return None
+        return category_dict.get(name)
 
     @classmethod
     def instantiate(cls, category: str, name: str, *args, **kwargs) -> Any:
@@ -191,7 +194,7 @@ class TradModelLibrary:
         return list(cls._registry.keys())
 
     @classmethod
-    def get(cls, name: str) -> Type:
+    def get(cls, name: str) -> Type | None:
         """
         Get a particular model by its name.
 
@@ -199,7 +202,7 @@ class TradModelLibrary:
             name (str): Name of the reqired tradional model.
         
         Returns:
-            Class of the required tradional model.    
+            Type | None: Class of the required tradional model.    
         """
         return cls._registry.get(name)
 
