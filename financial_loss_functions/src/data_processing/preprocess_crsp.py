@@ -71,42 +71,6 @@ def clean_inplace(
     
     return train, val, test
 
-# def get_only_returns(
-#         train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
-#     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-#     """
-#     Extract only return columns from each of the split datasets.
-
-#     @param train pd.DataFrame Training data.
-#     @param val pd.DataFrame Validation data.
-#     @param test pd.DataFrame Test data.
-    
-#     @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
-#             ret_train, ret_val, and ret_test
-
-#     """
-#     # return_cols = []
-#     return_suffix = '_RET'
-#     # for col in train.columns:
-#     #     if return_suffix in col:
-#     #         return_cols.append(col)
-    
-#     return_cols = extract_req_cols(train.columns, return_suffix)
-    
-#     ret_train = train[return_cols]
-#     ret_val = val[return_cols]
-#     ret_test = test[return_cols]
-
-#     ret_train.columns = [col.replace(return_suffix, '') for col in return_cols]
-#     ret_val.columns = [col.replace(return_suffix, '') for col in return_cols]
-#     ret_test.columns = [col.replace(return_suffix, '') for col in return_cols]
-
-#     return (
-#         ret_train.sort_index(axis=1),
-#         ret_val.sort_index(axis=1),
-#         ret_test.sort_index(axis=1)
-#     )
-
 class SSA:
     def __init__(self, window_len: int, variance_thres: float = 0.90):
         self.window_len = window_len
@@ -291,12 +255,6 @@ class Preprocessor:
         """
         self.common_features = common_features
         self.broadcast = broadcast
-        
-        # self._yeo_john = PowerTransformer(method='yeo-johnson', standardize=False)
-        # self._box_cox = PowerTransformer(method='box-cox', standardize=False)
-
-        # self.ssa = SSA(window_len=90)
-        # self.kalman_filt = KalmanDenoise()
 
         self._robust_scaler = RobustScaler()
 
@@ -304,38 +262,6 @@ class Preprocessor:
         self.all_tickers = None
 
         self.return_cols = None
-
-    def _transform(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
-        """
-        Transforms Volume Change columns using Yeo Johnson Transformation and
-        Turnover columns using Box Cox Transformation. Yeo Johnson allows negative values,
-        whereas Box Cox doesn't. This method treats train and validation or test 
-        splits differently. Use mode `fit` to fit and transform, use mode `split`
-        to transform only and not refit.
-
-        @param data pd.DataFrame Dataset to be transformed
-        @param mode str `git` or `split`
-
-        @return pd.DataFrame Transformed dataset
-        """
-        vol_change_cols = extract_req_cols(self.unordered_cols, '_VOL_CHANGE')
-        turnover_cols = extract_req_cols(self.unordered_cols, '_TURNOVER')
-        
-        # For training split
-        if mode == 'fit':
-            # Yeo Johnson transformation for VOL_CHANGE
-            data[vol_change_cols] = self._yeo_john.fit_transform(data[vol_change_cols])
-            # Box-Cox transoformation for TURNOVER
-            data[turnover_cols] = self._box_cox.fit_transform(data[turnover_cols])
-
-        # For val or test split
-        elif mode == 'split':
-            data[vol_change_cols] = self._yeo_john.transform(data[vol_change_cols])
-            data[turnover_cols] = self._box_cox.transform(data[turnover_cols])
-        else:
-            raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
-
-        return data
     
     def _normalize(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
@@ -362,24 +288,6 @@ class Preprocessor:
             raise ValueError('ERROR: Incorrect mode. Must be `fit` or `split`')
         
         return data
-
-    # def _extract_tickers(self) -> list[str]:
-    #     """
-    #     Extract ticker symbols from column names of the dataset.
-
-    #     @return list[str] List of the ticker symbols sorted alphabetically
-    #     """
-    #     tickers = []
-    #     for col in self.unordered_cols :
-    #         if col != 'date':
-    #             ticker = col.split(self.col_sep, 1)[0]
-    #             tickers.append(ticker)
-        
-    #     if self.common_features:
-    #         tickers = [x for x in sorted(set(tickers)) if x not in self.common_features]
-    #         return tickers
-    #     else:
-    #         return sorted(set(tickers))
 
     def _broadcast_common(
             self, data: pd.DataFrame, features: list[str]
@@ -491,7 +399,7 @@ class Preprocessor:
         ret_train = self._extract_only_returns(train, 'fit')
         
         macro_cols: list[str] = []
-        if macro_data:
+        if macro_data is not None:
             macro_cols = list(macro_data.columns)
             train = pd.concat([train, macro_data], axis=1)
 
@@ -535,7 +443,7 @@ class Preprocessor:
         ba_split = self._extract_only_ba(split_data)
 
         # macro_cols: list[str] = []
-        if macro_data:
+        if macro_data is not None:
             # macro_cols = list(macro_data.columns)
             split_data = pd.concat([split_data, macro_data], axis=1)
 
