@@ -18,7 +18,9 @@ test_output/*
 # Environment files
 .env
 financial_loss_functions/exploration/.ipynb_checkpoints
-*sbatch.sh
+financial_loss_functions/one_model_sbatch.sh
+financial_loss_functions/one_sbatch.sh
+financial_loss_functions/test_all_sbatch.sh
 check_hpc.py
 test_env.sh
 
