@@ -4,7 +4,6 @@ import pandas as pd
 from pathlib import Path
 from src.evaluation.test_nn import WFTester
 from src.data_processing.dataset import WFUtilities
-from src.visualization.plots import wfv_losses_plot
 from src.training.train_trad import TradModelsTrainer
 from src.utils.device import get_best_device, mpi_setup
 from src.utils.constants import EQ_WT_NAME, SP500_NAME, MODEL_LOSS_SEP
