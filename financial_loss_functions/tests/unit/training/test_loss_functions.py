@@ -13,6 +13,15 @@ from src.training.loss_functions import (
     rms_sortino_loss,
     smooth_neglog_sortino_objective,
     log_sortino_objective,
+    smooth_mdd_regularizer,
+    cvar_topk_regularizer,
+    smooth_cvar_regularizer,
+    smooth_rockafellar_cvar_regularizer,
+    sample_covariance,
+    shrinkage_covariance_torch,
+    risk_parity_regularizer,
+    raw_omega_ratio,
+    smooth_omega_objective
 )
 
 # Fixture to populate registry with dummy functions
@@ -189,6 +198,30 @@ def negative_returns():
 @pytest.fixture
 def zero_returns():
     return torch.zeros(2, 5, dtype=torch.float32)
+
+@pytest.fixture
+def returns_2d():
+    """Simple returns: batch=1, time=3, assets=2"""
+    return torch.tensor([[[0.1, 0.2],
+                          [0.3, 0.4],
+                          [0.5, 0.6]]], dtype=torch.float32)
+
+@pytest.fixture
+def weights_2d():
+    """Weights: batch=1, assets=2"""
+    return torch.tensor([[0.4, 0.6]], dtype=torch.float32)
+
+@pytest.fixture
+def returns_2d_batch2():
+    """Two batches, each 3 time steps, 2 assets"""
+    return torch.tensor([
+        [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]],
+        [[0.2, 0.1], [0.4, 0.3], [0.6, 0.5]]
+    ], dtype=torch.float32)
+
+@pytest.fixture
+def weights_2d_batch2():
+    return torch.tensor([[0.4, 0.6], [0.5, 0.5]], dtype=torch.float32)
 
 # -------------------- raw_sharpe_objective -------------------- #
 def test_raw_sharpe_positive(sample_returns):
@@ -372,7 +405,7 @@ def test_rms_sortino_gradient(sample_returns):
     loss.backward()
     assert returns.grad is not None
 
-# -------------------- smooth_neglog_sortino_objective -------------------- #
+# -------------------- Tests for smooth_neglog_sortino_objective -------------------- #
 def test_smooth_sortino_positive(sample_returns):
     loss = smooth_neglog_sortino_objective(sample_returns, use_soft_downside=True, beta=10.0)
     # Expected value from actual run (observed)
@@ -398,7 +431,7 @@ def test_smooth_sortino_gradient(sample_returns):
     loss.backward()
     assert returns.grad is not None
 
-# -------------------- log_sortino_objective -------------------- #
+# -------------------- Tests for log_sortino_objective -------------------- #
 def test_log_sortino_positive(sample_returns):
     loss = log_sortino_objective(sample_returns, use_soft_downside=True)
     assert loss.shape == ()
@@ -418,5 +451,316 @@ def test_log_sortino_zero(zero_returns):
 def test_log_sortino_gradient(sample_returns):
     returns = sample_returns.clone().detach().requires_grad_(True)
     loss = log_sortino_objective(returns)
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- Tests for smooth_mdd_regularizer -------------------- #
+def test_mdd_shape(sample_returns):
+    loss = smooth_mdd_regularizer(sample_returns)
+    assert loss.shape == ()
+
+def test_mdd_positive_returns(sample_returns):
+    loss = smooth_mdd_regularizer(sample_returns, use_percent=True)
+    assert loss.item() == 0.0
+
+def test_mdd_negative_returns(negative_returns):
+    loss = smooth_mdd_regularizer(negative_returns, use_percent=True)
+    expected = 0.03333002328872681
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_mdd_zero_returns(zero_returns):
+    loss = smooth_mdd_regularizer(zero_returns, use_percent=True)
+    assert loss.item() == 0.0
+
+def test_mdd_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = smooth_mdd_regularizer(returns)
+    loss.backward()
+    assert returns.grad is not None
+    assert returns.grad.shape == returns.shape
+
+def test_mdd_percent_vs_log(sample_returns):
+    loss_percent = smooth_mdd_regularizer(sample_returns, use_percent=True)
+    loss_log = smooth_mdd_regularizer(sample_returns, use_percent=False)
+    assert loss_percent.item() == 0.0
+    assert loss_log.item() == 0.0
+
+def test_mdd_parameter_effects(negative_returns):
+    loss_low_temp = smooth_mdd_regularizer(negative_returns, temp=10.0)
+    loss_high_temp = smooth_mdd_regularizer(negative_returns, temp=100.0)
+    assert not torch.isclose(loss_low_temp, loss_high_temp, atol=1e-6)
+
+def test_mdd_batch_consistency():
+    returns = torch.tensor([[0.01, 0.02, 0.03], [-0.01, -0.02, -0.03]], dtype=torch.float32)
+    loss = smooth_mdd_regularizer(returns)
+    assert loss.shape == ()
+    assert not torch.isnan(loss)
+
+# -------------------- Tests for cvar_topk_regularizer -------------------- #
+def test_cvar_topk_shape(sample_returns):
+    loss = cvar_topk_regularizer(sample_returns, alpha=0.05)
+    assert loss.shape == ()
+
+def test_cvar_topk_positive_returns(sample_returns):
+    loss = cvar_topk_regularizer(sample_returns, alpha=0.05)
+    expected = -0.01
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_cvar_topk_negative_returns(negative_returns):
+    loss = cvar_topk_regularizer(negative_returns, alpha=0.05)
+    expected = 0.03
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_cvar_topk_zero_returns(zero_returns):
+    loss = cvar_topk_regularizer(zero_returns, alpha=0.05)
+    assert loss.item() == 0.0
+
+def test_cvar_topk_alpha_large():
+    returns = torch.tensor([[-0.01, -0.02, -0.03]], dtype=torch.float32)
+    loss = cvar_topk_regularizer(returns, alpha=0.5)
+    expected = 0.025
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_cvar_topk_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = cvar_topk_regularizer(returns)
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- Tests for smooth_cvar_regularizer -------------------- #
+def test_smooth_cvar_shape(sample_returns):
+    loss = smooth_cvar_regularizer(sample_returns)
+    assert loss.shape == ()
+
+def test_smooth_cvar_positive_returns(sample_returns):
+    loss = smooth_cvar_regularizer(sample_returns, scale_by_std=False, normalize_by_port_std=False)
+    assert loss.item() < 0
+
+def test_smooth_cvar_negative_returns(negative_returns):
+    loss = smooth_cvar_regularizer(negative_returns, scale_by_std=False, normalize_by_port_std=False)
+    assert loss.item() > 0
+
+def test_smooth_cvar_zero_returns(zero_returns):
+    loss = smooth_cvar_regularizer(zero_returns, scale_by_std=False, normalize_by_port_std=False)
+    assert loss.item() == 0.0
+
+def test_smooth_cvar_normalization(sample_returns):
+    loss_norm = smooth_cvar_regularizer(sample_returns, normalize_by_port_std=True)
+    loss_no_norm = smooth_cvar_regularizer(sample_returns, normalize_by_port_std=False)
+    assert not torch.isclose(loss_norm, loss_no_norm, atol=1e-6)
+
+def test_smooth_cvar_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = smooth_cvar_regularizer(returns)
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- smooth_rockafellar_cvar_regularizer -------------------- #
+def test_rockafellar_cvar_shape(sample_returns):
+    loss = smooth_rockafellar_cvar_regularizer(sample_returns)
+    assert loss.shape == ()
+
+def test_rockafellar_cvar_positive_returns(sample_returns):
+    loss = smooth_rockafellar_cvar_regularizer(sample_returns, normalize_by_port_std=False)
+    # Observed deterministic value
+    expected = 0.0706624910235405
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_rockafellar_cvar_negative_returns(negative_returns):
+    loss = smooth_rockafellar_cvar_regularizer(negative_returns, normalize_by_port_std=False)
+    assert loss.item() > 0
+
+def test_rockafellar_cvar_zero_returns(zero_returns):
+    loss = smooth_rockafellar_cvar_regularizer(zero_returns, normalize_by_port_std=False)
+    # Observed deterministic value
+    expected = 0.13862943649291992
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_rockafellar_cvar_alpha_effect(negative_returns):
+    loss_alpha05 = smooth_rockafellar_cvar_regularizer(negative_returns, alpha=0.05, normalize_by_port_std=False)
+    loss_alpha1 = smooth_rockafellar_cvar_regularizer(negative_returns, alpha=0.1, normalize_by_port_std=False)
+    assert loss_alpha05.item() > loss_alpha1.item()
+
+def test_rockafellar_cvar_normalization(sample_returns):
+    loss_norm = smooth_rockafellar_cvar_regularizer(sample_returns, normalize_by_port_std=True)
+    loss_no_norm = smooth_rockafellar_cvar_regularizer(sample_returns, normalize_by_port_std=False)
+    assert not torch.isclose(loss_norm, loss_no_norm, atol=1e-6)
+
+def test_rockafellar_cvar_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = smooth_rockafellar_cvar_regularizer(returns)
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- sample_covariance -------------------- #
+def test_sample_covariance_shape(returns_2d):
+    B, T, N = returns_2d.shape
+    cov = sample_covariance(returns_2d)
+    assert cov.shape == (B, N, N)
+
+def test_sample_covariance_values(returns_2d):
+    # Compute manually: mean of each asset = [0.3, 0.4]
+    # demeaned: [[-0.2,-0.2], [0.0,0.0], [0.2,0.2]]
+    # X^T X / (T-1) = ([[0.08,0.08],[0.08,0.08]]) / 2 = [[0.04,0.04],[0.04,0.04]]
+    cov = sample_covariance(returns_2d, unbiased=True)
+    expected = torch.tensor([[[0.04, 0.04], [0.04, 0.04]]], dtype=torch.float32)
+    assert torch.allclose(cov, expected, atol=1e-6)
+
+def test_sample_covariance_unbiased_false(returns_2d):
+    # With unbiased=False, denominator = T = 3
+    cov = sample_covariance(returns_2d, unbiased=False)
+    expected = torch.tensor([[[0.08/3, 0.08/3], [0.08/3, 0.08/3]]], dtype=torch.float32)
+    assert torch.allclose(cov, expected, atol=1e-6)
+
+def test_sample_covariance_gradient(returns_2d):
+    returns = returns_2d.clone().detach().requires_grad_(True)
+    cov = sample_covariance(returns)
+    loss = cov.sum()
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- shrinkage_covariance_torch -------------------- #
+def test_shrinkage_covariance_shape(returns_2d):
+    cov = sample_covariance(returns_2d)
+    shrunk = shrinkage_covariance_torch(cov, shrink=0.2)
+    assert shrunk.shape == cov.shape
+
+def test_shrinkage_covariance_values(returns_2d):
+    cov = sample_covariance(returns_2d)
+    # cov = [[0.04,0.04],[0.04,0.04]], trace=0.08, scale=0.08/2=0.04, I=identity
+    # shrunk = (1-0.2)*cov + 0.2*0.04*I = 0.8*cov + 0.008*I
+    # = [[0.8*0.04+0.008, 0.8*0.04], [0.8*0.04, 0.8*0.04+0.008]]
+    # = [[0.032+0.008, 0.032], [0.032, 0.032+0.008]] = [[0.04,0.032],[0.032,0.04]]
+    shrunk = shrinkage_covariance_torch(cov, shrink=0.2)
+    expected = torch.tensor([[[0.04, 0.032], [0.032, 0.04]]], dtype=torch.float32)
+    assert torch.allclose(shrunk, expected, atol=1e-6)
+
+def test_shrinkage_covariance_gradient(returns_2d):
+    cov = sample_covariance(returns_2d).requires_grad_(True)
+    shrunk = shrinkage_covariance_torch(cov, shrink=0.1)
+    loss = shrunk.sum()
+    loss.backward()
+    assert cov.grad is not None
+
+# -------------------- risk_parity_regularizer -------------------- #
+def test_risk_parity_regularizer_shape(weights_2d, returns_2d):
+    loss = risk_parity_regularizer(weights_2d, returns_2d)
+    assert loss.shape == ()
+
+def test_risk_parity_regularizer_values(weights_2d, returns_2d):
+    # Manual calculation:
+    # returns: [[0.1,0.2],[0.3,0.4],[0.5,0.6]] -> cov = [[0.04,0.04],[0.04,0.04]]
+    # weights = [0.4,0.6]
+    # portfolio variance = w^T cov w = 0.4*0.04*0.4 + 2*0.4*0.04*0.6 + 0.6*0.04*0.6 = 0.04*(0.16+0.48+0.36)=0.04*1=0.04
+    # marginal contributions: cov w = [[0.04,0.04],[0.04,0.04]] * [0.4,0.6]^T = [0.04,0.04] (since sum=1)
+    # rc = weights * mcontrib = [0.4*0.04, 0.6*0.04] = [0.016,0.024]
+    # target = sigma2/N = 0.04/2 = 0.02
+    # squared deviations = [(0.016-0.02)^2, (0.024-0.02)^2] = [0.000016, 0.000016] sum=0.000032
+    # scale_invariant = loss/(sigma2^2)=0.000032/0.0016=0.02
+    loss = risk_parity_regularizer(weights_2d, returns_2d, use_shrink=False, scale_invariant=True)
+    expected = 0.02
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_risk_parity_regularizer_no_scale_invariant(weights_2d, returns_2d):
+    loss = risk_parity_regularizer(weights_2d, returns_2d, use_shrink=False, scale_invariant=False)
+    expected = 0.000032
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_risk_parity_regularizer_with_shrink(weights_2d, returns_2d):
+    # Shrinkage changes cov, so loss will be different; just test that it runs.
+    loss = risk_parity_regularizer(weights_2d, returns_2d, use_shrink=True, shrink=0.1)
+    assert loss.shape == ()
+    assert not torch.isnan(loss)
+
+def test_risk_parity_regularizer_gradient(weights_2d, returns_2d):
+    w = weights_2d.clone().detach().requires_grad_(True)
+    loss = risk_parity_regularizer(w, returns_2d)
+    loss.backward()
+    assert w.grad is not None
+
+def test_risk_parity_regularizer_batch(weights_2d_batch2, returns_2d_batch2):
+    loss = risk_parity_regularizer(weights_2d_batch2, returns_2d_batch2, use_shrink=False)
+    # Should produce a scalar (mean across batches)
+    assert loss.shape == ()
+    assert not torch.isnan(loss)
+
+def test_risk_parity_regularizer_zero_variance_edge():
+    # All returns zero -> covariance zero -> sigma2=0 -> should be handled by eps
+    returns = torch.zeros(1, 3, 2, dtype=torch.float32)
+    weights = torch.tensor([[0.5, 0.5]], dtype=torch.float32)
+    loss = risk_parity_regularizer(weights, returns)
+    assert not torch.isnan(loss)
+    assert torch.isclose(loss, torch.tensor(0.0), atol=1e-8)
+
+# -------------------- raw_omega_ratio -------------------- #
+def test_raw_omega_ratio_shape(sample_returns):
+    loss = raw_omega_ratio(sample_returns)
+    assert loss.shape == ()
+
+def test_raw_omega_ratio_positive_returns(sample_returns):
+    # returns all > theta=0, so neg=0, pos = returns mean = 0.02
+    # omega = pos / (0+eps) = very large, loss = -very large (negative)
+    loss = raw_omega_ratio(sample_returns)
+    assert loss.item() < 0
+
+def test_raw_omega_ratio_negative_returns(negative_returns):
+    # returns all < theta=0, so pos=0, neg = -returns mean = 0.02
+    # omega = 0 / (0.02+eps) = 0, loss = 0
+    loss = raw_omega_ratio(negative_returns)
+    assert loss.item() == 0.0
+
+def test_raw_omega_ratio_mixed():
+    # returns: [0.01, -0.02, 0.03], theta=0
+    # pos_mean = (0.01+0+0.03)/3 = 0.01333, neg_mean = (0+0.02+0)/3 = 0.0066667
+    # omega = 0.01333/0.0066667 = 2.0, loss = -2.0
+    returns = torch.tensor([[0.01, -0.02, 0.03]], dtype=torch.float32)
+    loss = raw_omega_ratio(returns)
+    expected = -2.0
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_raw_omega_ratio_zero_returns(zero_returns):
+    loss = raw_omega_ratio(zero_returns)
+    # pos_mean=0, neg_mean=0 -> omega=0/(eps)=0, loss=0
+    assert loss.item() == 0.0
+
+def test_raw_omega_ratio_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = raw_omega_ratio(returns)
+    loss.backward()
+    assert returns.grad is not None
+
+# -------------------- Tests for smooth_omega_objective -------------------- #
+def test_smooth_omega_shape(sample_returns):
+    loss = smooth_omega_objective(sample_returns)
+    assert loss.shape == ()
+
+def test_smooth_omega_positive_returns(sample_returns):
+    loss = smooth_omega_objective(sample_returns, use_log_loss=True)
+    assert loss.item() < 0
+
+def test_smooth_omega_negative_returns(negative_returns):
+    loss = smooth_omega_objective(negative_returns, use_log_loss=True)
+    assert loss.item() > 0
+
+def test_smooth_omega_without_log(sample_returns):
+    loss = smooth_omega_objective(sample_returns, use_log_loss=False)
+    assert loss.item() < 0
+
+def test_smooth_omega_cap(sample_returns):
+    # Use a cap that is smaller than the actual omega to see an effect.
+    # For sample_returns, compute omega roughly; set cap to 0.01.
+    loss_uncapped = smooth_omega_objective(sample_returns, use_log_loss=True, cap_omega=None)
+    loss_capped = smooth_omega_objective(sample_returns, use_log_loss=True, cap_omega=0.01)
+    # Capped loss should be higher (less negative) than uncapped
+    assert loss_capped.item() > loss_uncapped.item()
+
+def test_smooth_omega_zero_returns(zero_returns):
+    loss = smooth_omega_objective(zero_returns)
+    expected = 0.0
+    assert torch.isclose(loss, torch.tensor(expected), atol=1e-6)
+
+def test_smooth_omega_gradient(sample_returns):
+    returns = sample_returns.clone().detach().requires_grad_(True)
+    loss = smooth_omega_objective(returns)
     loss.backward()
     assert returns.grad is not None
