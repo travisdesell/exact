@@ -44,7 +44,10 @@ def _build_expected_feats(df: pd.DataFrame, common_feats: list[str]) -> tuple[li
     
     # Append sorted common features, eg., sprtrn (s&p500)
     all_features.extend(sorted(common_feats))
-    return all_features, tickers
+
+    order_ba_spreads = [f'{ticker}_BA_SPREAD' for ticker in tickers]
+
+    return all_features, tickers, order_ba_spreads
 
 @pytest.mark.integration
 def test_processing_with_committed_sample(tmp_path):
@@ -65,7 +68,7 @@ def test_processing_with_committed_sample(tmp_path):
         dst = tmp_raw / fname
         shutil.copy(src, dst)
     
-    # SHOULD MATCH PATHS CONFIG
+    # ---------- SHOULD MATCH PATHS CONFIG ---------- #
     paths_config = {
         'data': {
             'crsp_dir': str(tmp_raw),
@@ -83,9 +86,11 @@ def test_processing_with_committed_sample(tmp_path):
             'processed_train': str(tmp_processed / 'processed_train.csv'),
             'processed_val': str(tmp_processed / 'processed_val.csv'),
             'processed_test': str(tmp_processed / 'processed_test.csv'),
-            "benchmark_train": str(tmp_processed / "benchmark_train.csv"),
-            "benchmark_val": str(tmp_processed / "benchmark_val.csv"),
-            "benchmark_test": str(tmp_processed/ "benchmark_test.csv")
+            "benchmark_train": str(tmp_processed / 'benchmark_train.csv'),
+            "benchmark_val": str(tmp_processed / 'benchmark_val.csv'),
+            "benchmark_test": str(tmp_processed / 'benchmark_test.csv'),
+            "ba_val": str(tmp_processed / 'ba_val.csv'),
+            "ba_test": str(tmp_processed / 'ba_test.csv')
         }
     }
 
@@ -124,29 +129,60 @@ def test_processing_with_committed_sample(tmp_path):
     # Loop over raw files
     for split, raw_df in raw_files.items():
         # Build expected feature columns and check processed files
-        expected_cols, expected_tickers = _build_expected_feats(
+        expected_all_feats_cols, expected_tickers, expected_ba_cols = _build_expected_feats(
             raw_df,
             features_config['common_features']
         )
 
         # Check if all features match
         assert len(list(processed_files[f'processed_{split}'].columns)) \
-            == len(expected_cols), f'Lengths of feature columns in processed {split} do not match'
+            == len(expected_all_feats_cols), f'Lengths of feature columns in processed {split} do not match'
         
-        assert set(processed_files[f'processed_{split}'].columns) \
-            == set(expected_cols), f'Feature columns are different {split}'
+        assert list(processed_files[f'processed_{split}'].columns) \
+            == expected_all_feats_cols, f'Feature columns are different {split}'
 
         # Check if returns features match (will be only ticker symbol)
-        assert set(processed_files[f'returns_{split}'].columns) \
-            == set(expected_tickers), f'Returns columns in {split} do not match'
+        assert list(processed_files[f'returns_{split}'].columns) \
+            == expected_tickers, f'Returns columns in {split} do not match'
+        
+        # Check if BA spreads match. <Ticker>_BA_SPREAD
+        if split == 'train':
+            pass #### SINCE WE DONT HAVE BA SPREAD FOR TRAIN ####
+        else:
+            assert list(processed_files[f'ba_{split}'].columns) \
+                == expected_ba_cols, f'BA Spread columns in {split} do not match'
 
+        # Check if s&p500 benchmarks returns match
+        assert len(processed_files[f'benchmark_{split}'].columns) == 1, 'Only 1 column of S&P500 returns must be present'
+        assert list(processed_files[f'benchmark_{split}'].columns)[0] == \
+            features_config['sp500_returns']
+        
         # Check that feature indices match target (returns) indices exactly
         proc = processed_files[f'processed_{split}']
         rets = processed_files[f'returns_{split}']
         pd.testing.assert_index_equal(
             proc.index, 
-            rets.index, 
+            rets.index,
             obj=f'Index mismatch between features and returns in {split}'
+        )
+
+        # Check that BA Spread indices match target (returns) indices exactly
+        if split == 'train': # We dont have ba spreads for train
+            pass
+        else:
+            ba_spreads = processed_files[f'ba_{split}']
+            pd.testing.assert_index_equal(
+                ba_spreads.index,
+                rets.index,
+                obj=f'Index mismatch between ba spreads and returns in {split}'
+            )
+        
+        # Check that Benchmark (S&P500) indices match target (returns) indices exactly
+        bench = processed_files[f'benchmark_{split}']
+        pd.testing.assert_index_equal(
+            bench.index, 
+            rets.index,
+            obj=f'Index mismatch between benchmark returns and all stock returns in {split}'
         )
     
     # Verify all processed files have identical schemas
