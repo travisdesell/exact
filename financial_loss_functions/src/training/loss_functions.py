@@ -49,6 +49,9 @@ class LossLibrary:
             cat = category
             sub = subcategory or '__default__'
             nm = name or fn.__name__
+            # Prevent duplicate registration
+            if nm in cls._registry.get(cat, {}).get(sub, {}):
+                raise KeyError(f"Function '{nm}' already registered in category '{cat}', subcategory '{sub}'")
             cls._registry.setdefault(cat, {}).setdefault(sub, {})[nm] = fn
             return fn
         return decorator
