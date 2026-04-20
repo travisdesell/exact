@@ -12,6 +12,20 @@ def dummy_sharpe(returns):
 def dummy_cvar(returns):
     return -np.mean(returns[returns < 0]) if np.any(returns < 0) else 0.0
 
+@pytest.fixture
+def evaluator_with_returns():
+    # Creating dummy returns: 2 windows, each with 3 days, 2 models
+    returns = {
+        'modelA': np.array([[0.01, 0.02, 0.03],
+                            [0.04, 0.05, 0.06]]),
+        'modelB': np.array([[0.02, 0.03, 0.04],
+                            [0.05, 0.06, 0.07]])
+    }
+    evaluator = Evaluator(eval_returns=None, all_daily_returns=returns)
+    evaluator.metrics_lib = {'sharpe': dummy_sharpe, 'cvar': dummy_cvar}
+    evaluator.rounding_digits = 4
+    return evaluator
+
 # -------------------- Tests for __init__ -------------------- #
 def test_init_with_eval_returns():
     eval_returns = np.random.randn(2, 3, 4)
@@ -208,6 +222,64 @@ def test_calc_avg_performance_no_metrics_lib(capsys):
     assert result is None
     captured = capsys.readouterr()
     assert "No metrics library or dict provided" in captured.out
+
+# -------------------- Tests for _combine_rets_winds -------------------- #
+def test_combine_rets_winds(evaluator_with_returns):
+    combined = evaluator_with_returns._combine_rets_winds()
+    assert isinstance(combined, dict)
+    assert set(combined.keys()) == {'modelA', 'modelB'}
+    # modelA: [0.01,0.02,0.03,0.04,0.05,0.06]
+    expected_A = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.06])
+    np.testing.assert_array_equal(combined['modelA'], expected_A)
+    # modelB: [0.02,0.03,0.04,0.05,0.06,0.07]
+    expected_B = np.array([0.02, 0.03, 0.04, 0.05, 0.06, 0.07])
+    np.testing.assert_array_equal(combined['modelB'], expected_B)
+
+# -------------------- Tests for _calc_overall_metric_perf -------------------- #
+def test_calc_overall_metric_perf(evaluator_with_returns):
+    combined = evaluator_with_returns._combine_rets_winds()
+    # Test with dummy_sharpe
+    result = evaluator_with_returns._calc_overall_metric_perf(dummy_sharpe, combined)
+    expected = {
+        'modelA': round(dummy_sharpe(np.array([0.01,0.02,0.03,0.04,0.05,0.06])), 4),
+        'modelB': round(dummy_sharpe(np.array([0.02,0.03,0.04,0.05,0.06,0.07])), 4)
+    }
+    assert result == expected
+
+def test_calc_overall_metric_perf_with_cvar(evaluator_with_returns):
+    combined = evaluator_with_returns._combine_rets_winds()
+    result = evaluator_with_returns._calc_overall_metric_perf(dummy_cvar, combined)
+    # Manual compute dummy_cvar for modelA: negative returns? none -> 0.0
+    expected_A = 0.0
+    expected_B = 0.0  # no negative returns in dummy data
+    assert result['modelA'] == expected_A
+    assert result['modelB'] == expected_B
+
+# -------------------- Tests for calc_pf_performances -------------------- #
+def test_calc_pf_performances(evaluator_with_returns):
+    df = evaluator_with_returns.calc_pf_performances()
+    assert isinstance(df, pd.DataFrame)
+    # Expected columns: metrics ('sharpe', 'cvar')
+    assert set(df.columns) == {'sharpe', 'cvar'}
+    # Expected index: models
+    assert set(df.index) == {'modelA', 'modelB'}
+    # Check a value
+    sharpe_A = dummy_sharpe(np.array([0.01,0.02,0.03,0.04,0.05,0.06]))
+    assert df.loc['modelA', 'sharpe'] == round(sharpe_A, 4)
+
+def test_calc_pf_performances_no_metrics_lib(capsys):
+    evaluator = Evaluator(eval_returns=None, all_daily_returns={'modelA': np.array([[1,2],[3,4]])})
+    evaluator.metrics_lib = None
+    result = evaluator.calc_pf_performances()
+    assert result is None
+    captured = capsys.readouterr()
+    assert "No metrics library or dict provided" in captured.out
+
+def test_calc_pf_performances_empty_returns_raises():
+    evaluator = Evaluator(eval_returns=None, all_daily_returns={})
+    evaluator.metrics_lib = {'sharpe': dummy_sharpe}
+    with pytest.raises(ValueError, match="No daily returns calculated"):
+        evaluator.calc_pf_performances()
 
 # -------------------- Tests for get_all_daily_returns -------------------- #
 def test_get_all_daily_returns():

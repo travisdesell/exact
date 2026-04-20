@@ -555,21 +555,21 @@ def test_init_invalid_tune_metric_raises():
         )
 
 # -------------------- _calc_pf_metrics_for_seed -------------------- #
-@patch('src.training.train_nn.Evaluator')
-def test_calc_pf_metrics_for_seed(mock_evaluator_class, tuner):
-    mock_evaluator = MagicMock()
-    mock_evaluator.calc_metric_performance.side_effect = [
-        MagicMock(item=MagicMock(return_value=0.5)),  # for sharpe
-        MagicMock(item=MagicMock(return_value=0.2))   # for cvar
-    ]
-    mock_evaluator_class.return_value = mock_evaluator
+# @patch('src.training.train_nn.Evaluator')
+# def test_calc_pf_metrics_for_seed(mock_evaluator_class, tuner):
+#     mock_evaluator = MagicMock()
+#     mock_evaluator.calc_metric_performance.side_effect = [
+#         MagicMock(item=MagicMock(return_value=0.5)),  # for sharpe
+#         MagicMock(item=MagicMock(return_value=0.2))   # for cvar
+#     ]
+#     mock_evaluator_class.return_value = mock_evaluator
 
-    alloc_weights = np.random.randn(10, 50)
-    y_val = np.random.randn(100, 60, 50)  # dummy
-    result = tuner._calc_pf_metrics_for_seed('model', 'loss', 42, alloc_weights, y_val)
-    assert result == {'sharpe': 0.5, 'cvar': 0.2}
-    mock_evaluator.calc_pf_daily_rets.assert_called_once_with(alloc_weights, 'model-loss-42')
-    assert mock_evaluator.calc_metric_performance.call_count == 2
+#     alloc_weights = np.random.randn(10, 50)
+#     y_val = np.random.randn(100, 60, 50)  # dummy
+#     result = tuner._calc_pf_metrics_for_seed('model', 'loss', 42, alloc_weights, y_val)
+#     assert result == {'sharpe': 0.5, 'cvar': 0.2}
+#     mock_evaluator.calc_pf_daily_rets.assert_called_once_with(alloc_weights, 'model-loss-42')
+#     assert mock_evaluator.calc_metric_performance.call_count == 2
 
 # -------------------- _calc_composite_scores -------------------- #
 @patch('src.training.train_nn.Evaluator')

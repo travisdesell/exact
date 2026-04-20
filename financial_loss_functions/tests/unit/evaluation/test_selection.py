@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 from src.evaluation.selection import (
     high_corr_with_each_metric,
     pareto_dominance,
