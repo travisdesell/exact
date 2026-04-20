@@ -1,5 +1,6 @@
 import torch
 import pytest
+from unittest.mock import patch, MagicMock
 from src.training.loss_functions import (
     LossLibrary,
     log_return_objective,
@@ -26,7 +27,10 @@ from src.training.loss_functions import (
     hhi_signed_regularizer,
     entropy_conc_regularizer,
     raw_calmar_objective,
-    smooth_calmar_objective
+    smooth_calmar_objective,
+    custom_loss_1, custom_loss_2, custom_loss_3, custom_loss_4, custom_loss_5,
+    custom_loss_6, custom_loss_7, custom_loss_8, custom_loss_9, custom_loss_10,
+    custom_loss_11, custom_loss_12, custom_loss_13, custom_loss_14, custom_loss_15, custom_loss_16
 )
 
 # Fixture to populate registry with dummy functions
@@ -1017,3 +1021,248 @@ def test_smooth_calmar_gradient(sample_returns):
     loss = smooth_calmar_objective(returns)
     loss.backward()
     assert returns.grad is not None
+
+# ----------------------------------------------------------------------
+# Helper to create mocks and test a custom loss
+# ----------------------------------------------------------------------
+def _run_custom_loss_test(loss_func, expected_calls, args, kwargs, expected_formula):
+    """
+    loss_func: the custom loss function to test
+    expected_calls: dict mapping component name to (mock_path, expected_args)
+    args: positional arguments to pass to loss_func
+    kwargs: keyword arguments to pass to loss_func (including lambdas)
+    expected_formula: function that given the mocked return values returns expected loss
+    """
+    mocks = {}
+    patchers = []
+    for comp_name, (mock_path, expected_args) in expected_calls.items():
+        patcher = patch(mock_path)
+        mock = patcher.start()
+        mock.return_value = torch.tensor(1.0)  # arbitrary deterministic value
+        mocks[comp_name] = mock
+        patchers.append(patcher)
+
+    # Call the loss function
+    loss = loss_func(*args, **kwargs)
+
+    # Verify each component was called exactly once with expected arguments
+    for comp_name, (mock_path, expected_args) in expected_calls.items():
+        mock = mocks[comp_name]
+        mock.assert_called_once_with(*expected_args)
+
+    # Compute expected loss using the formula
+    expected = expected_formula({name: 1.0 for name in expected_calls})
+    assert torch.isclose(loss, torch.tensor(expected))
+
+    # Stop all patchers
+    for patcher in patchers:
+        patcher.stop()
+
+def test_custom_loss_1(sample_returns):
+    args = (sample_returns,)
+    kwargs = {'lambda1': 0.5}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.differentiable_sharpe_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sharpe'] + kwargs['lambda1'] * mock_vals['cvar']
+    _run_custom_loss_test(custom_loss_1, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_2(sample_returns):
+    args = (sample_returns,)
+    kwargs = {'lambda1': 0.5}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.rms_sharpe_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sharpe'] + kwargs['lambda1'] * mock_vals['cvar']
+    _run_custom_loss_test(custom_loss_2, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_3(sample_returns):
+    args = (sample_returns,)
+    kwargs = {'lambda1': 0.5}
+    expected_calls = {
+        'sortino': ('src.training.loss_functions.rms_sortino_loss', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sortino'] + kwargs['lambda1'] * mock_vals['cvar']
+    _run_custom_loss_test(custom_loss_3, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_4(sample_returns):
+    args = (sample_returns,)
+    kwargs = {'lambda1': 0.5}
+    expected_calls = {
+        'sortino': ('src.training.loss_functions.differentiable_sortino_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sortino'] + kwargs['lambda1'] * mock_vals['cvar']
+    _run_custom_loss_test(custom_loss_4, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_5(weights_2d, returns_2d, sample_returns):
+    # Note: custom_loss_5 signature: (weights, all_returns, pf_returns, lambda1, **kwargs)
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'lambda1': 0.5}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.differentiable_sharpe_objective', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sharpe'] + kwargs['lambda1'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_5, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_7(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'lambda1': 0.5, 'lambda2': 0.2}
+    expected_calls = {
+        'log_sharpe': ('src.training.loss_functions.log_sharpe_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['log_sharpe'] + kwargs['lambda1'] * mock_vals['cvar'] + kwargs['lambda2'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_7, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_8(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'log_ret_lambda': 0.1, 'cvar_lambda': 0.5, 'risk_p_lambda': 0.2}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.differentiable_sharpe_objective', (sample_returns,)),
+        'log_returns': ('src.training.loss_functions.log_return_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return (mock_vals['sharpe'] +
+                kwargs['log_ret_lambda'] * mock_vals['log_returns'] +
+                kwargs['cvar_lambda'] * mock_vals['cvar'] +
+                kwargs['risk_p_lambda'] * mock_vals['rp'])
+    _run_custom_loss_test(custom_loss_8, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_9(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'lambda1': 0.5, 'lambda2': 0.2}
+    expected_calls = {
+        'log_sortino': ('src.training.loss_functions.log_sortino_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['log_sortino'] + kwargs['lambda1'] * mock_vals['cvar'] + kwargs['lambda2'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_9, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_6(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.differentiable_sharpe_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sharpe'] + kwargs['cvar_lambda'] * mock_vals['cvar'] + kwargs['risk_p_lambda'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_6, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_10(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.smooth_neglog_sharpe_loss', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['sharpe'] + kwargs['cvar_lambda'] * mock_vals['cvar'] + kwargs['risk_p_lambda'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_10, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_11(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2}
+    expected_calls = {
+        'omega': ('src.training.loss_functions.smooth_omega_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['omega'] + kwargs['cvar_lambda'] * mock_vals['cvar'] + kwargs['risk_p_lambda'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_11, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_12(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2}
+    expected_calls = {
+        'omega': ('src.training.loss_functions.raw_omega_ratio', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d))
+    }
+    def expected_formula(mock_vals):
+        return mock_vals['omega'] + kwargs['cvar_lambda'] * mock_vals['cvar'] + kwargs['risk_p_lambda'] * mock_vals['rp']
+    _run_custom_loss_test(custom_loss_12, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_13(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2, 'ent_lambda': 0.3}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.smooth_neglog_sharpe_loss', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d)),
+        'entropy': ('src.training.loss_functions.entropy_conc_regularizer', (weights_2d,))
+    }
+    def expected_formula(mock_vals):
+        # Note: ent_lambda is added, not multiplied
+        return (mock_vals['sharpe'] +
+                kwargs['cvar_lambda'] * mock_vals['cvar'] +
+                kwargs['risk_p_lambda'] * mock_vals['rp'] +
+                (kwargs['ent_lambda'] + mock_vals['entropy']))
+    _run_custom_loss_test(custom_loss_13, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_14(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2, 'ent_lambda': 0.3}
+    expected_calls = {
+        'omega': ('src.training.loss_functions.smooth_omega_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d)),
+        'entropy': ('src.training.loss_functions.entropy_conc_regularizer', (weights_2d,))
+    }
+    def expected_formula(mock_vals):
+        return (mock_vals['omega'] +
+                kwargs['cvar_lambda'] * mock_vals['cvar'] +
+                kwargs['risk_p_lambda'] * mock_vals['rp'] +
+                (kwargs['ent_lambda'] + mock_vals['entropy']))
+    _run_custom_loss_test(custom_loss_14, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_15(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2, 'hhi_lambda': 0.3}
+    expected_calls = {
+        'sharpe': ('src.training.loss_functions.smooth_neglog_sharpe_loss', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d)),
+        'hhi': ('src.training.loss_functions.hhi_regularizer', (weights_2d,))
+    }
+    def expected_formula(mock_vals):
+        return (mock_vals['sharpe'] +
+                kwargs['cvar_lambda'] * mock_vals['cvar'] +
+                kwargs['risk_p_lambda'] * mock_vals['rp'] +
+                (kwargs['hhi_lambda'] + mock_vals['hhi']))
+    _run_custom_loss_test(custom_loss_15, expected_calls, args, kwargs, expected_formula)
+
+def test_custom_loss_16(weights_2d, returns_2d, sample_returns):
+    args = (weights_2d, returns_2d, sample_returns)
+    kwargs = {'cvar_lambda': 0.5, 'risk_p_lambda': 0.2, 'hhi_lambda': 0.3}
+    expected_calls = {
+        'omega': ('src.training.loss_functions.smooth_omega_objective', (sample_returns,)),
+        'cvar': ('src.training.loss_functions.smooth_rockafellar_cvar_regularizer', (sample_returns,)),
+        'rp': ('src.training.loss_functions.risk_parity_regularizer', (weights_2d, returns_2d)),
+        'hhi': ('src.training.loss_functions.hhi_regularizer', (weights_2d,))
+    }
+    def expected_formula(mock_vals):
+        return (mock_vals['omega'] +
+                kwargs['cvar_lambda'] * mock_vals['cvar'] +
+                kwargs['risk_p_lambda'] * mock_vals['rp'] +
+                (kwargs['hhi_lambda'] + mock_vals['hhi']))
+    _run_custom_loss_test(custom_loss_16, expected_calls, args, kwargs, expected_formula)
