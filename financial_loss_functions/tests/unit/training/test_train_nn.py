@@ -6,7 +6,9 @@ from unittest.mock import MagicMock, patch
 from src.data_processing.dataset import WindowDataset, Reshaper
 from src.training.train_nn import (
     Trainer,
-    Walker
+    Walker,
+    MetricModel,
+    Tuner
 )
 
 # Dummy model with trainable parameters (no shape errors)
@@ -474,3 +476,242 @@ def test_walk_1_model_no_seed():
 def test_get_train_eval_losses(walker):
     walker.train_eval_losses = [{'train': [1,2], 'eval': [3,4]}]
     assert walker.get_train_eval_losses() == [{'train': [1,2], 'eval': [3,4]}]
+
+# ==================== Fixtures for Tuner ==================== #
+@pytest.fixture
+def sample_tune_metric():
+    return {
+        'sharpe': MetricModel(func=MagicMock(return_value=0.5), sign='+'),
+        'cvar': MetricModel(func=MagicMock(return_value=0.1), sign='-')
+    }
+
+@pytest.fixture
+def n_steps():
+    return 10
+
+@pytest.fixture
+def sample_bench_rets(n_steps):
+    # Shape: (n_steps, 60) - must match number of steps
+    return np.random.randn(n_steps, 60)
+
+@pytest.fixture
+def sample_eval_winds(n_steps):
+    # Shape: (n_steps, 60, 50)
+    return np.random.randn(n_steps, 60, 50)
+
+@pytest.fixture
+def sample_ba_eval(n_steps):
+    # Shape: (n_steps, 50)
+    return np.random.randn(n_steps, 50)
+
+@pytest.fixture
+def tuner(sample_tune_metric, sample_bench_rets, sample_eval_winds, mock_reshaper, n_steps):
+    return Tuner(
+        tune_metric=sample_tune_metric,
+        tune_bench_rets=sample_bench_rets,
+        eval_winds=sample_eval_winds,
+        n_steps=n_steps,
+        n_trials=5,
+        n_warmup_steps=2,
+        n_jobs=1,
+        reshaper=mock_reshaper,
+        torch_device='cpu',
+        ba_eval_winds=None
+    )
+
+# -------------------- Tests for __init__ -------------------- #
+def test_init_validates_tune_metric(sample_tune_metric, sample_bench_rets, sample_eval_winds, mock_reshaper):
+    tuner = Tuner(
+        tune_metric=sample_tune_metric,
+        tune_bench_rets=sample_bench_rets,
+        eval_winds=sample_eval_winds,
+        n_steps=5,
+        n_trials=10,
+        n_warmup_steps=1,
+        n_jobs=2,
+        reshaper=mock_reshaper,
+        torch_device='cuda',
+        ba_eval_winds=None
+    )
+    assert tuner.tune_metric == sample_tune_metric
+    assert tuner.n_startup_trials == max(int(10 * 0.3), 20)  # 20 because min is 20
+    assert tuner.direction == 'maximize'
+
+def test_init_invalid_tune_metric_raises():
+    with pytest.raises(Exception):  # TypeAdapter will raise validation error
+        Tuner(
+            tune_metric={'invalid': {}},
+            tune_bench_rets=np.zeros(1),
+            eval_winds=np.zeros((1,1,1)),
+            n_steps=1,
+            n_trials=1,
+            n_warmup_steps=1,
+            n_jobs=1,
+            reshaper=MagicMock(),
+            torch_device='cpu',
+            ba_eval_winds=None
+        )
+
+# -------------------- _calc_pf_metrics_for_seed -------------------- #
+@patch('src.training.train_nn.Evaluator')
+def test_calc_pf_metrics_for_seed(mock_evaluator_class, tuner):
+    mock_evaluator = MagicMock()
+    mock_evaluator.calc_metric_performance.side_effect = [
+        MagicMock(item=MagicMock(return_value=0.5)),  # for sharpe
+        MagicMock(item=MagicMock(return_value=0.2))   # for cvar
+    ]
+    mock_evaluator_class.return_value = mock_evaluator
+
+    alloc_weights = np.random.randn(10, 50)
+    y_val = np.random.randn(100, 60, 50)  # dummy
+    result = tuner._calc_pf_metrics_for_seed('model', 'loss', 42, alloc_weights, y_val)
+    assert result == {'sharpe': 0.5, 'cvar': 0.2}
+    mock_evaluator.calc_pf_daily_rets.assert_called_once_with(alloc_weights, 'model-loss-42')
+    assert mock_evaluator.calc_metric_performance.call_count == 2
+
+# -------------------- _calc_composite_scores -------------------- #
+@patch('src.training.train_nn.Evaluator')
+def test_calc_composite_scores(mock_evaluator_class, tuner):
+    # Setup mock evaluator
+    mock_evaluator = MagicMock()
+    # get_rets_for_one returns (n_steps, 60) – correct shape
+    mock_evaluator.get_rets_for_one.return_value = np.random.randn(tuner.n_steps, 60)
+    import pandas as pd
+    df_sharpe = pd.DataFrame({'model': [0.5] * tuner.n_steps})
+    df_cvar = pd.DataFrame({'model': [0.1] * tuner.n_steps})
+    mock_evaluator.calc_metric_performance.side_effect = [df_sharpe, df_cvar]
+    mock_evaluator_class.return_value = mock_evaluator
+
+    alloc_weights = np.random.randn(tuner.n_steps, 50)  # (n_steps, 50)
+    result = tuner._calc_composite_scores('model-loss', alloc_weights)
+
+    # Expected composite: sharpe (sign +) + (-cvar) because cvar sign is '-'
+    # So per step: 0.5 - 0.1 = 0.4
+    expected = np.full(tuner.n_steps, 0.4)
+    np.testing.assert_array_equal(result, expected)
+    mock_evaluator.calc_pf_daily_rets.assert_called_once_with(alloc_weights, 'model-loss')
+    mock_evaluator.get_rets_for_one.assert_called_once_with('model-loss')
+    mock_evaluator.update_rets_for_one.assert_called_once()
+    assert mock_evaluator.calc_metric_performance.call_count == 2
+
+# -------------------- calc_hinge_penalty -------------------- #
+def test_calc_hinge_penalty_positive_gap(tuner):
+    train_losses = [0.1, 0.2]
+    val_losses = [0.2, 0.3]
+    penalty = tuner.calc_hinge_penalty(train_losses, val_losses)
+    # avg_train = 0.15, avg_val = 0.25, raw_gap = (0.25-0.15)/0.15 = 0.6666666666666666
+    expected = 0.6666666666666666
+    assert pytest.approx(penalty, 1e-6) == expected
+
+def test_calc_hinge_penalty_negative_gap(tuner):
+    train_losses = [0.2, 0.3]
+    val_losses = [0.1, 0.2]
+    penalty = tuner.calc_hinge_penalty(train_losses, val_losses)
+    assert penalty == 0.0
+
+def test_calc_hinge_penalty_zero_avg_train(tuner):
+    train_losses = [0.0, 0.0]
+    val_losses = [0.0, 0.0]
+    penalty = tuner.calc_hinge_penalty(train_losses, val_losses, eps=1e-9)
+    assert penalty == 0.0
+
+# -------------------- _calc_tuning_objective -------------------- #
+def test_calc_tuning_objective(tuner):
+    composite_scores = [1.0, 2.0, 3.0]
+    train_losses = [0.1, 0.1, 0.1]
+    val_losses = [0.2, 0.2, 0.2]
+    objective = tuner._calc_tuning_objective(composite_scores, train_losses, val_losses)
+    # mean_score = 2.0, std = 1.0, n=3, t_val for 95% df=2 = 2.92, margin = 2.92*1/√3≈1.686
+    # base_score = 2.0 - 1.686 = 0.314
+    # gap_penalty = (0.2-0.1)/0.1 = 1.0
+    # final = 0.314 - 1.0 = -0.686
+    assert pytest.approx(objective, abs=0.01) == -0.686
+
+def test_calc_tuning_objective_less_than_2_seeds(tuner):
+    composite_scores = [1.0]
+    train_losses = [0.1]
+    val_losses = [0.2]
+    objective = tuner._calc_tuning_objective(composite_scores, train_losses, val_losses)
+    # Use approx to handle floating point
+    assert pytest.approx(objective, abs=1e-8) == 0.0
+
+# -------------------- _calc_tuning_objective_no_gap -------------------- #
+def test_calc_tuning_objective_no_gap(tuner):
+    composite_scores = np.array([1.0, 2.0, 3.0])
+    objective = tuner._calc_tuning_objective_no_gap(composite_scores)
+    assert pytest.approx(objective, abs=0.01) == 0.314
+
+def test_calc_tuning_objective_no_gap_less_than_2_seeds(tuner):
+    composite_scores = np.array([1.0])
+    objective = tuner._calc_tuning_objective_no_gap(composite_scores)
+    assert objective == 1.0
+
+# -------------------- _run_tuning_study (with mocking) -------------------- #
+@patch('src.training.train_nn.optuna.create_study')
+@patch('src.training.train_nn.Walker')
+def test_run_tuning_study(mock_walker_class, mock_create_study, tuner):
+    # Create a dummy trial to simulate Optuna's trial object
+    class DummyTrial:
+        number = 0
+        def suggest_float(self, name, low, high, log):
+            return (low + high) / 2
+        def suggest_int(self, name, low, high):
+            return (low + high) // 2
+        def suggest_categorical(self, name, choices):
+            return choices[0]
+
+    # Mock Walker
+    mock_walker = MagicMock()
+    mock_walker.walk_1_model.return_value = np.random.randn(tuner.n_steps, 50)
+    mock_walker_class.return_value = mock_walker
+
+    # Mock Optuna study
+    mock_study = MagicMock()
+    mock_create_study.return_value = mock_study
+
+    # Define a side effect for study.optimize to call the objective once
+    def optimize_side_effect(objective_func, n_trials, n_jobs):
+        # Call the objective with a dummy trial
+        objective_func(DummyTrial())
+    mock_study.optimize.side_effect = optimize_side_effect
+
+    # Mock _calc_composite_scores and _calc_tuning_objective_no_gap
+    tuner._calc_composite_scores = MagicMock(return_value=np.array([1.0, 2.0, 3.0]))
+    tuner._calc_tuning_objective_no_gap = MagicMock(return_value=0.5)
+
+    # Provide a valid model_cfg with required keys
+    model_cfg = {
+        'model': {},
+        'optimizer': {},
+        'train': {},
+        'scheduler': None,
+        'tuning': {'lr': {'type': 'float', 'low': 1e-4, 'high': 1e-2, 'log': True}}
+    }
+    loss_cfg = {}
+
+    result = tuner._run_tuning_study(
+        model_name='TestModel',
+        model_class=MagicMock(),
+        loss_name='test_loss',
+        loss_func=MagicMock(),
+        train_data=np.zeros((100, 251)),
+        rets_train=np.zeros((100, 50)),
+        val_data=np.zeros((100, 251)),
+        rets_val=np.zeros((100, 50)),
+        model_cfg=model_cfg,
+        loss_cfg=loss_cfg
+    )
+
+    assert result == mock_study
+    mock_create_study.assert_called_once_with(direction='maximize', study_name='TestModel-test_loss')
+    mock_study.optimize.assert_called_once()
+    # Now Walker should have been instantiated
+    mock_walker_class.assert_called_once()
+    # Also check that the mocks were called
+    tuner._calc_composite_scores.assert_called_once()
+    tuner._calc_tuning_objective_no_gap.assert_called_once()
+
+# -------------------- set_tuning_direction -------------------- #
+def test_set_tuning_direction(tuner):
+    tuner.set_tuning_direction('minimize')
+    assert tuner.direction == 'minimize'
