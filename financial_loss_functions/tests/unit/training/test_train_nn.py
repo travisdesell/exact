@@ -1,6 +1,7 @@
-import pytest
 import torch
+import pytest
 import numpy as np
+import pandas as pd
 import torch.nn as nn
 from unittest.mock import MagicMock, patch
 from src.data_processing.dataset import WindowDataset, Reshaper
@@ -8,7 +9,8 @@ from src.training.train_nn import (
     Trainer,
     Walker,
     MetricModel,
-    Tuner
+    Tuner,
+    CandidatesGrid,
 )
 
 # Dummy model with trainable parameters (no shape errors)
@@ -23,7 +25,7 @@ class DummyModel(nn.Module):
         logits = self.fc(x_flat)
         return torch.softmax(logits, dim=-1)
 
-# ==================== Fixtures ==================== #
+# ==================== Fixtures for Trainer ==================== #
 @pytest.fixture
 def dummy_model_class():
     return DummyModel
@@ -715,3 +717,421 @@ def test_run_tuning_study(mock_walker_class, mock_create_study, tuner):
 def test_set_tuning_direction(tuner):
     tuner.set_tuning_direction('minimize')
     assert tuner.direction == 'minimize'
+
+
+# ==================== Fixtures for CandidatesGrid ==================== #
+@pytest.fixture
+def sample_model_lib():
+    class DummyModel:
+        pass
+    return {
+        'transformer': {
+            'ModelA': DummyModel,
+            'ModelB': DummyModel,
+        },
+        'lstm': {
+            'ModelC': DummyModel,
+        }
+    }
+
+@pytest.fixture
+def sample_loss_lib():
+    def dummy_loss(**kwargs):
+        return 0.0
+    return {
+        'custom': {'__default__': {'custom_loss_1': dummy_loss, 'custom_loss_2': dummy_loss}},
+        'objectives': {'__default__': {'sharpe': dummy_loss, 'sortino': dummy_loss}},
+        'regularizers': {'structural': {'hhi': dummy_loss}, 'tail_risk': {'cvar': dummy_loss}}
+    }
+
+@pytest.fixture
+def sample_hparams_config():
+    return {
+        'nn_models': {
+            'ModelA': {
+                'model': {'hidden_size': 32},
+                'optimizer': {'lr': 0.001},
+                'train': {'epochs': 5},
+                'scheduler': None,
+                'tuning': {}
+            },
+            'ModelB': {
+                'model': {'hidden_size': 64},
+                'optimizer': {'lr': 0.0001},
+                'train': {'epochs': 10},
+                'scheduler': None,
+                'tuning': {}
+            }
+        },
+        'losses': {
+            'custom_loss_1': {'lambdas': {}},
+            'sharpe': {'lambdas': {}}
+        },
+        'rolling_windows': {
+            'in_size': 120,
+            'out_size': 60,
+            'stride': 60
+        },
+        'tuner': {
+            'n_tuning_trials': 10,
+            'n_warmup_steps': 2,
+            'n_jobs': 1
+        }
+    }
+
+@pytest.fixture
+def sample_common_features():
+    return ['sprtrn']
+
+@pytest.fixture
+def sample_train_data():
+    dates = pd.date_range('2020-01-01', periods=200, freq='D')
+    features = pd.DataFrame(np.random.randn(200, 251), index=dates, columns=[f'feat_{i}' for i in range(251)])
+    returns = pd.DataFrame(np.random.randn(200, 50), index=dates, columns=[f'stock_{i}' for i in range(50)])
+    return features, returns
+
+@pytest.fixture
+def sample_val_data():
+    dates = pd.date_range('2020-07-20', periods=120, freq='D')
+    features = pd.DataFrame(np.random.randn(120, 251), index=dates, columns=[f'feat_{i}' for i in range(251)])
+    returns = pd.DataFrame(np.random.randn(120, 50), index=dates, columns=[f'stock_{i}' for i in range(50)])
+    return features, returns
+
+@pytest.fixture
+def candidates_grid(sample_model_lib, sample_loss_lib, sample_hparams_config, sample_common_features):
+    return CandidatesGrid(
+        model_lib=sample_model_lib,
+        loss_lib=sample_loss_lib,
+        hparams_config=sample_hparams_config,
+        num_steps=2,
+        common_features=sample_common_features,
+        torch_device='cpu',
+        loss_mode='custom',
+        tune=False,
+        tuner_eval_items=None,
+        mpi=False,
+        temp_dir=None,
+        enable_diagnostics=False
+    )
+
+# -------------------- Tests for __init__ and inherited methods -------------------- #
+def test_init(candidates_grid, sample_model_lib, sample_loss_lib, sample_hparams_config, sample_common_features):
+    assert candidates_grid.model_lib == sample_model_lib
+    assert candidates_grid.loss_lib == sample_loss_lib
+    assert candidates_grid.hparams_config == sample_hparams_config
+    assert candidates_grid.num_steps == 2
+    assert candidates_grid.torch_device == 'cpu'
+    assert candidates_grid.loss_mode == 'custom'
+    assert candidates_grid.tune is False
+    assert candidates_grid.tuner is None
+    assert candidates_grid.mpi is False
+    assert candidates_grid.temp_dir is None
+    assert isinstance(candidates_grid.reshaper, Reshaper)
+
+def test_init_invalid_loss_mode(sample_model_lib, sample_loss_lib, sample_hparams_config, sample_common_features):
+    with pytest.raises(ValueError, match="Incorrect Loss Mode"):
+        CandidatesGrid(
+            model_lib=sample_model_lib,
+            loss_lib=sample_loss_lib,
+            hparams_config=sample_hparams_config,
+            num_steps=2,
+            common_features=sample_common_features,
+            torch_device='cpu',
+            loss_mode='invalid',
+            tune=False,
+            tuner_eval_items=None,
+            mpi=False,
+            temp_dir=None,
+            enable_diagnostics=False
+        )
+
+# -------------------- Tests for _tuner_setup -------------------- #
+def test_tuner_setup_with_tune(candidates_grid):
+    candidates_grid.tune = True
+    # Create proper MetricModel objects
+    metric_model = MetricModel(func=MagicMock(), sign='+')
+    tuner_eval_items = {
+        'metric': {'sharpe': metric_model, 'cvar': metric_model},
+        'bench_rets': np.random.randn(2, 60),
+        'eval_winds': np.random.randn(2, 60, 50),
+        'ba_eval_winds': np.random.randn(2, 50)
+    }
+    tuner = candidates_grid._tuner_setup(tuner_eval_items)
+    assert tuner is not None
+
+def test_tuner_setup_without_tune(candidates_grid):
+    candidates_grid.tune = False
+    tuner = candidates_grid._tuner_setup(None)
+    assert tuner is None
+
+def test_tuner_setup_missing_metric_raises(candidates_grid):
+    candidates_grid.tune = True
+    tuner_eval_items = {'bench_rets': np.zeros((2,60)), 'eval_winds': np.zeros((2,60,50))}
+    with pytest.raises(ValueError, match="Provide Tuning metric if tune = True"):
+        candidates_grid._tuner_setup(tuner_eval_items)
+
+def test_tuner_setup_missing_bench_rets_raises(candidates_grid):
+    candidates_grid.tune = True
+    # Need to provide metric to avoid earlier check
+    metric_model = MetricModel(func=MagicMock(), sign='+')
+    tuner_eval_items = {'metric': {'sharpe': metric_model}, 'eval_winds': np.zeros((2,60,50))}
+    with pytest.raises(ValueError, match="Provide tuning benchmark"):
+        candidates_grid._tuner_setup(tuner_eval_items)
+
+def test_tuner_setup_missing_eval_winds_raises(candidates_grid):
+    candidates_grid.tune = True
+    metric_model = MetricModel(func=MagicMock(), sign='+')
+    tuner_eval_items = {'metric': {'sharpe': metric_model}, 'bench_rets': np.zeros((2,60))}
+    with pytest.raises(ValueError, match="Provide evaluation windows"):
+        candidates_grid._tuner_setup(tuner_eval_items)
+
+# -------------------- _build_losses_to_use -------------------- #
+def test_build_losses_to_use_custom_mode(candidates_grid):
+    candidates_grid.loss_mode = 'custom'
+    losses = candidates_grid._build_losses_to_use()
+    assert set(losses.keys()) == {'custom_loss_1', 'custom_loss_2'}
+
+def test_build_losses_to_use_all_mode(candidates_grid):
+    candidates_grid.loss_mode = 'all'
+    losses = candidates_grid._build_losses_to_use()
+    expected = {'custom_loss_1', 'custom_loss_2', 'sharpe', 'sortino'}
+    assert set(losses.keys()) == expected
+
+# -------------------- _build_combos -------------------- #
+def test_build_combos_all_mode(candidates_grid):
+    losses_to_use = {'loss1': MagicMock(), 'loss2': MagicMock()}
+    combos = candidates_grid._build_combos(losses_to_use, 'all')
+    assert len(combos) == 6
+    for combo in combos:
+        assert len(combo) == 4
+        assert combo[0] in losses_to_use
+        assert isinstance(combo[2], str)
+
+def test_build_combos_one_model_mode(candidates_grid):
+    losses_to_use = {'loss1': MagicMock()}
+    model_name = 'ModelA'
+    model_class = MagicMock()
+    combos = candidates_grid._build_combos(losses_to_use, 'one_model', model_name, model_class)
+    assert len(combos) == 1
+    assert combos[0][0] == 'loss1'
+    assert combos[0][2] == 'ModelA'
+    assert combos[0][3] == model_class
+
+def test_build_combos_invalid_mode(candidates_grid):
+    with pytest.raises(ValueError, match="Incorrect grid mode"):
+        candidates_grid._build_combos({}, 'invalid')
+
+# -------------------- _walker_helper (with mocks) -------------------- #
+@patch('src.training.train_nn.reformat_hparams')
+@patch('src.training.train_nn.Walker')
+def test_walker_helper_without_tune(mock_walker_class, mock_reformat, candidates_grid):
+    mock_reformat.return_value = {'model': {}, 'optimizer': {}, 'train': {}, 'loss': {}}
+    mock_walker = MagicMock()
+    mock_walker.walk_1_model.return_value = np.zeros((2,50))
+    mock_walker.get_train_eval_losses.return_value = {'train': [1,2], 'eval': [3,4]}
+    mock_walker_class.return_value = mock_walker
+
+    model_name = 'ModelA'
+    loss_name = 'custom_loss_1'
+    train_data = np.zeros((200,251))
+    rets_train = np.zeros((200,50))
+    val_data = np.zeros((120,251))
+    rets_val = np.zeros((120,50))
+
+    alloc_weights, losses, opt_hparams = candidates_grid._walker_helper(
+        model_name, MagicMock(), loss_name, MagicMock(),
+        train_data, rets_train, val_data, rets_val
+    )
+    mock_reformat.assert_called_once()
+    mock_walker_class.assert_called_once()
+    mock_walker.walk_1_model.assert_called_once_with(train_data, rets_train, val_data, rets_val)
+    assert alloc_weights.shape == (2,50)
+    assert losses == {'train': [1,2], 'eval': [3,4]}
+    assert opt_hparams is None
+
+@patch('src.training.train_nn.reformat_hparams')
+@patch('src.training.train_nn.Walker')
+@patch('src.training.train_nn.Tuner')
+def test_walker_helper_with_tune(mock_tuner_class, mock_walker_class, mock_reformat, candidates_grid):
+    candidates_grid.tune = True
+    # Create a mock tuner instance
+    mock_tuner = MagicMock()
+    mock_tuner_class.return_value = mock_tuner
+    # Set the tuner attribute on the instance
+    candidates_grid.tuner = mock_tuner
+
+    mock_study = MagicMock()
+    mock_study.best_params = {'lr': 0.001}
+    mock_tuner._run_tuning_study.return_value = mock_study
+    mock_reformat.return_value = {'model': {}, 'optimizer': {}, 'train': {}, 'loss': {}}
+    mock_walker = MagicMock()
+    mock_walker.walk_1_model.return_value = np.zeros((2,50))
+    mock_walker.get_train_eval_losses.return_value = {}
+    mock_walker_class.return_value = mock_walker
+
+    model_name = 'ModelA'
+    loss_name = 'custom_loss_1'
+    train_data = np.zeros((200,251))
+    rets_train = np.zeros((200,50))
+    val_data = np.zeros((120,251))
+    rets_val = np.zeros((120,50))
+
+    alloc_weights, losses, opt_hparams = candidates_grid._walker_helper(
+        model_name, MagicMock(), loss_name, MagicMock(),
+        train_data, rets_train, val_data, rets_val
+    )
+    mock_tuner._run_tuning_study.assert_called_once()
+    mock_walker_class.assert_called_once()
+    assert opt_hparams is not None
+
+# -------------------- train_eval_one_model (non-MPI) -------------------- #
+def test_train_eval_one_model_non_mpi(candidates_grid, sample_train_data, sample_val_data):
+    # Set up mocks
+    candidates_grid.reshaper.extract_features = MagicMock()
+    candidates_grid._data_check = MagicMock()
+    candidates_grid._trained_check = MagicMock()
+    candidates_grid._walker_helper = MagicMock(return_value=(np.zeros((2,50)), {'train': [1,2], 'eval': [3,4]}, {'model': {}}))
+
+    train_features, train_rets = sample_train_data
+    val_features, val_rets = sample_val_data
+
+    result = candidates_grid.train_eval_one_model(
+        model_name='ModelA',
+        train_data=train_features,
+        rets_train=train_rets,
+        val_data=val_features,
+        rets_val=val_rets
+    )
+    # 2 custom losses
+    assert candidates_grid._walker_helper.call_count == 2
+    assert len(candidates_grid.all_alloc_weights) == 2
+    assert result is candidates_grid.all_alloc_weights
+
+# -------------------- train_eval_one -------------------- #
+def test_train_eval_one(candidates_grid, sample_train_data, sample_val_data):
+    candidates_grid.reshaper.extract_features = MagicMock()
+    candidates_grid._data_check = MagicMock()
+    candidates_grid._trained_check = MagicMock()
+    candidates_grid._walker_helper = MagicMock(return_value=(np.zeros((2,50)), {'train': [1,2], 'eval': [3,4]}, {'model': {}}))
+
+    train_features, train_rets = sample_train_data
+    val_features, val_rets = sample_val_data
+
+    result = candidates_grid.train_eval_one(
+        model_name='ModelA',
+        loss_name='custom_loss_1',
+        train_data=train_features,
+        rets_train=train_rets,
+        val_data=val_features,
+        rets_val=val_rets
+    )
+    candidates_grid._walker_helper.assert_called_once()
+    assert len(candidates_grid.all_alloc_weights) == 1
+    assert result is candidates_grid.all_alloc_weights
+
+# -------------------- get_optimized_hparams and get_train_val_losses -------------------- #
+def test_get_optimized_hparams(candidates_grid):
+    candidates_grid.optimized_hparams = {'modelA-loss1': {'lr': 0.001}}
+    assert candidates_grid.get_optimized_hparams() == {'modelA-loss1': {'lr': 0.001}}
+
+def test_get_train_val_losses(candidates_grid):
+    candidates_grid.train_eval_losses = {
+        'modelA-loss1': [{'train': [0.1,0.2], 'eval': [0.3]}, {'train': [0.4], 'eval': [0.5]}]
+    }
+    result = candidates_grid.get_train_val_losses()
+    expected = {
+        'modelA-loss1': {
+            'train': [[0.1,0.2], [0.4]],
+            'eval': [0.3, 0.5]
+        }
+    }
+    assert result == expected
+
+def test_get_train_val_losses_not_trained_raises(candidates_grid):
+    candidates_grid.train_eval_losses = {}
+    with pytest.raises(RuntimeError, match="Models not trained yet"):
+        candidates_grid.get_train_val_losses()
+
+# -------------------- Utility methods -------------------- #
+def test_search_model_found(candidates_grid):
+    model_class = candidates_grid._search_model('ModelA')
+    assert model_class is not None
+    assert model_class.__name__ == 'DummyModel'
+
+def test_search_model_not_found(candidates_grid):
+    model_class = candidates_grid._search_model('NonExistent')
+    assert model_class is None
+
+def test_search_loss_func_found(candidates_grid):
+    loss_func = candidates_grid._search_loss_func('custom_loss_1')
+    assert loss_func is not None
+
+def test_search_loss_func_not_found(candidates_grid):
+    loss_func = candidates_grid._search_loss_func('missing')
+    assert loss_func is None
+
+def test_convert_datasets_to_np(candidates_grid):
+    df1 = pd.DataFrame({'a': [1,2], 'b': [3,4]})
+    df2 = pd.DataFrame({'c': [5,6], 'd': [7,8]})
+    df3 = pd.DataFrame({'e': [9,10]})
+    df4 = pd.DataFrame({'f': [11,12]})
+    arr1, arr2, arr3, arr4 = candidates_grid._convert_datasets_to_np(df1, df2, df3, df4)
+    assert isinstance(arr1, np.ndarray)
+    assert arr1.shape == (2,2)
+    assert arr2.shape == (2,2)
+    assert arr3.shape == (2,1)
+    assert arr4.shape == (2,1)
+
+def test_data_check_valid(candidates_grid):
+    train = pd.DataFrame(np.zeros((120, 251)))
+    rets_val = pd.DataFrame(np.zeros((120, 50)))  # 120 days -> 2 steps (60 each)
+    candidates_grid._data_check(train, rets_val)  # should not raise
+
+def test_data_check_invalid_steps(candidates_grid):
+    train = pd.DataFrame(np.zeros((120, 251)))
+    rets_val = pd.DataFrame(np.zeros((100, 50)))  # 100/60 = 1 step, but num_steps=2
+    with pytest.raises(ValueError, match="does not match actual number of full windows"):
+        candidates_grid._data_check(train, rets_val)
+
+def test_trained_check_empty(candidates_grid):
+    candidates_grid.all_alloc_weights = {}
+    candidates_grid._trained_check()
+
+def test_trained_check_not_empty(candidates_grid):
+    candidates_grid.all_alloc_weights = {'some': np.zeros(1)}
+    with pytest.raises(RuntimeError, match="Allocation weights already predicted"):
+        candidates_grid._trained_check()
+
+# -------------------- MPI methods -------------------- #
+def test_select_ranks_combos():
+    combos = list(range(10))
+    result = CandidatesGrid._select_ranks_combos(combos, global_rank=1, size=3)
+    assert result == [4,5,6]
+
+def test_mpi_setup_check():
+    CandidatesGrid._mpi_setup_check([1,2,3])
+    with pytest.raises(ValueError, match="All necessary MPI values must be provided"):
+        CandidatesGrid._mpi_setup_check([1, None, 3])
+
+# -------------------- _merge_all_results -------------------- #
+@patch('src.training.train_nn.load_pickle_temp')
+@patch('src.training.train_nn.delete_file')
+def test_merge_all_results(mock_delete, mock_load, candidates_grid, tmp_path):
+    candidates_grid.temp_dir = tmp_path
+    size = 2
+    temps_wts_prefix = 'test_weights'
+    temp_losses_prefix = 'test_losses'
+    temp_hparams_prefix = 'test_hparams'
+    mock_load.side_effect = [
+        {'modelA-loss1': np.zeros((2,50))},
+        {'modelA-loss2': np.zeros((2,50))},
+        {'modelA-loss1': [{'train':[1]}]},
+        {'modelA-loss2': [{'train':[2]}]},
+        {'modelA-loss1': {'lr':0.001}},
+        {'modelA-loss2': {'lr':0.002}}
+    ]
+    candidates_grid._merge_all_results(size, temps_wts_prefix, temp_losses_prefix, temp_hparams_prefix)
+    assert len(candidates_grid.all_alloc_weights) == 2
+    assert len(candidates_grid.train_eval_losses) == 2
+    assert len(candidates_grid.optimized_hparams) == 2
+    assert mock_delete.call_count == 6

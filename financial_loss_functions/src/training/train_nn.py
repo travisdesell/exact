@@ -1177,12 +1177,12 @@ class CandidatesGrid(WalkerGridUtilities):
                     "In the tuner_eval_items dict, add 'metric': {'<metric>': 'func': Callable, 'sign': '<sign>'}"
                 )
 
-            elif not tune_bench_rets:
+            elif tune_bench_rets is None:
                 raise ValueError(
                     'Provide tuning benchmark (eg. S&P500 or Equal Weight returns) if tune = True.',
                     "In the tuner_eval_items dict, add 'bench_rets': np.ndarray"
                 )
-            elif not tune_eval_winds:
+            elif tune_eval_winds is None:
                 raise ValueError(
                     'Provide evaluation windows reshaped and sliced from validation returns if tune = True.',
                     "In the tuner_eval_items dict, add 'eval_winds': np.ndarray"
