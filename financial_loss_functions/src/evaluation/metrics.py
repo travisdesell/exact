@@ -28,6 +28,9 @@ class MetricLibrary:
         """
         def decorator(fn: Callable):
             nm = name or fn.__name__
+            # Prevent duplicate registration
+            if nm in cls._registry:
+                raise KeyError(f"Metric function '{nm}' already registered.")
             cls._registry[nm] = fn
             return fn
         return decorator
