@@ -20,7 +20,7 @@ from src.data_processing.dataset import WindowDataset, Reshaper
 from src.utils.formatting import reformat_hparams, split_combo_names
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
-from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
+from src.evaluation.evaluator import Evaluator
 from pydantic import BaseModel, TypeAdapter
 from typing import Callable, Dict, Literal
 from scipy import stats
