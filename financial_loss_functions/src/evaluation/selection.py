@@ -1,5 +1,38 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+def filter_models(
+        avg_perf: pd.DataFrame, bench_name: str, bench_met: str, keep: list[str]
+    ) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Filter out models that do not beat the benchmark (eg. Equal_Weight) and keep ones that do.
+
+    Args:
+        avg_perf (pd.DataFrame): Average Performance of all models across all metrics.
+        bench_name (str): String name of the benchmark that exists in the avg_per dataframe.
+        bench_met (str): String name of the metric that should be used to compare the models.
+        keep (list[str]): List of all benchmarks or indexes to keep.
+    
+    Returns:
+        tuple: A tuple containing,
+            - filtered_avg_perf (pd.DataFrame): Dataframe containing only models that 
+            outperformed the benchmark on the specified metric.
+            - filtered_models (list[str]): List of names of the models that beat the benchmark.
+    """
+
+    # Get the equal‑weight Metric (Sharpe) value
+    ew_sharpe = avg_perf.loc[bench_name, bench_met]
+
+    # Create mask: keep if (1) it's a benchmark OR (2) its Sharpe > ew_sharpe
+    mask = avg_perf.index.isin(keep) | (avg_perf[bench_met] > ew_sharpe)
+
+    filtered_df = avg_perf[mask]
+
+    filtered_models = filtered_df.index[
+        ~filtered_df.index.isin(keep)
+    ].to_list()
+
+    return filtered_df, filtered_models
 
 def high_corr_with_each_metric(corr, threshold=0.8):
     for metric in corr.columns:

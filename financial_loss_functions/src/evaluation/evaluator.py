@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Callable
@@ -33,7 +34,7 @@ class Evaluator:
         if eval_returns is not None and isinstance(eval_returns, np.ndarray):
             if eval_returns.ndim != 3:
                 raise ValueError(
-                    f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
+                    f'ERROR: Evaluation Returns must have 3 dim, got {eval_returns.ndim}.'
                 )
             
             self.eval_returns = eval_returns
@@ -148,9 +149,7 @@ class Evaluator:
         if model_name in self.all_daily_returns:
             self.all_daily_returns.update({model_name: new_returns})
         else:
-            raise Warning(
-                f'Returns for {model_name} do not exist, hence not updating any returns.'
-            )
+            warnings.warn(f'Returns for {model_name} do not exist. Not updating.')
     
     def add_benchmark_rets(self, bench_name: str, bench_rets: np.ndarray):
         """
@@ -280,7 +279,7 @@ class EqualWeightCalculator:
         Returns:
             eq_weights (np.ndarray | None): Array containing weights for every window from the data.
         """
-        if self.eq_weights:
+        if self.eq_weights is not None:
             return self.eq_weights
         else:
             print(
@@ -288,36 +287,3 @@ class EqualWeightCalculator:
                 'Run `EqualWeightCalculator.calc_eq_wt_daily_rets()` first.'
             )
             return None
-
-def filter_models(
-        avg_perf: pd.DataFrame, bench_name: str, bench_met: str, keep: list[str]
-    ) -> tuple[pd.DataFrame, list[str]]:
-    """
-    Filter out models that do not beat the benchmark (eg. Equal_Weight) and keep ones that do.
-
-    Args:
-        avg_perf (pd.DataFrame): Average Performance of all models across all metrics.
-        bench_name (str): String name of the benchmark that exists in the avg_per dataframe.
-        bench_met (str): String name of the metric that should be used to compare the models.
-        keep (list[str]): List of all benchmarks or indexes to keep.
-    
-    Returns:
-        tuple: A tuple containing,
-            - filtered_avg_perf (pd.DataFrame): Dataframe containing only models that 
-            outperformed the benchmark on the specified metric.
-            - filtered_models (list[str]): List of names of the models that beat the benchmark.
-    """
-
-    # Get the equal‑weight Metric (Sharpe) value
-    ew_sharpe = avg_perf.loc[bench_name, bench_met]
-
-    # Create mask: keep if (1) it's a benchmark OR (2) its Sharpe > ew_sharpe
-    mask = avg_perf.index.isin(keep) | (avg_perf[bench_met] > ew_sharpe)
-
-    filtered_df = avg_perf[mask]
-
-    filtered_models = filtered_df.index[
-        ~filtered_df.index.isin(keep)
-    ].to_list()
-
-    return filtered_df, filtered_models
