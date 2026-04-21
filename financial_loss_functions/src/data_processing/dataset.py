@@ -18,11 +18,13 @@ class ReshapeStyle(StrEnum):
 
 class Reshaper:
     """
-    Reshapes a wide 2D DataFrame with columns like '<ticker>_<feature>',
-    into 2D or 3D arrays, and builds sliding windows.
+    Reshapes a wide 2D DataFrame with columns like `<ticker>_<feature>`,
+    into 2D or 3D arrays, and builds rolling windows.
 
-    Assumes all columns follow the pattern:
-        <ticker>_<feature>
+    Assumes all columns follow the pattern: `<ticker>_<feature>`
+
+    Attributes:
+        col_sep (str): Special character that separates the ticker string from the feature string.
     """
     col_sep = '_'
     def __init__(
@@ -37,13 +39,16 @@ class Reshaper:
         Initialize Reshaper instance.
         Run Reshaper.extract_features on training data after initializing and before reshaping.
 
-        @param in_size int size of input window in terms of time steps
-        @param out_size int size output window in terms of time steps
-        @param stride int step size for the sliding window
-        @param col_sep str Special character that separates the ticker string from the feature string
-        @param layout: ReshapeStyle 
-            Enum of rehsape style, see `src.data_processing.preprocess.ReshapeStyle`. 
-            Deafult = ReshapeStyle.T_NxF
+        Args:
+            in_size (int): Size of input window in terms of time steps.
+            out_size (int): Size output window in terms of time steps.
+            stride (int): step stride size for the rolling windows.
+            layout (ReshapeStyle): Enum for reshaping define the reshaping style, 
+                see `src.data_processing.preprocess.ReshapeStyle`. Default = ReshapeStyle.T_NxF.
+        
+        Raises:
+            TypeError: When ReshapeStyle is of the wrong type
+            ValueError: When a list of common features in the 2D dataframe is not provided.
         """
         self.in_size = in_size
         self.out_size = out_size
@@ -71,8 +76,13 @@ class Reshaper:
         self.num_tickers = None
         self.num_features = None
     
-    def extract_features(self, train_cols: list):
-        """Extract tickers and features from full DataFrame column names."""
+    def extract_features(self, train_cols: list[str]):
+        """
+        Extract tickers and features from full DataFrame column names.
+        
+        Args:
+            train_cols (list[str]): List of columns in the dataframe.
+        """
         tickers = []
         features = []
 
@@ -90,7 +100,19 @@ class Reshaper:
         self.num_tickers = len(self.tickers)
         self.num_features = len(self.features)
     
-    def transform_one_window(self, wind_data: np.ndarray) -> np.ndarray:        
+    def transform_one_window(self, wind_data: np.ndarray) -> np.ndarray:  
+        """
+        Transform one window of the data array into the desired shape.
+
+        Args:
+            wind_data (np.ndarray): Array of one window of data.
+        
+        Returns:
+            np.ndarray: Rehaped array of one window.
+        
+        Raises:
+            ValueError: When layout is not of type `ReshapeStyle`
+        """      
         # Extract the raw values for ticker features
         # Shape: (T, N * F) + (C)
         
@@ -103,8 +125,6 @@ class Reshaper:
         # Common Block is the remaining columns at the end
         common_block = wind_data[:, N*F:]
 
-        # Handle Layouts using Vectorized Operations
-        # TODO: Other forms of reshaping must be implmented !!!!
         if self.layout == ReshapeStyle.T_NxF:
             # Already in shape (T, N*F)
             return wind_data
@@ -139,6 +159,12 @@ class Reshaper:
             raise ValueError('layout must be of type `ReshapeStyle`')
 
     def _features_check(self):
+        """
+        Utility method to check if features have been extracted from dataframe.
+        
+        Raises:
+            ValueError: If `extract_features` has not run before the execution of this method.
+        """
         if (
             not self.num_tickers or 
             not self.num_features or
@@ -147,6 +173,12 @@ class Reshaper:
             raise ValueError('Run `extract_features` before reshaping!')
 
     def _columns_match_check(self, features_num_cols: int, returns_num_cols: int):
+        """
+        Utility method to check if the number of columns in features data and returns data match.
+
+        Raises:
+            ValueError: When Extracted columns or tickers returns do not match.
+        """
         if features_num_cols != self.total_num_cols:
             raise ValueError(
                 'Extracted columns do not match provided array shape.'
@@ -161,13 +193,15 @@ class Reshaper:
             self, features_data: np.ndarray, raw_returns: np.ndarray
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Reshapes 2D DataFrame into set `layout` at initialization.
+        Reshapes 2D data into set `layout` at initialization.
 
-        @param features_data pd.DataFrame Dataframe containg all processed features
-        @param raw_returns pd.DataFrame Dataframe containing only raw returns
+        Args:
+            features_data (np.ndarray): 2D array containg all processed features.
+            raw_returns (np.ndarray): 2D array containing only raw returns.
         
-        @return tuple[np.ndarray, np.ndarray, np.ndarray] 
-            Reshaped X and y, Array of good starting points of each window. Helpful for debugging
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray] :
+                Reshaped X and y, Array of good starting points of each window. Helpful for debugging.
         """
         
         self._features_check()
@@ -204,14 +238,26 @@ class Reshaper:
         y = np.stack(y_list)
         return X, y, np.array(good_starts)
 
-    def get_tickers(self) -> list:
+    def get_tickers(self) -> list | None:
+        """
+        Get the list of ticker symbols if `extract_features` has been executed.
+
+        Returns:
+            tickers (list | None): List of ticker symbols in the dataset.
+        """
         if len(self.tickers) == 0:
             print('Run `extract_features` on training data first.')
             return None
         else:
             return self.tickers
     
-    def get_features(self) -> list:
+    def get_features(self) -> list | None:
+        """
+        Get a list of stock features if `extract_features` method has been executed.
+
+        Returns:
+            features (list | None): List stock features in the dataset.
+        """
         if len(self.features) == 0:
             print('Run `extract_features` on training data first.')
             return None
@@ -226,17 +272,19 @@ class WindowDataset(Dataset):
         """
         Convert given numpy arrays into pytorch windowed dataset.
         
-        @param X np.ndarray X input windows
-        @param y np.ndarray y output windows
+        Args:
+            X (np.ndarray): X input windows.
+            y (np.ndarray): y output windows.
         """
         self.X = torch.tensor(X, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
     def get_X_y_shapes(self) -> tuple[torch.Size, torch.Size]:
         """
-        returns X and y shapes
+        Get the shapes of X and y.
 
-        @return tuple[torch.Size, torch.Size] Shape of X and shape of y
+        Returns:
+            tuple[torch.Size, torch.Size]: Shape of X and shape of y
         """
         return self.X.shape, self.y.shape
 
@@ -244,7 +292,8 @@ class WindowDataset(Dataset):
         """
         Get length of windowed dataset.
 
-        @return int length of windowed dataset (Number of samples)
+        Args:
+            int: Length of windowed dataset (Number of samples).
         """
         return self.X.shape[0]
 
@@ -252,8 +301,11 @@ class WindowDataset(Dataset):
         """
         Get one window from the dataset.
 
-        @param idx int Index of require window in the windowed dataset
-        @return tuple[torch.tensor, torch.tensor] X & y for the given index
+        Args:
+            idx (int): Index of required window in the windowed dataset.
+        
+        Returns:
+            tuple[torch.tensor, torch.tensor]: X & y for the given index.
         """
         # Return one sample
         return self.X[idx], self.y[idx]
@@ -265,6 +317,17 @@ class WFUtilities:
         self.extra_days = None
     
     def calc_walk_steps(self, split: pd.DataFrame) -> tuple[int, int]:
+        """
+        Calculate the walk steps in the provided dataframe and extra days remaining 
+        after dividing the data by the walk steps.
+
+        Args:
+            split (pd.DataFrame): Data split dataframe, where the features data and 
+                returns data have the same lengths.
+        
+        Returns:
+            tuple[int, int]: Tuple containing number of steps and number of remaining extra days.
+        """
         total_oos_days = len(split)
         extra_days = total_oos_days % self.out_size
         num_steps = total_oos_days // self.out_size
@@ -280,7 +343,15 @@ class WFUtilities:
         """
         Create initial datasets by adjusting for the extra days.
         This method adds the first 'extra' days to the training data.
-        We only Adjust teh validation data set, not test set.
+        We only Adjust the validation data set, not test set.
+
+        Args:
+            train (pd.DataFrame): Dataframe of the train data.
+            split (pd.Dataframe): Dataframe of the split data (val or test).
+        
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: Adjusted dataframes where extra days 
+                from the validation data is moved to the training data.
         """
         self.calc_walk_steps(split)
         
@@ -303,8 +374,22 @@ class WFUtilities:
 
     def build_eval_windows(
             self, split: pd.DataFrame
-        ) -> tuple[np.ndarray, list[tuple[int, int]]]:  
-    
+        ) -> tuple[np.ndarray, list[tuple[int, int]]]:
+        """
+        Build evaluation windows for evaluation of walk forward experiments. 
+        These windows are not overlapping.
+
+        Args:
+            split (pd.DataFrame): Out-of-Sample split 2D dataframe that is divided to 
+                non-overlapping windows.
+        
+        Returns:
+            tuple[np.ndarray, list[tuple[int, int]]]: Windowed evaluation data and list 
+                of tuples containing the start and end indexes for each window.
+        
+        Raises:
+            ValueError: If provided dataframe is smaller than num_steps * out_size.
+        """  
         if len(split) < self.out_size * self.num_steps:
             raise ValueError('Provided dataframe is smaller than num_steps * out_size.')
         
@@ -322,8 +407,23 @@ class WFUtilities:
         return np.stack(eval_windows), out_wind_idxs
     
     def build_ba_for_eval(
-            self, ba_split: pd.DataFrame, out_wind_idxs:list[tuple[int, int]]
+            self, ba_split: pd.DataFrame, out_wind_idxs: list[tuple[int, int]]
         ) -> np.ndarray:
+        """
+        Build for the Bid-Ask Spread matrix data based on the output window indexes proided.
+        This matric contains BA Spread data only for the first day of each evaluation window.
+
+        Args:
+            ba_split (pd.DataFrame): Bid-Ask Spread dataframe for the evaluation period.
+            out_wind_idxs (list[tuple[int, int]]): List of tuples containing the start 
+                and end indexes for each window.
+        
+        Returns:
+            np.ndarray: Array of Bid-Ask Spreads for the first day of every output evaluation window.
+        
+        Raises:
+            ValueError: If provided dataframe is smaller than num_steps * out_size.
+        """
         if len(ba_split) < self.out_size * self.num_steps:
             raise ValueError('Provided ba spread dataframe is smaller than num_steps * out_size.')
         
@@ -337,7 +437,13 @@ class WFUtilities:
         return np.stack(first_day_bas_winds)
     
     def get_num_steps(self) -> int:
+        """
+        Get number of walk steps calculated for the provided dataframes.
+        """
         return self.num_steps
     
     def get_extra_days(self) -> int:
+        """
+        Get the number of extra days remaining after dividing the dataframe by the number of walk steps.
+        """
         return self.extra_days
