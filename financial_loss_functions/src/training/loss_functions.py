@@ -132,8 +132,8 @@ def log_return_objective(port_returns: Tensor, eps: float = 1e-8, **kwargs
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
     # Convert to log returns: log(1 + R)
-    # We add a tiny epsilon to avoid log(0) if a portfolio hits -100%
-    log_returns = torch.log(1.0 + port_returns + eps)
+    # Clamp the argument to >= eps so returns near -100% cannot produce log of a non-positive number.
+    log_returns = torch.log(torch.clamp(1.0 + port_returns, min=eps))
     
     # Sum of log returns = Cumulative log growth
     cum_log_return = log_returns.sum(dim=1)
@@ -232,6 +232,8 @@ def smooth_neglog_sharpe_loss(
         Tensor: Batch mean smooth negative log Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
+    if beta <= 0:
+        raise ValueError(f"smooth_neglog_sharpe_loss: beta must be > 0, got {beta}")
     mean_ret = pf_returns.mean(dim=1)
 
     var = pf_returns.var(dim=1)
@@ -263,11 +265,11 @@ def log_sharpe_objective(pf_returns: Tensor, eps: float = 1e-8, **kwargs) -> Ten
             (-ve because NN should maximize +ve returns but minimize loss). 
     """
 
-    log_returns = torch.log(1.0 + pf_returns + eps)
-    
+    log_returns = torch.log(torch.clamp(1.0 + pf_returns, min=eps))
+
     mean_log_ret = log_returns.mean(dim=1)
     var_log  = log_returns.var(dim=1)          # variance, not std
-    
+
     return -(mean_log_ret / (var_log.sqrt() + eps)).mean()
 
 # -------------------- Sortino -------------------- #
@@ -393,6 +395,8 @@ def smooth_neglog_sortino_objective(
         Tensor: Batch mean smooth negative log Sharpe ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
+    if use_soft_downside and beta <= 0:
+        raise ValueError(f"smooth_neglog_sortino_objective: beta must be > 0, got {beta}")
     # downside: smooth or hard
     if use_soft_downside:
         # softplus approximates clamp(target - port, min=0)
@@ -436,8 +440,10 @@ def log_sortino_objective(
         Tensor: Batch mean log Sortino ratio objective
             (-ve because NN should maximize +ve returns but minimize loss).
     """
-    # Log portfolio returns
-    log_returns = torch.log(1.0 + pf_returns + eps)
+    if use_soft_downside and beta <= 0:
+        raise ValueError(f"log_sortino_objective: beta must be > 0, got {beta}")
+    # Log portfolio returns (clamp arg to >= eps so returns near -100% don't blow up)
+    log_returns = torch.log(torch.clamp(1.0 + pf_returns, min=eps))
 
     # Downside deviation: std of negative deviations from target
     # downside: smooth or hard
@@ -487,6 +493,8 @@ def smooth_mdd_regularizer(
     Return:
         Tensor: batch mean smooth max drawdown regularizer.
     """
+    if temp <= 0:
+        raise ValueError(f"smooth_mdd_regularizer: temp must be > 0, got {temp}")
     B, T = pf_returns.shape
 
     # clamp port to > -1 for log1p safety
@@ -580,9 +588,11 @@ def smooth_cvar_regularizer(
             'Tail Ratio' to convert CVaR into a unitless ratio.
         port_std_floor (float): Minimum floor clamp and portfolio standard deviation.
             
-    Returns: 
+    Returns:
         Tensor: Batch mean smooth CVaR regularizer term
     """
+    if temp <= 0:
+        raise ValueError(f"smooth_cvar_regularizer: temp must be > 0, got {temp}")
     losses = -pf_returns  # (B, T)
 
     if scale_by_std:
@@ -631,12 +641,16 @@ def smooth_rockafellar_cvar_regularizer(
             'Tail Ratio' to convert CVaR into a unitless ratio.
         port_std_floor (float): Minimum floor clamp and portfolio standard deviation.
             
-    Returns: 
+    Returns:
         Tensor: Batch mean differentiable Rockafellar & Uryasev CVaR regularizer term
     """
+    if temp <= 0:
+        raise ValueError(f"smooth_rockafellar_cvar_regularizer: temp must be > 0, got {temp}")
+    if not (0 < alpha <= 1):
+        raise ValueError(f"smooth_rockafellar_cvar_regularizer: alpha must be in (0, 1], got {alpha}")
     # Calculate Portfolio Returns and Losses
     # port: (B, T), losses: (B, T)
-    losses = -pf_returns 
+    losses = -pf_returns
 
     # Estimate VaR (zeta) for the batch
     # We take the (1-alpha) quantile of the losses as our starting point for zeta
@@ -648,7 +662,9 @@ def smooth_rockafellar_cvar_regularizer(
     # Instead of max(0, losses - zeta), we use Softplus for a smooth gradient.
     # soft_excess = temp * log(1 + exp((losses - zeta) / temp))
     excess_losses = (losses - zeta)
-    soft_excess = softplus(excess_losses, beta=1/temp)
+    # eps in the denom is redundant here (temp is already validated > 0) but keeps
+    # the expression robust if the validation is ever relaxed.
+    soft_excess = softplus(excess_losses, beta=1.0 / (temp + eps))
     
     # CVaR = zeta + (1 / alpha) * Average(excess_losses)
     # (B,)
@@ -831,6 +847,8 @@ def smooth_omega_objective(
     Returns:
         Tensor: Batch mean smooth omega objective.
     """
+    if beta <= 0:
+        raise ValueError(f"smooth_omega_objective: beta must be > 0, got {beta}")
     # smoothed positive / negative parts
     pos = softplus(pf_returns - theta, beta=beta)      # (R - theta)_+
     neg = softplus(theta - pf_returns, beta=beta)      # (theta - R)_+
@@ -1074,6 +1092,10 @@ def smooth_calmar_objective(
     Returns:
         Tensor: Batch mean smooth calmar ratio.
     """
+    if mdd_temp <= 0:
+        raise ValueError(f"smooth_calmar_objective: mdd_temp must be > 0, got {mdd_temp}")
+    if use_log_loss and beta <= 0:
+        raise ValueError(f"smooth_calmar_objective: beta must be > 0 when use_log_loss=True, got {beta}")
     B, T = pf_returns.shape
 
     # apply theta where requested
@@ -1319,7 +1341,7 @@ def custom_loss_13(
     loss = sharpe + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (ent_lambda + entropy)
+                (ent_lambda * entropy)
     return loss
 
 @LossLibrary.register(category='custom')
@@ -1338,7 +1360,7 @@ def custom_loss_14(
     loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (ent_lambda + entropy)
+                (ent_lambda * entropy)
     return loss
 
 # @LossLibrary.register(category='custom')
@@ -1362,7 +1384,7 @@ def custom_loss_15(
     loss = sharpe + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (hhi_lambda + hhi)
+                (hhi_lambda * hhi)
     return loss
 
 # @LossLibrary.register(category='custom')
@@ -1381,5 +1403,5 @@ def custom_loss_16(
     loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (hhi_lambda + hhi)
+                (hhi_lambda * hhi)
     return loss
