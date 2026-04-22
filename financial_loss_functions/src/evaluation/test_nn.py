@@ -41,17 +41,20 @@ class WFTester(WalkerGridUtilities):
             self.multi_seed = True
         else:
             self.multi_seed = False
+        
+        self.train_eval_losses = {}
+        self.all_alloc_weights = {}
     
     def _merge_all_results(
             self,
             size,
             temp_wts_prefix,
             temp_losses_prefix
-        ):
+        ) -> tuple[dict, dict]:
         """Merge all results into one dict if rank is 0, i.e., main process."""
-        self.all_alloc_weights = {}
-        self.train_infer_losses = {}
-                
+        all_alloc_weights = {}
+        train_eval_losses = {} #### Must be same as in constructor ####
+        
         for r in range(size):
             # Load all temp alloc wt files
             rank_alloc_weights = load_pickle_temp(
@@ -59,14 +62,14 @@ class WFTester(WalkerGridUtilities):
             )
             # Merge into self.all_alloc_weights
             for model_loss, models_dict in rank_alloc_weights.items():
-                self.all_alloc_weights[model_loss] = models_dict
+                all_alloc_weights[model_loss] = models_dict
             
             rank_losses = load_pickle_temp(
                 self.temp_dir / f'{temp_losses_prefix}_{r}.pkl'
             )
             # Merge into self.train_val_losses
             for model_loss, losses_dict in rank_losses.items():
-                self.train_infer_losses[model_loss] = losses_dict
+                train_eval_losses[model_loss] = losses_dict
 
         # Delete all temp files
         for r in range(size):
@@ -74,6 +77,8 @@ class WFTester(WalkerGridUtilities):
             delete_file(self.temp_dir / f'{temp_losses_prefix}_{r}.pkl')
 
         print('All temp files merged and then deleted.')
+
+        return all_alloc_weights, train_eval_losses
 
     def _build_combos(
             self, selected_combos: list[tuple[str, str]]
@@ -327,7 +332,7 @@ class WFTester(WalkerGridUtilities):
 
             # Rank 0 collects and merges all files
             if global_rank == 0:
-                self._merge_all_results(
+                self.all_alloc_weights, self.train_eval_losses = self._merge_all_results(
                     size,
                     self.temp_wts_prefix,
                     self.temp_losses_prefix

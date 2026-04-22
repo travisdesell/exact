@@ -8,6 +8,18 @@ from src.utils.formatting import extract_req_cols, split_col
 
 
 def _handle_missing_data(df: pd.DataFrame, col_suffix: str, limit: int = 1):
+    """
+    Forward fill data is there are NaNs.
+
+    Args:
+        df (pd.DataFrame): Dataframe to be cleaned by forward filling data.
+        col_suffix (str): Column suffix to identify columns that need to be 
+            handled for missing data.
+        limit (int): Number of maximum time steps to forward fill. Default = 1.
+    
+    Returns:
+        df (pd.DataFrame): Dataframe that has its missing values filled using ffill().
+    """
     req_cols = extract_req_cols(df.columns, col_suffix)
 
     df[req_cols] = df[req_cols].ffill(limit=limit)
@@ -19,14 +31,16 @@ def clean_inplace(
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Cleans dataset by removing dupilcate columns and duplicate rows. It makes date the index.
-    This process is inplace, i.e., Refrence of dataset is used, not copy.
+    This process is inplace, i.e., Reference of dataset is used, not copy.
     
-    @param train pd.DataFrame train data
-    @param val pd.DataFrame validation data
-    @param test pd.DataFrame test data
+    Args:
+        train (pd.DataFrame): Train dataframe.
+        val (pd.DataFrame): Validation dataframe.
+        test (pd.DataFrame): test dataframe.
     
-    @return tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame] 
-            Cleaned train data, validation data and test data
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: 
+        Cleaned train data, validation data and test data.  
     """
 
     features = train.columns
@@ -64,7 +78,8 @@ def clean_inplace(
     test['date'] = pd.to_datetime(test['date'])
     test.set_index('date', inplace=True)
 
-    # Handling missing data #### Add missing data handling for each col here, if needed
+    # Handling missing data #### Add missing data handling for each col here, if needed.
+    # CRSP data did not have missing values, but this is just a guard and is used for the sample data
     train = _handle_missing_data(train, '_BA_SPREAD')
     val = _handle_missing_data(val, '_BA_SPREAD')
     test = _handle_missing_data(test, '_BA_SPREAD')
