@@ -87,17 +87,47 @@ def clean_inplace(
     return train, val, test
 
 class SSA:
+    """Singular Spectrum Analysis for time series denoising.
+
+    Fits a separate SSA model to each feature (column) of the input data,
+    then applies the learned subspace to denoise new data.
+
+    Attributes:
+        window_len (int): Window length (L) used to build the trajectory matrix.
+        variance_thres (float): Fraction of variance to retain when selecting
+            singular components (default 0.90).
+        U_dict (dict): Stores the signal subspace (`U_r`) and other metadata
+            for each feature column after fitting.
+        _input_is_df (bool): Internal flag indicating whether the input was a
+            pandas DataFrame (used to restore output type).
+        _column_names (list[str] | None): Column names if input was a DataFrame.
+    """
     def __init__(self, window_len: int, variance_thres: float = 0.90):
+        """Initializes the SSA denoiser.
+
+        Args:
+            window_len (int): Window length (L). Must be less than or equal to
+                the number of time steps in the training data.
+            variance_thres (float): Cumulative variance threshold for
+                selecting the number of components to keep. Default = 0.90.
+        """
         self.window_len = window_len
         self.variance_thres = variance_thres
         self.U_dict = {}          # stores U_r for each column index
         self._input_is_df = False
         self._column_names = None
 
-    def ssa_fit(self, data):
-        """
-        Fit SSA on each column/feature.
-        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
+    def ssa_fit(self, data: pd.DataFrame | np.ndarray):
+        """Fits an SSA model to each feature column of the training data.
+
+        For each column, builds a Hankel trajectory matrix, performs SVD,
+        and stores the signal subspace (`U_r`) based on the explained variance
+        threshold.
+
+        Args:
+            data (pd.DataFrame | np.ndarray): Training data of shape
+                (n_samples, n_features). Can be a pandas DataFrame or a
+                numpy array.
         """
         if isinstance(data, pd.DataFrame):
             self._input_is_df = True
@@ -130,11 +160,29 @@ class SSA:
                 's': s
             }
 
-    def ssa_transform(self, data):
-        """
-        Denoise new data using the pre‑computed subspaces.
-        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
-        Returns same type as input.
+    def ssa_transform(
+            self, data: pd.DataFrame | np.ndarray
+        ) -> pd.DataFrame | np.ndarray:
+        """Denoises new data using the previously fitted subspaces.
+
+        For each column, projects the new series onto the signal subspace
+        from training and reconstructs the denoised series.
+
+        Args:
+            data (pd.DataFrame | np.ndarray): New data of shape
+                (n_samples, n_features). Must have the same number of features
+                as the training data.
+
+        Returns:
+            pd.DataFrame | np.ndarray: Denoised data of the same shape and type
+                as the input. If the input was a DataFrame, the returned object
+                is a DataFrame with the same index and columns; otherwise, a
+                numpy array is returned.
+
+        Raises:
+            ValueError: If `ssa_fit` has not been called before this method.
+            KeyError: If a feature column index (or name) was not seen during
+                fitting (should not happen with consistent data).
         """
         if not self.U_dict:
             raise ValueError('Run `ssa_fit` before calling `ssa_transform`!')
@@ -176,17 +224,49 @@ class SSA:
             return denoised
 
 class KalmanDenoise:
+    """Kalman filter denoising using a local level model.
+
+    Fits a separate local level state-space model to each feature column,
+    then applies the fitted filter to denoise new data.
+
+    Attributes:
+        method (str): Optimization method used for maximum likelihood estimation.
+        maxiter (int): Maximum number of iterations for the optimizer.
+        params_dict (dict): Stores the fitted parameters (observation noise and
+            level noise) for each feature column (by column index).
+        _input_is_df (bool): Internal flag indicating whether the input was a
+            pandas DataFrame (used to restore output type).
+        _column_names (list[str] | None): Column names if input was a DataFrame.
+    """
     def __init__(self, method: str = 'powell', maxiter: int = 100):
+        """Initializes the Kalman denoiser.
+
+        Args:
+            method (str, optional): Optimization algorithm passed to
+                `statsmodels.tsa.UnobservedComponents.fit`. Default = 'powell'.
+            maxiter (int, optional): Maximum number of iterations for the
+                optimizer. Defaults to 100.
+        """
         self.method = method
         self.maxiter = maxiter
         self.params_dict = {}          # key: column index
         self._input_is_df = False
         self._column_names = None
 
-    def kalman_fit(self, data):
-        """
-        Fit local level model to each column/feature.
-        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
+    def kalman_fit(self, data: pd.DataFrame | np.ndarray):
+        """Fits a local level Kalman filter to each feature column.
+
+        For each column, estimates the observation noise and level noise
+        using maximum likelihood estimation (MLE) via `statsmodels`.
+
+        Args:
+            data (pd.DataFrame | np.ndarray): Training data of shape
+                (n_samples, n_features). Can be a pandas DataFrame or a
+                numpy array.
+
+        Note:
+            The fitted parameters are stored internally in `self.params_dict`
+            and are later used by `kalman_transform`.
         """
         if isinstance(data, pd.DataFrame):
             self._input_is_df = True
@@ -204,11 +284,29 @@ class KalmanDenoise:
             res = model.fit(method=self.method, maxiter=self.maxiter, disp=False)
             self.params_dict[j] = res.params   # store by index
 
-    def kalman_transform(self, data):
-        """
-        Apply fitted Kalman filter to new data.
-        data: pandas DataFrame or numpy array of shape (n_samples, n_features)
-        Returns same type as input.
+    def kalman_transform(
+            self, data: pd.DataFrame | np.ndarray
+        ) -> pd.DataFrame | np.ndarray:
+        """Applies the fitted Kalman filter to new data.
+
+        Uses the pre-estimated noise parameters from training to filter
+        (denoise) each column of the new data.
+
+        Args:
+            data (pd.DataFrame | np.ndarray): New data of shape
+                (n_samples, n_features). Must have the same number of features
+                as the training data.
+
+        Returns:
+            pd.DataFrame | np.ndarray: Denoised data of the same shape and type
+                as the input. If the input was a DataFrame, the returned object
+                is a DataFrame with the same index and columns; otherwise, a
+                numpy array is returned.
+
+        Raises:
+            ValueError: If `kalman_fit` has not been called before this method.
+            KeyError: If a feature column index (or name) was not seen during
+                fitting (should not happen with consistent data).
         """
         if not self.params_dict:
             raise ValueError('Run `kalman_fit` on training data before transforming!')
@@ -238,8 +336,19 @@ class KalmanDenoise:
             return denoised
 
 def calculate_dema(df, span=20):
-    """
-    Computes DEMA for all columns in a DataFrame.
+    """Computes the Double Exponential Moving Average (DEMA) for all columns.
+
+    DEMA = 2 * EMA1 - EMA2, where EMA1 is the standard exponential moving
+    average of the original series, and EMA2 is the EMA of EMA1.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame where each column is a time series.
+        span (int, optional): The span (window size) for the EMA calculation.
+            Defaults to 20.
+
+    Returns:
+        pd.DataFrame: DataFrame of the same shape as `df` containing the DEMA
+            values for each column.
     """
     # 1. Calculate the first EMA
     ema1 = df.ewm(span=span, adjust=False).mean()
@@ -252,9 +361,19 @@ def calculate_dema(df, span=20):
     return dema
 
 class Preprocessor:
-    col_sep = '_'
-    return_suffix = '_RET'
-    ba_spread_suffix = '_BA_SPREAD'
+    """
+    Preprocessor class which splits the Returns, BA Spread for all stocks and 
+    then normalizes the given dataset. This class used Robust scaling for normalization 
+    (Median/IQR scaling).
+
+    Attributes:
+        col_sep (str): Special character that separates the ticker string from the feature string.
+        return_suffix (str): Suffix for returns  columns of every stock.
+        ba_spread_suffix (str): Suffix for BA spread columns of every stock.
+    """
+    col_sep = '_' # Special character that separates the ticker string from the feature string.
+    return_suffix = '_RET' # Suffix for returns of every stock
+    ba_spread_suffix = '_BA_SPREAD' # Suffix for BA spread of every stock
     
     def __init__(
             self,
@@ -262,11 +381,13 @@ class Preprocessor:
             broadcast: bool = False
         ):
         """
-        Initialize Preprocessor which transorforms and normalizes the given dataset
+        Initialize Preprocessor object which splits the Returns, BA Spread for all stocks and 
+        then normalizes the given dataset.
         
-        @param col_sep str
-            Special character that separates the ticker string from the feature string.
-        @param common_features list[str] List of common features in the dataset. Default = None
+        Args:
+            common_features (list[str]): List of common features in the dataset, eg., sprtrn. 
+                Default = None
+            broadcast (bool): Toggle to broadcast common features to all stocks. Default = False.
         """
         self.common_features = common_features
         self.broadcast = broadcast
@@ -280,16 +401,21 @@ class Preprocessor:
     
     def _normalize(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
         """
-        Normalize data set using robust scaling.
+        Normalize data set using robust scaling, i.e., Median/IQR scaling.
         This method treats train and validation or test splits differently.
         Use mode `fit` to fit and transform, use mode `split`
         to transform only and not refit.
 
-        @param data pd.DataFrame Dataframe to be normalized
-        @param mode str `fit` or `split`. 
-            Determines if dataframe must be used to fit the scaler or the scaler should transform the dataframe.
+        Args:
+            data (pd.DataFrame): Dataframe to be normalized using robust scaling.
+            mode (str): `fit` or `split`. Determines if dataframe must be used to 
+                fit the scaler or the scaler should transform the dataframe.
 
-        @return data pd.DataFrame Normalized using scaler object
+        Returns:
+            data (pd.DataFrame): Normalized dataframe using scaler object.
+        
+        Raises:
+            ValueError: If incorrect mode string is provided. Must be `fit` or `split`.
         """
         # For training split
         if mode == 'fit':
@@ -310,10 +436,12 @@ class Preprocessor:
         """
         Broadcast common features to all tickers with names <ticker>_<common_feature>.
         
-        @param data pd.DataFrame dataset which needs broadcasting of common features
-        @param features list[str] List of features which need to be broadcasted to every stock
+        Args:
+            data (pd.DataFrame): Dataset which needs broadcasting of common features.
+            features (list[str]): List of features which need to be broadcasted to every stock.
 
-        @return pd.DataFrame dataframe with broadcasted common features
+        Returns:
+            pd.DataFrame dataframe with broadcasted common features.
         """
 
         # Build broadcasted columns in a single concatenation to avoid fragmentation
@@ -335,7 +463,8 @@ class Preprocessor:
         """
         Merge macro columns with existing common features without duplicates.
         
-        @param macro_cols list[str] List of column names in macro-economic dataset
+        Args:
+            macro_cols (list[str]): List of column names in macro-economic dataset.
         """
         # TODO: Use set instead of dict (more efficient)
         base_common = self.common_features or []
@@ -343,7 +472,12 @@ class Preprocessor:
         self.common_features = combined if combined else None
 
     def _build_feats_order(self) -> tuple[list, list]:
-        """Extract tickers and features from full DataFrame column names."""
+        """
+        Extract tickers and features from full DataFrame column names.
+        
+        Returns:
+            tuple[list, list]: Tuple containing list of all features and list of tickers.
+        """
         tickers = []
         features = []
         
@@ -371,6 +505,21 @@ class Preprocessor:
         return all_features, tickers
 
     def _extract_only_returns(self, data: pd.DataFrame, mode: str) -> pd.DataFrame:
+        """
+        Extract only returns data columns from the given dataframe.
+
+        Args:
+            data (pd.DataFrame): Dataframe with returns data, that has to be extracted.
+            mode (str): `fit` or `split`. Determines if dataframe must be used to extract 
+                return columns names or extract the set return column names from a split dataframe.
+        
+        Returns:
+            returns_data (pd.DataFrame): Dataframe containing only the returns columns.
+        
+        Raises:
+            ValueError: If self.returns_cols is not filled yet, `process_train_data` must be run 
+                first to extract return column names from the train data.
+        """
         if mode == 'fit':
             self.return_cols = extract_req_cols(data.columns, self.return_suffix)
         else:
@@ -380,22 +529,32 @@ class Preprocessor:
             
             returns_data = data[self.return_cols]
 
+            # Rename columns to remove the '_RET' suffix
             returns_data.columns = [col.replace(self.return_suffix, '') for col in self.return_cols]
 
-            return returns_data.sort_index(axis=1)
+            return returns_data.sort_index(axis=1) # Sort to match other files of the dataset
 
         else:
             raise RuntimeError('Run `process_train_data` first.')
 
     def _extract_only_ba(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract only Bid-Ask Spread data columns from the given dataframe.
+
+        Args:
+            data (pd.DataFrame): Dataframe with BA Spread data, that has to be extracted.
+        
+        Returns:
+            returns_data (pd.DataFrame): Dataframe containing only BA_Spread columns.
+        """
         ba_spread_cols = extract_req_cols(data, self.ba_spread_suffix)
 
         ba_spreads = data[ba_spread_cols]
 
-        return ba_spreads.sort_index(axis=1)
+        return ba_spreads.sort_index(axis=1) # Sort to match other files of the dataset
 
     def _build_ba_spread_cols(self):
-
+        """Method to build the ordering of the BA_Spread columns."""
         order_ba_spreads = [f'{ticker}{self.ba_spread_suffix}' for ticker in self.all_tickers]
 
         return order_ba_spreads
@@ -404,12 +563,16 @@ class Preprocessor:
             self, train: pd.DataFrame, macro_data: pd.DataFrame | None = None
         )-> tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Preprocesses given training data
+        Preprocesses given training data. Extracts returns, reorders columns for every 
+        dataframe to follow alphabetical ordering, then normalizes the dataframe with all features.
 
-        @param train pd.DataFrame Training data
-        @param macro_data pd.DataFrame Macro data aligned to training dates. Default = None
+        Args:
+            train (pd.DataFrame): Dataframe containing training data.
+            macro_data (pd.DataFrame): Macro data aligned to training dates. Default = None.
         
-        @return pd.DataFrame Preprocessed training data
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: Tuple containing Preprocessed training data and 
+                returns only data.
         """
         ret_train = self._extract_only_returns(train, 'fit')
         
@@ -446,12 +609,19 @@ class Preprocessor:
         ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Preprocesses given validation or test data based on statistics 
-        from the training data.
+        from the training data. Extracts returns and Bid-Ask spread data, reorders columns for every 
+        dataframe to follow alphabetical ordering, then normalizes the dataframe with all features.
 
-        @param split_data pd.DataFrame Validation or test data
-        @param macro_data: pd.DataFrame Macro data aligned to validation/test dates. Default = None
+        Args:
+            split_data (pd.DataFrame): Dataframe containing validation or test data.
+            macro_data (pd.DataFrame): Macro data aligned to validation/test dates. Default = None.
         
-        @return pd.DataFrame Preprocessed validation or test data
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: Tuple containing Preprocessed validation or test data, 
+                Bid-Ask spread only data, and returns only data.
+        
+        Raises:
+            ValueError: If there are missing columns in the split data, that were present in the training data.
         """
         
         ret_split = self._extract_only_returns(split_data, 'split')
@@ -492,9 +662,12 @@ class Preprocessor:
 
         return split_data, ret_split, ba_split
 
-    def get_common_features(self) -> list:
+    def get_common_features(self) -> list[str]:
         """
         Getter method to get the common features list at the current state of the object.
+
+        Returns:
+            common_features (list[str]): List of common feature names.
         """
         return self.common_features
 
@@ -502,12 +675,14 @@ def preprocessor2(
         returns_is: pd.DataFrame
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Calculates covariance and correlation matrices for returns data
+    Calculates covariance and correlation matrices for returns data.
 
-    @param train pd.DataFrame Training split data, only returns
-    @param val pd.DataFrame Validation split data, only returns
+    Args: 
+        train (pd.DataFrame): Training split data, only returns.
+        val (pd.DataFrame): Validation or test split data, only returns.
 
-    @return tuple[pd.DataFrame, pd.DataFrame] covariance and correlation matrices
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame]: Covariance and correlation matrices.
     """
 
     returns_is_cov = returns_is.cov()
