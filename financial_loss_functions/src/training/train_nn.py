@@ -115,6 +115,12 @@ class Trainer:
         self.best_epoch = 0
         self.best_model_state = None
         self.patience_counter = 0
+
+        # Checkpointing state. `resume_start_epoch` is consumed once by train()
+        # and then reset, so multiple calls to train() don't double-skip epochs.
+        self._resume_optimizer_state: dict | None = None
+        self._resume_scheduler_state: dict | None = None
+        self._resume_start_epoch: int = 0
     
     def _cal_pf_returns(self, weights: Tensor, returns: Tensor) -> Tensor:
         """
@@ -173,7 +179,8 @@ class Trainer:
         return scheduler
 
     def train(
-            self, train_ds: WindowDataset, val_ds: WindowDataset | None = None
+            self, train_ds: WindowDataset, val_ds: WindowDataset | None = None,
+            checkpoint_dir: str | None = None,
         ):
         """
         Train initialized model using the train data split.
@@ -181,9 +188,12 @@ class Trainer:
 
         Args:
             train_ds (WindowDataset): Training data split converted to windowed dataset tensors.
-            val_ds (WindowDataset | None): Validation data split for validation during training, 
-                converted to windowed dataset tensors. 
+            val_ds (WindowDataset | None): Validation data split for validation during training,
+                converted to windowed dataset tensors.
                 If None, validation will not be done during training. Default = None.
+            checkpoint_dir (str | None): If provided (and `train_hparams['checkpoint_every']`
+                is > 0), per-epoch checkpoints are written under this directory with the
+                latest-K kept. Default = None (no checkpointing).
         """
         start_time = time.time()
 
@@ -194,18 +204,34 @@ class Trainer:
         min_delta = self.train_hparams.get('early_stop_min_delta', 1e-3)
         early_stopping = self.train_hparams.get('early_stopping', True)
         clip_grad_norm = self.train_hparams.get('clip_grad_norm', 0.5)
-        
+        checkpoint_every = int(self.train_hparams.get('checkpoint_every', 0) or 0)
+        keep_last = int(self.train_hparams.get('checkpoint_keep_last', 3) or 3)
+
         # Initialize optimizer and scheduler
         optimizer = self._init_optimizer()
         scheduler = self._init_scheduler(optimizer)
-        
+
+        # Restore optimizer/scheduler state if a prior checkpoint was loaded via resume_from().
+        if self._resume_optimizer_state is not None:
+            optimizer.load_state_dict(self._resume_optimizer_state)
+            self._resume_optimizer_state = None
+        if self._resume_scheduler_state is not None and scheduler is not None:
+            scheduler.load_state_dict(self._resume_scheduler_state)
+            self._resume_scheduler_state = None
+
+        start_epoch = self._resume_start_epoch
+        self._resume_start_epoch = 0  # consume once so re-calls don't skip
+
+        if checkpoint_dir is not None and checkpoint_every > 0:
+            os.makedirs(checkpoint_dir, exist_ok=True)
+
         train_loader = DataLoader(
             train_ds,
             batch_size=self.train_hparams['train_batch_size'],
             shuffle=True
         )
 
-        for epoch in range(n_epochs):
+        for epoch in range(start_epoch, n_epochs):
             epoch_start = time.time()
             self.model.train()
             total_loss_sum = 0.0
@@ -281,9 +307,15 @@ class Trainer:
                         
                 else:
                     status_msg = status_msg + f' | Val Loss: {avg_val_loss:.5f}'
-            
+
             print(status_msg + f' | Time: {round(time.time() - epoch_start, 3)}s')
-        
+
+            if checkpoint_dir is not None and checkpoint_every > 0 and \
+                    (epoch + 1) % checkpoint_every == 0:
+                self._save_checkpoint(
+                    checkpoint_dir, epoch, optimizer, scheduler, keep_last=keep_last
+                )
+
         # After the training loop
         if self.best_model_state is not None:
             self.model.load_state_dict(self.best_model_state)
@@ -436,6 +468,106 @@ class Trainer:
         elif self.device.type == 'cuda':
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
+
+    # ─────────────────── Checkpointing ───────────────────
+
+    @staticmethod
+    def _checkpoint_path(checkpoint_dir: str, epoch: int) -> str:
+        return os.path.join(checkpoint_dir, f'epoch_{epoch:04d}.pt')
+
+    def _save_checkpoint(
+            self,
+            checkpoint_dir: str,
+            epoch: int,
+            optimizer: torch.optim.Optimizer,
+            scheduler,
+            keep_last: int = 3,
+        ) -> str:
+        """
+        Persist {model, optimizer, scheduler, RNG, training state} to disk.
+        Keeps only the most recent `keep_last` checkpoints under checkpoint_dir.
+        """
+        ckpt = {
+            'epoch': epoch,
+            'model_state': self.model.state_dict(),
+            'optimizer_state': optimizer.state_dict(),
+            'scheduler_state': scheduler.state_dict() if scheduler is not None else None,
+            'best_val_loss': self.best_val_loss,
+            'best_train_loss': self.best_train_loss,
+            'best_epoch': self.best_epoch,
+            'best_model_state': self.best_model_state,
+            'patience_counter': self.patience_counter,
+            'train_losses': self.train_losses,
+            'val_losses': self.val_losses,
+            'rng_cpu': torch.get_rng_state(),
+            'rng_cuda': torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+            'rng_numpy': np.random.get_state(),
+        }
+        path = self._checkpoint_path(checkpoint_dir, epoch)
+        # Save atomically: write to a temp path, then rename.
+        tmp_path = path + '.tmp'
+        torch.save(ckpt, tmp_path)
+        os.replace(tmp_path, path)
+        print(f'  ✓ Checkpoint saved: {path}')
+
+        # Prune older checkpoints (keep newest `keep_last`).
+        all_ckpts = sorted(
+            p for p in os.listdir(checkpoint_dir)
+            if p.startswith('epoch_') and p.endswith('.pt')
+        )
+        if keep_last > 0 and len(all_ckpts) > keep_last:
+            for stale in all_ckpts[:-keep_last]:
+                try:
+                    os.remove(os.path.join(checkpoint_dir, stale))
+                except OSError:
+                    pass
+        return path
+
+    def resume_from(self, checkpoint_path: str) -> int:
+        """
+        Restore Trainer state from a checkpoint produced by `_save_checkpoint`.
+
+        Model weights are loaded immediately. Optimizer / scheduler state is
+        staged and applied on the next call to `train()`, since those objects
+        are constructed inside train(). Returns the epoch to resume from.
+        """
+        ckpt = torch.load(checkpoint_path, map_location=self.device, weights_only=False)
+        self.model.load_state_dict(ckpt['model_state'])
+        self._resume_optimizer_state = ckpt.get('optimizer_state')
+        self._resume_scheduler_state = ckpt.get('scheduler_state')
+
+        self.best_val_loss = ckpt.get('best_val_loss', float('inf'))
+        self.best_train_loss = ckpt.get('best_train_loss', float('inf'))
+        self.best_epoch = ckpt.get('best_epoch', 0)
+        self.best_model_state = ckpt.get('best_model_state')
+        self.patience_counter = ckpt.get('patience_counter', 0)
+        self.train_losses = ckpt.get('train_losses', [])
+        self.val_losses = ckpt.get('val_losses', [])
+
+        if 'rng_cpu' in ckpt and ckpt['rng_cpu'] is not None:
+            torch.set_rng_state(ckpt['rng_cpu'])
+        if 'rng_cuda' in ckpt and ckpt['rng_cuda'] is not None and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all(ckpt['rng_cuda'])
+        if 'rng_numpy' in ckpt and ckpt['rng_numpy'] is not None:
+            np.random.set_state(ckpt['rng_numpy'])
+
+        next_epoch = int(ckpt.get('epoch', -1)) + 1
+        self._resume_start_epoch = next_epoch
+        print(f'Resumed from {checkpoint_path} — next epoch = {next_epoch}')
+        return next_epoch
+
+    @staticmethod
+    def find_latest_checkpoint(checkpoint_dir: str) -> str | None:
+        """Return the path to the highest-epoch checkpoint under dir, or None."""
+        if not os.path.isdir(checkpoint_dir):
+            return None
+        ckpts = sorted(
+            p for p in os.listdir(checkpoint_dir)
+            if p.startswith('epoch_') and p.endswith('.pt')
+        )
+        if not ckpts:
+            return None
+        return os.path.join(checkpoint_dir, ckpts[-1])
 
 class Walker:
 
