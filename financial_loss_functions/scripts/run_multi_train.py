@@ -103,6 +103,7 @@ def run_multi_train(
     n_runs: int = 5,
     seeds: list[int] | None = None,
     rank_metric: str = "sharpe",
+    resume: bool = False,
 ):
     """
     Train *model_name* with *loss_name* for *n_runs* seeds.
@@ -141,8 +142,10 @@ def run_multi_train(
     # Multi-run specific dirs
     best_models_dir = artifacts_paths["results_dir"] / "best_models"
     multi_run_dir = artifacts_paths["results_dir"] / "multi_run"
+    checkpoints_root = artifacts_paths["results_dir"] / "checkpoints"
     create_directory(best_models_dir)
     create_directory(multi_run_dir)
+    create_directory(checkpoints_root)
 
     # ── Register models & losses ──────────────────────────────
     models_module = paths_config["models_module"]
@@ -258,8 +261,18 @@ def run_multi_train(
                 device=torch_device,
             )
 
-            # Train with validation
-            trainer.train(train_ds, val_ds)
+            # Per-seed checkpoint directory.
+            run_ckpt_dir = checkpoints_root / f"{model_name}-{loss_name}-seed{seed}"
+            create_directory(run_ckpt_dir)
+
+            # If resuming, pick up from the most recent checkpoint for this seed.
+            if resume:
+                latest = Trainer.find_latest_checkpoint(str(run_ckpt_dir))
+                if latest is not None:
+                    trainer.resume_from(latest)
+
+            # Train with validation, writing checkpoints along the way.
+            trainer.train(train_ds, val_ds, checkpoint_dir=str(run_ckpt_dir))
             # Evaluate to get allocation weights
             trainer.evaluate(val_ds)
             alloc_weights = trainer.get_eval_alloc_weights()
@@ -399,6 +412,12 @@ if __name__ == "__main__":
             choices=["sharpe", "sortino", "max_drawdown", "cvar", "omega", "calmar"],
             help="Metric used to rank runs and pick the best (default: sharpe).",
         )
+        parser.add_argument(
+            "--resume", action="store_true",
+            help="If set, resume each per-seed run from the latest checkpoint on disk "
+                 "(if any). Checkpoint frequency is controlled by "
+                 "hparams.json > nn_models[model].train.checkpoint_every.",
+        )
 
         args = parser.parse_args()
 
@@ -412,6 +431,7 @@ if __name__ == "__main__":
             n_runs=args.n_runs,
             seeds=seed_list,
             rank_metric=args.rank_metric,
+            resume=args.resume,
         )
 
     except SystemExit:
