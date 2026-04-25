@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy import stats
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import plotly.graph_objects as go
@@ -248,7 +249,7 @@ def plot_3d_pareto(
     """
     Create an interactive 3D Pareto frontier plot.
 
-    Parameters:
+    Args:
         df: DataFrame containing models as index and metric columns.
         x_col, y_col, z_col: Names of the three metrics to plot.
         dominated_col: Column name that indicates dominated models (boolean).
@@ -356,7 +357,7 @@ def plot_2d_pareto(
     """
     Plot a 2D Pareto frontier with optional frontier line and annotations.
 
-    Parameters:
+    Args:
         df: DataFrame containing models as index and metric columns.
         x_col, y_col: Column names for the two metrics.
         dominated_col: Column name indicating dominated models (boolean).
@@ -417,3 +418,117 @@ def plot_2d_pareto(
     
     fig.tight_layout()
     return fig
+
+# -------------------- Normality Plots -------------------- #
+def plot_qq_by_model(
+        all_seed_perf: pd.DataFrame,
+        nn_model_losses,
+        metrics=None,
+        figsize=(5,4),
+        n_cols=3
+    ):
+    """
+    Draw Q-Q plots for each metric and each model-loss combination.
+    
+    Args:
+        all_seed_perf : pd.DataFrame
+            DataFrame with columns 'model_loss', seed index (or any identifier),
+            and metric columns (e.g., 'sharpe', 'calmar', 'cvar', ...).
+        nn_model_losses : list
+            List of model-loss strings present in all_seed_perf['model_loss'].
+        metrics : list, optional
+            List of metric column names to plot. If None, all numeric columns except 'model_loss' are used.
+        figsize : tuple, default (5,4)
+            Size of each individual subplot.
+        n_cols : int, default 3
+            Number of columns in the faceted grid.
+    """
+    if metrics is None:
+        # Use all numeric columns except the identifier column
+        metrics = all_seed_perf.select_dtypes(include=[np.number]).columns.tolist()
+        # Remove 'seed' if present (assuming no other non‑metric numeric columns)
+        if 'seed' in metrics:
+            metrics.remove('seed')
+    
+    n_models = len(nn_model_losses)
+    n_metrics = len(metrics)
+    
+    for model in nn_model_losses:
+        model_data = all_seed_perf[all_seed_perf.index == model]
+        n_rows = (n_metrics + n_cols - 1) // n_cols
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols*figsize[0], n_rows*figsize[1]))
+        axes = axes.flatten() if n_metrics > 1 else [axes]
+        
+        for idx, metric in enumerate(metrics):
+            ax = axes[idx]
+            values = model_data[metric].dropna().values
+            if len(values) > 0:
+                stats.probplot(values, dist="norm", plot=ax)
+                ax.set_title(f"{model}\n{metric}")
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, "No data", ha='center', va='center')
+                ax.set_title(f"{model}\n{metric}")
+        # Hide any unused subplots
+        for idx in range(len(metrics), len(axes)):
+            axes[idx].axis('off')
+        fig.tight_layout()
+        plt.show()
+
+def plot_hist_by_model(
+        all_seed_perf: pd.DataFrame,
+        nn_model_losses,
+        metrics=None,
+        figsize=(5,4),
+        n_cols=3,
+        bins=20
+    ):
+    """
+    Draw histograms for each metric and each model-loss combination.
+    
+    Args:
+        all_seed_perf : pd.DataFrame
+            DataFrame with columns 'model_loss', seed index (or any identifier),
+            and metric columns (e.g., 'sharpe', 'calmar', 'cvar', ...).
+        nn_model_losses : list
+            List of model-loss strings present in all_seed_perf['model_loss'].
+        metrics : list, optional
+            List of metric column names to plot. If None, all numeric columns except 'model_loss' are used.
+        figsize : tuple, default (5,4)
+            Size of each individual subplot.
+        n_cols : int, default 3
+            Number of columns in the faceted grid.
+        bins : int or sequence, default 20
+            Number of histogram bins.
+    """
+    if metrics is None:
+        metrics = all_seed_perf.select_dtypes(include=[np.number]).columns.tolist()
+        if 'seed' in metrics:
+            metrics.remove('seed')
+    
+    n_models = len(nn_model_losses)
+    n_metrics = len(metrics)
+    
+    for model in nn_model_losses:
+        model_data = all_seed_perf[all_seed_perf.index == model]
+        n_rows = (n_metrics + n_cols - 1) // n_cols
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols*figsize[0], n_rows*figsize[1]))
+        axes = axes.flatten() if n_metrics > 1 else [axes]
+        
+        for idx, metric in enumerate(metrics):
+            ax = axes[idx]
+            values = model_data[metric].dropna().values
+            if len(values) > 0:
+                ax.hist(values, bins=bins, alpha=0.7, edgecolor='black', density=True)
+                ax.axvline(np.mean(values), color='red', linestyle='--', label='mean')
+                ax.axvline(np.median(values), color='blue', linestyle='-.', label='median')
+                ax.set_title(f"{model}\n{metric}")
+                ax.legend()
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, "No data", ha='center', va='center')
+                ax.set_title(f"{model}\n{metric}")
+        for idx in range(len(metrics), len(axes)):
+            axes[idx].axis('off')
+        fig.tight_layout()
+        plt.show()
