@@ -6,10 +6,11 @@ from numpy.testing import assert_allclose
 from src.data_processing.preprocess_crsp import (
     clean_inplace,
     preprocessor2,
-    Preprocessor
+    Preprocessor,
+    SSA
 )
 
-# ---------- Clean inplace tests ---------- #
+# -------------------- Clean inplace tests -------------------- #
 def test_clean_inplace_uneq_cols():
     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_EFG':[100, 200, 300]})
     val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
@@ -60,71 +61,152 @@ def test_clean_inplace_dup_dates():
     assert not val.index.duplicated().any(), 'Duplicate index date found in the validation set.'
     assert not test.index.duplicated().any(), 'Duplicate index date found in the test set.'
 
-# ---------- Get only returns tests ---------- #
-# def test_get_only_data_returns():
-#     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
-#     val = pd.DataFrame({'ABCD_RET': [0.4, 0.5, 0.6], 'ABCD_VOL':[150, 250, 350]})
-#     test = pd.DataFrame({'ABCD_RET': [0.7, 0.8, 0.9], 'ABCD_VOL':[400, 500, 600]})
+# -------------------- Tests for SSA -------------------- #
 
-#     train_ret, val_ret, test_ret = get_only_returns(train, val, test)
-    
-#     # Should keep only columns containing '_RET',
-#     # but with suffix removed
-#     assert list(train_ret.columns) == ['ABCD']
-#     assert list(val_ret.columns) == ['ABCD']
-#     assert list(test_ret.columns) == ['ABCD']
+@pytest.fixture
+def sample_data_array():
+    """Numpy array of shape (50, 5) – 50 time steps, 5 features."""
+    np.random.seed(42)
+    return np.random.randn(50, 5)
 
-#     # Check values remain the same
-#     assert train_ret.iloc[0,0] == 0.1
-#     assert val_ret.iloc[1,0] == 0.5
-#     assert test_ret.iloc[2,0] == 0.9
+@pytest.fixture
+def sample_data_df(sample_data_array):
+    """DataFrame version with column names."""
+    return pd.DataFrame(sample_data_array, columns=['A', 'B', 'C', 'D', 'E'])
 
-# ---------- Cov Preprocessor tests ---------- #
-def test_cov_preprocessor():
-    train = pd.DataFrame({
-        'RET1': [0.1, 0.2, 0.3, 0.4, 0.5, 0.3],
-        'RET2': [0.2, 0.1, 0.0, 0.2, 0.1, 0.0]
-    })
+def test_fit_transform_numpy(sample_data_array):
+    ssa = SSA(window_len=10, variance_thres=0.9)
+    ssa.ssa_fit(sample_data_array)
+    denoised = ssa.ssa_transform(sample_data_array)
+    # Check shape
+    assert denoised.shape == sample_data_array.shape
+    # Check that denoised is not identical to input (should reduce noise)
+    assert not np.allclose(denoised, sample_data_array, atol=1e-6)
+    # Check that U_dict contains entries for each column
+    assert len(ssa.U_dict) == sample_data_array.shape[1]
 
-    cov, corr = preprocessor2(train)
+def test_fit_transform_dataframe(sample_data_df):
+    ssa = SSA(window_len=10, variance_thres=0.9)
+    ssa.ssa_fit(sample_data_df)
+    denoised = ssa.ssa_transform(sample_data_df)
+    # Check output is DataFrame with same index/columns
+    assert isinstance(denoised, pd.DataFrame)
+    assert denoised.shape == sample_data_df.shape
+    assert (denoised.columns == sample_data_df.columns).all()
+    assert (denoised.index == sample_data_df.index).all()
+    # Check internal flags
+    assert ssa._input_is_df is True
+    assert ssa._column_names == sample_data_df.columns.tolist()
 
-    # Check that returned objects are DataFrames
-    assert isinstance(cov, pd.DataFrame)
-    assert isinstance(corr, pd.DataFrame)
+def test_fit_before_transform_raises():
+    ssa = SSA(window_len=10)
+    with pytest.raises(ValueError, match="Run `ssa_fit` before"):
+        ssa.ssa_transform(np.random.randn(20, 3))
 
-    # Check dimensions
-    assert cov.shape == (2,2)
-    assert corr.shape == (2,2)
+def test_transform_missing_column_raises(sample_data_array):
+    ssa = SSA(window_len=10)
+    ssa.ssa_fit(sample_data_array)
+    # Create array with more features
+    larger = np.random.randn(20, sample_data_array.shape[1] + 1)
+    with pytest.raises(KeyError):
+        ssa.ssa_transform(larger)
 
-    # Check that covariance is correct
-    expected_cov = train.cov()
-    pd.testing.assert_frame_equal(cov, expected_cov)
+# -------------------- Tests for Kalman Filter -------------------- #
 
-# ---------- NN Preprocessor ---------- #
+# -------------------- Tests for Preprocessor -------------------- #
 @pytest.fixture
 def preprocessor():
-    return Preprocessor(common_features=['sp500r'], broadcast=False)
+    return Preprocessor(common_features=['sprtrn'], broadcast=False)
 
-# def test_extract_tickers(preprocessor):
-#     test_list = ['ABCD','EFGH']
-#     preprocessor.all_col_names = [
-#         'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 'EFGH_VOL_CHANGE', 'sp500r'
-#     ]
-#     tickers_list = preprocessor._extract_tickers()
+def test_normalize_fit_median_and_iqr(preprocessor):
+    # small deterministic dataframe whose median and IQR are known
+    df = pd.DataFrame({
+        'col1': np.array([0, 1, 2, 3, 4], dtype=float),   # median=2, IQR=2 (3-1)
+        'col': np.array([10, 20, 30, 40, 50], dtype=float), # median=30, IQR=20 (40-20)
+    })
 
-#     assert tickers_list == test_list, 'Only tickers should be extracted, and sorted alphabetically.'
-#     assert 'sp500r' not in tickers_list, 'Common features should not be in all_tickers list.'
+    scaled = preprocessor._normalize(df.copy(), mode='fit')
+
+    # For RobustScaler, after fitting:
+    # - column medians should be ~ 0
+    # - IQR should be ~ 1
+    for col in scaled.columns:
+        col_vals = scaled[col].values
+        median = np.median(col_vals)
+        iqr = np.percentile(col_vals, 75) - np.percentile(col_vals, 25)
+
+        assert np.isclose(median, 0.0, atol=1e-8), f'median for {col} not ~0 (got {median})'
+        assert np.isclose(iqr, 1.0, atol=1e-8), f'IQR for {col} not ~1 (got {iqr})'
+
+def test_broadcast_common_features(preprocessor):
+    # Small df with macro common feature 'sprtrn'
+    n = 10
+    rng = np.random.default_rng(42)
+    dates = pd.date_range('2020-01-01', periods=n)
+    df = pd.DataFrame({
+        'A_VOL_CHANGE': rng.normal(size=n),
+        'A_RET': rng.normal(size=n),
+        'A_TURNOVER': rng.uniform(0.1, 5.0, size=n),
+        'B_VOL_CHANGE': rng.normal(loc=0.5, size=n),
+        'B_RET': rng.normal(size=n),
+        'B_TURNOVER': rng.uniform(0.2, 8.0, size=n),
+        'sprtrn': np.linspace(2.0, 3.0, n),
+    }, index=dates)
+    preprocessor.broadcast = True # Set to true, since default is false
+    processed, _ = preprocessor.process_train_data(df.copy())
+    # processed
+
+    # Original macro column 'GDP' must be removed
+    assert 'sprtrn' not in processed.columns
+
+    # Broadcasted columns for each ticker must exist
+    assert 'A_sprtrn' in processed.columns
+    assert 'B_sprtrn' in processed.columns
+
+    # There should not be any leftover macro column names without ticker
+    assert all(('_' in c) or c == 'date' for c in processed.columns)
+
+    # A_GDP and B_GDP should be equal vectors (they are broadcast copies)
+    assert_allclose(
+        processed['A_sprtrn'].values,
+        processed['B_sprtrn'].values,
+        atol=1e-12
+    )
+
+def test_update_common_features_merges_and_deduplicates_preserve_order():
+    # existing common features should stay in front, new ones appended,
+    # and duplicates removed preserving first-seen order
+    p = Preprocessor(common_features=['A', 'B'])
+    p._update_common_features(['B', 'C', 'D'])
+    assert p.common_features == ['A', 'B', 'C', 'D']
+
+def test_update_common_features_empty_result_sets_none():
+    """
+    Test for update common features list method when either on or
+    both lists are None or empty
+    """
+    p = Preprocessor(common_features=None)
+    p._update_common_features([])   # no macro columns and no base -> None
+    assert p.common_features is None
+
+    p2 = Preprocessor(common_features=[])
+    p2._update_common_features([])  # empty list treated same as None in constructor use
+    assert p2.common_features is None
+
+    p3 = Preprocessor(common_features=None)
+    p3._update_common_features(['GDP', 'CPI'])
+    assert p3.common_features == ['GDP', 'CPI']
 
 def test_build_feats_order(preprocessor):
     unordered_cols = [
-        'sp500r', 'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 
+        'sprtrn', 'EFGH_RET', 'ABCD_RET', 'ABCD_VOL_CHANGE', 
         'EFGH_VOL_CHANGE', 'ABCD_BA_SPREAD', 'EFGH_BA_SPREAD'
     ]
 
     expected_ticker = ['ABCD', 'EFGH']
     expected_order = [
         'ABCD_BA_SPREAD', 'ABCD_RET', 'ABCD_VOL_CHANGE', 
-        'EFGH_BA_SPREAD', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sp500r'
+        'EFGH_BA_SPREAD', 'EFGH_RET', 'EFGH_VOL_CHANGE', 'sprtrn'
     ]
     preprocessor.unordered_cols = unordered_cols
 
@@ -133,30 +215,6 @@ def test_build_feats_order(preprocessor):
     assert all_ordered == expected_order, 'All features must be sorted by ticker first,\
         then feature, and lastly sorted common features'
     assert tickers == expected_ticker, 'Only tickers should be extracted, and sorted alphabetically.'
-
-def make_sample_train(n=100, seed=0):
-    rng = np.random.default_rng(seed)
-    dates = pd.date_range("2020-01-01", periods=n)
-    # vol_change can be negative (Yeo-Johnson supports negatives)
-    a_vol = rng.normal(loc=0.0, scale=2.0, size=n)
-    b_vol = rng.normal(loc=0.5, scale=1.5, size=n)
-    # turnover must be strictly positive for Box-Cox
-    a_turn = rng.uniform(0.1, 10.0, size=n)
-    b_turn = rng.uniform(0.2, 20.0, size=n)
-    # a regular feature (not transformed by _transform)
-    a_price = rng.normal(loc=100, scale=5, size=n)
-    # macro common feature (no underscore in name)
-    gdp = np.linspace(1.0, 2.0, n)
-
-    df = pd.DataFrame({
-        'ABCD_RET': a_price,
-        'ABCD_VOL_CHANGE': a_vol,
-        'ABCD_TURNOVER': a_turn,
-        'BCDE_VOL_CHANGE': b_vol,
-        'BCDE_TURNOVER': b_turn,
-        'GDP': gdp,
-    }, index=dates)
-    return df
 
 def test_extract_only_returns(preprocessor):
     train = pd.DataFrame({'ABCD_RET': [0.1, 0.2, 0.3], 'ABCD_VOL':[100, 200, 300]})
@@ -186,159 +244,206 @@ def test_extract_only_returns_incorrect_init(preprocessor):
     
     assert 'Run `process_train_data` first.' in str(excinfo)
 
-# def test_transform_fit_and_split_applies_power_transforms(preprocessor):
-#     train = make_sample_train(n=50, seed=1)
-#     split = make_sample_train(n=20, seed=2)
+def test_extract_only_ba(preprocessor):
+    train = pd.DataFrame({'ABCD_BA_SPREAD': [0.1, 0.2, 0.3], 'ABCD_RET':[100, 200, 300]})
+    val = pd.DataFrame({'ABCD_BA_SPREAD': [0.4, 0.5, 0.6], 'ABCD_RET':[150, 250, 350]})
+    test = pd.DataFrame({'ABCD_BA_SPREAD': [0.7, 0.8, 0.9], 'ABCD_RET':[400, 500, 600]})
 
-#     preprocessor.unordered_cols = list(train.columns)
+    ret_train = preprocessor._extract_only_ba(train)
+    ret_val = preprocessor._extract_only_ba(val)
+    ret_test = preprocessor._extract_only_ba(test)
 
-#     # fit mode
-#     transformed_train = preprocessor._transform(train.copy(), mode='fit')
+    # Should keep only columns containing '_BA_SPREAD',
+    # but with suffix removed
+    assert list(ret_train.columns) == ['ABCD_BA_SPREAD']
+    assert list(ret_val.columns) == ['ABCD_BA_SPREAD']
+    assert list(ret_test.columns) == ['ABCD_BA_SPREAD']
 
-#     # Ensure transformers were fitted and transformed data changed for the relevant cols
-#     vol_cols = [c for c in preprocessor.unordered_cols if '_VOL_CHANGE' in c]
-#     turn_cols = [c for c in preprocessor.unordered_cols if '_TURNOVER' in c]
+    # Check values remain the same
+    assert ret_train.iloc[0,0] == 0.1
+    assert ret_val.iloc[1,0] == 0.5
+    assert ret_test.iloc[2,0] == 0.9
 
-#     # At least one value should differ from original after fit-transform
-#     assert not np.allclose(train[vol_cols].values, transformed_train[vol_cols].values)
-#     assert not np.allclose(train[turn_cols].values, transformed_train[turn_cols].values)
+def test_build_ba_spread_cols(preprocessor):
+    # Preprocessor must have all_tickers set
+    preprocessor.all_tickers = ['A', 'B']
+    result = preprocessor._build_ba_spread_cols()
+    expected = ['A_BA_SPREAD', 'B_BA_SPREAD']
+    assert result == expected
 
-#     # split mode
-#     # Manually compute expected transformed values
-#     expected_split = split.copy()
-#     expected_split[vol_cols] = preprocessor._yeo_john.transform(split[vol_cols])
-#     expected_split[turn_cols] = preprocessor._box_cox.transform(split[turn_cols])
+def test_build_ba_spread_cols_empty(preprocessor):
+    preprocessor.all_tickers = []
+    result = preprocessor._build_ba_spread_cols()
+    assert result == []
 
-#     result_split = preprocessor._transform(split.copy(), mode='split')
+@pytest.fixture
+def sample_train_data():
+    # Create a DataFrame with columns: date (ignored), ticker features, common feature, returns, BA spreads
+    # Tickers: A, B; Features: x, y
+    dates = pd.date_range('2020-01-01', periods=10, freq='D')
+    data = {
+        'A_x': np.random.randn(10),
+        'A_y': np.random.randn(10),
+        'B_x': np.random.randn(10),
+        'B_y': np.random.randn(10),
+        'sprtrn': np.random.randn(10),
+        'A_RET': np.random.randn(10),
+        'B_RET': np.random.randn(10),
+        'A_BA_SPREAD': np.random.randn(10),
+        'B_BA_SPREAD': np.random.randn(10),
+    }
+    return pd.DataFrame(data, index=dates)
 
-#     # Compare
-#     assert_allclose(
-#         result_split[vol_cols].values, 
-#         expected_split[vol_cols].values,
-#         atol=1e-8
-#     )
-#     assert_allclose(
-#         result_split[turn_cols].values,
-#         expected_split[turn_cols].values,
-#         atol=1e-8
-#     )
+@pytest.fixture
+def sample_macro_data():
+    dates = pd.date_range('2020-01-01', periods=10, freq='D')
+    return pd.DataFrame({'macro1': np.random.randn(10), 'macro2': np.random.randn(10)}, index=dates)
 
-# def test_power_transform_reduces_skewness(preprocessor):
-#     """
-#     Ensure that Yeo-Johnson and Box-Cox transformations reduce skewness
-#     in VOL_CHANGE and TURNOVER columns.
-#     """
-#     # Create an intentionally skewed dataset
-#     rng = np.random.default_rng(0)
-#     n = 300
+@pytest.fixture
+def sample_split_data(sample_train_data):
+    # Create a similar DataFrame for validation/test
+    dates = pd.date_range('2020-01-11', periods=5, freq='D')
+    data = {
+        'A_x': np.random.randn(5),
+        'A_y': np.random.randn(5),
+        'B_x': np.random.randn(5),
+        'B_y': np.random.randn(5),
+        'sprtrn': np.random.randn(5),
+        'A_RET': np.random.randn(5),
+        'B_RET': np.random.randn(5),
+        'A_BA_SPREAD': np.random.randn(5),
+        'B_BA_SPREAD': np.random.randn(5),
+    }
+    return pd.DataFrame(data, index=dates)
 
-#     # VOL_CHANGE (can be negative): heavily right-skewed via exp() - 5
-#     vol_a = np.exp(rng.normal(1, 1, size=n)) - 5
-#     vol_b = np.exp(rng.normal(1.2, 1, size=n)) - 6
+def test_process_train_data_basic(preprocessor, sample_train_data):
+    train_processed, ret_train = preprocessor.process_train_data(sample_train_data)
+    # Check shapes
+    assert train_processed.shape[0] == sample_train_data.shape[0]
+    # Check that return columns are extracted correctly
+    assert ret_train.shape[1] == 2  # two tickers
+    assert list(ret_train.columns) == ['A', 'B']
+    # Check that scaler is fitted (should not raise)
+    assert hasattr(preprocessor._robust_scaler, 'scale_')
+    # Check that common_features are unchanged if no macro
+    assert preprocessor.common_features == ['sprtrn']
 
-#     # TURNOVER (strictly positive): lognormal = extremely skewed
-#     turn_a = rng.lognormal(mean=1, sigma=1, size=n)
-#     turn_b = rng.lognormal(mean=0.8, sigma=1, size=n)
+def test_process_train_data_with_macro(preprocessor, sample_train_data, sample_macro_data):
+    train_processed, ret_train = preprocessor.process_train_data(sample_train_data, macro_data=sample_macro_data)
+    # Macro columns should be added to common_features
+    assert 'macro1' in preprocessor.common_features
+    assert 'macro2' in preprocessor.common_features
+    # The processed data should contain the macro columns (broadcast? only if broadcast=True)
+    # By default broadcast=False, so macro columns remain as single columns
+    # Since we added macro columns, they are not part of ordered_cols? Actually they are added to common features, so they appear at the end.
+    assert 'macro1' in train_processed.columns
+    assert 'macro2' in train_processed.columns
 
-#     df = pd.DataFrame({
-#         'A_VOL_CHANGE': vol_a,
-#         'B_VOL_CHANGE': vol_b,
-#         'A_TURNOVER': turn_a,
-#         'B_TURNOVER': turn_b,
-#     })
+def test_process_train_data_broadcast(preprocessor, sample_train_data):
+    preprocessor.broadcast = True
+    train_processed, ret_train = preprocessor.process_train_data(sample_train_data)
+    # After broadcast, common feature 'sprtrn' should be broadcasted to each ticker
+    expected_broadcast_cols = ['A_sprtrn', 'B_sprtrn']
+    for col in expected_broadcast_cols:
+        assert col in train_processed.columns
+    # Original 'sprtrn' should be dropped
+    assert 'sprtrn' not in train_processed.columns
 
-#     # Preprocessor needs all_col_names set before calling _transform
-#     preprocessor.unordered_cols = list(df.columns)
+def test_process_train_data_orders_columns(preprocessor, sample_train_data):
+    train_processed, _ = preprocessor.process_train_data(sample_train_data)
+    # Check that columns are sorted: first ticker features alphabetically, then common features
+    # For tickers A,B and features x,y, the order should be A_x, A_y, B_x, B_y, then sprtrn
+    expected_order = [
+        'A_BA_SPREAD', 'A_RET', 'A_x', 'A_y', 
+        'B_BA_SPREAD','B_RET', 'B_x', 'B_y', 'sprtrn'
+    ]
+    assert list(train_processed.columns) == expected_order
 
-#     # Skewness BEFORE transformation
-#     before_skew = df.apply(lambda s: skew(s.dropna()))
+def test_process_split_data_no_macro(preprocessor, sample_train_data, sample_split_data):
+    # First fit on training
+    preprocessor.process_train_data(sample_train_data)
+    # Then process split
+    split_processed, ret_split, ba_split = preprocessor.process_split_data(sample_split_data)
+    # Check shapes
+    assert split_processed.shape[0] == sample_split_data.shape[0]
+    assert ret_split.shape == (sample_split_data.shape[0], 2)
+    assert ba_split.shape == (sample_split_data.shape[0], 2)
+    # Check column order matches training
+    expected_order = [
+        'A_BA_SPREAD', 'A_RET', 'A_x', 'A_y', 
+        'B_BA_SPREAD','B_RET', 'B_x', 'B_y', 'sprtrn'
+    ]
+    assert list(split_processed.columns) == expected_order
+    # Check that returns columns are tickers only
+    assert list(ret_split.columns) == ['A', 'B']
+    # Check BA spreads columns are ordered
+    assert list(ba_split.columns) == ['A_BA_SPREAD', 'B_BA_SPREAD']
 
-#     # Transform (fit mode)
-#     df_after = preprocessor._transform(df.copy(), mode="fit")
+def test_process_split_data_with_macro(preprocessor, sample_train_data, sample_macro_data, sample_split_data):
+    # Training with macro
+    preprocessor.process_train_data(sample_train_data, macro_data=sample_macro_data)
+    # Split also needs macro aligned? For split, macro should be provided, but not necessary for test.
+    # However, macro columns are now in common_features, so split must have those columns or else missing columns error.
+    # We'll create a split macro data with same columns
+    split_macro = sample_macro_data.iloc[:len(sample_split_data)].copy()
+    split_processed, ret_split, ba_split = preprocessor.process_split_data(sample_split_data, macro_data=split_macro)
+    # The split should have macro columns in the data
+    assert 'macro1' in split_processed.columns
+    assert 'macro2' in split_processed.columns
 
-#     # Skewness AFTER transformation
-#     after_skew = df_after.apply(lambda s: skew(s.dropna()))
+def test_process_split_data_missing_columns(preprocessor, sample_train_data, sample_split_data):
+    preprocessor.process_train_data(sample_train_data)
+    # Remove a column from split
+    split_missing = sample_split_data.drop(columns=['A_x'])
+    with pytest.raises(ValueError, match="Missing columns in split data"):
+        preprocessor.process_split_data(split_missing)
 
-#     # Check skewness reduction for each transformed column
-#     for col in ['A_VOL_CHANGE', 'B_VOL_CHANGE', 'A_TURNOVER', 'B_TURNOVER']:
-#         assert abs(after_skew[col]) < abs(before_skew[col]), \
-#             f'Skewness did not decrease for {col}: before={before_skew[col]}, after={after_skew[col]}'
+def test_process_split_data_extra_columns(preprocessor, sample_train_data, sample_split_data):
+    preprocessor.process_train_data(sample_train_data)
+    # Add an extra column
+    split_extra = sample_split_data.copy()
+    split_extra['extra'] = 0
+    # Should not raise, but extra column should be dropped
+    split_processed, _, _ = preprocessor.process_split_data(split_extra)
+    assert 'extra' not in split_processed.columns
 
-# def test_normalize_fit_median_and_iqr(preprocessor):
-#     # small deterministic dataframe whose median and IQR are known
-#     df = pd.DataFrame({
-#         'col1': np.array([0, 1, 2, 3, 4], dtype=float),   # median=2, IQR=2 (3-1)
-#         'col': np.array([10, 20, 30, 40, 50], dtype=float), # median=30, IQR=20 (40-20)
-#     })
+def test_process_split_data_broadcast(preprocessor, sample_train_data, sample_split_data):
+    preprocessor.broadcast = True
+    preprocessor.process_train_data(sample_train_data)
+    split_processed, _, _ = preprocessor.process_split_data(sample_split_data)
+    # Broadcasted common features should appear
+    expected_broadcast = ['A_sprtrn', 'B_sprtrn']
+    for col in expected_broadcast:
+        assert col in split_processed.columns
+    assert 'sprtrn' not in split_processed.columns
 
-#     scaled = preprocessor._normalize(df.copy(), mode='fit')
+def test_get_common_features_initial(preprocessor):
+    assert preprocessor.get_common_features() == ['sprtrn']
 
-#     # For RobustScaler, after fitting:
-#     # - column medians should be ~ 0
-#     # - IQR should be ~ 1
-#     for col in scaled.columns:
-#         col_vals = scaled[col].values
-#         median = np.median(col_vals)
-#         iqr = np.percentile(col_vals, 75) - np.percentile(col_vals, 25)
+def test_get_common_features_updated(preprocessor, sample_train_data, sample_macro_data):
+    preprocessor.process_train_data(sample_train_data, macro_data=sample_macro_data)
+    common = preprocessor.get_common_features()
+    assert 'macro1' in common
+    assert 'macro2' in common
+    assert 'sprtrn' in common
 
-#         assert np.isclose(median, 0.0, atol=1e-8), f'median for {col} not ~0 (got {median})'
-#         assert np.isclose(iqr, 1.0, atol=1e-8), f'IQR for {col} not ~1 (got {iqr})'
+# ---------- Cov Preprocessor tests ---------- #
+def test_cov_preprocessor():
+    train = pd.DataFrame({
+        'RET1': [0.1, 0.2, 0.3, 0.4, 0.5, 0.3],
+        'RET2': [0.2, 0.1, 0.0, 0.2, 0.1, 0.0]
+    })
 
-def test_broadcast_common_features(preprocessor):
-    # Small df with macro common feature 'sp500r'
-    n = 10
-    rng = np.random.default_rng(42)
-    dates = pd.date_range('2020-01-01', periods=n)
-    df = pd.DataFrame({
-        'A_VOL_CHANGE': rng.normal(size=n),
-        'A_RET': rng.normal(size=n),
-        'A_TURNOVER': rng.uniform(0.1, 5.0, size=n),
-        'B_VOL_CHANGE': rng.normal(loc=0.5, size=n),
-        'B_RET': rng.normal(size=n),
-        'B_TURNOVER': rng.uniform(0.2, 8.0, size=n),
-        'sp500r': np.linspace(2.0, 3.0, n),
-    }, index=dates)
-    preprocessor.broadcast = True # Set to true, since default is false
-    processed, _ = preprocessor.process_train_data(df.copy())
-    # processed
+    cov, corr = preprocessor2(train)
 
-    # Original macro column 'GDP' must be removed
-    assert 'sp500r' not in processed.columns
+    # Check that returned objects are DataFrames
+    assert isinstance(cov, pd.DataFrame)
+    assert isinstance(corr, pd.DataFrame)
 
-    # Broadcasted columns for each ticker must exist
-    assert 'A_sp500r' in processed.columns
-    assert 'B_sp500r' in processed.columns
+    # Check dimensions
+    assert cov.shape == (2,2)
+    assert corr.shape == (2,2)
 
-    # There should not be any leftover macro column names without ticker
-    assert all(('_' in c) or c == 'date' for c in processed.columns)
-
-    # A_GDP and B_GDP should be equal vectors (they are broadcast copies)
-    assert_allclose(
-        processed['A_sp500r'].values,
-        processed['B_sp500r'].values,
-        atol=1e-12
-    )
-
-def test_update_common_features_merges_and_deduplicates_preserve_order():
-    # existing common features should stay in front, new ones appended,
-    # and duplicates removed preserving first-seen order
-    p = Preprocessor(common_features=['A', 'B'])
-    p._update_common_features(['B', 'C', 'D'])
-    assert p.common_features == ['A', 'B', 'C', 'D']
-
-def test_update_common_features_empty_result_sets_none():
-    """
-    Test for update common features list method when either on or
-    both lists are None or empty
-    """
-    p = Preprocessor(common_features=None)
-    p._update_common_features([])   # no macro columns and no base -> None
-    assert p.common_features is None
-
-    p2 = Preprocessor(common_features=[])
-    p2._update_common_features([])  # empty list treated same as None in constructor use
-    assert p2.common_features is None
-
-    p3 = Preprocessor(common_features=None)
-    p3._update_common_features(['GDP', 'CPI'])
-    assert p3.common_features == ['GDP', 'CPI']
+    # Check that covariance is correct
+    expected_cov = train.cov()
+    pd.testing.assert_frame_equal(cov, expected_cov)

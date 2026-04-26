@@ -52,9 +52,31 @@ def test_extract_oos_dates():
     pd.testing.assert_index_equal(in_dates[0], df.index[0:5])
     pd.testing.assert_index_equal(out_dates[0], df.index[5:10])
 
-# ----------------------------------------------------------------------
-# Tests for calc_in_out_idx
-# ----------------------------------------------------------------------
+# -------------------- Tests for extract_sp500_winds ---------------- #
+def test_extract_sp500_winds_multiple_windows():
+    df = pd.DataFrame({'sp500': np.arange(20)})
+    out_win_idxs = [(0,5), (5,10)]
+    result = extract_sp500_winds(df, 'sp500', out_win_idxs)
+    expected = np.array([df['sp500'].iloc[0:5].values, df['sp500'].iloc[5:10].values])
+    assert result.shape == (2, 5)
+    np.testing.assert_array_equal(result, expected)
+
+def test_extract_sp500_winds_single_window():
+    df = pd.DataFrame({'sp500': np.arange(10)})
+    out_win_idxs = [(3,7)]
+    result = extract_sp500_winds(df, 'sp500', out_win_idxs)
+    expected = np.array([df['sp500'].iloc[3:7].values])
+    assert result.shape == (1, 4)
+    np.testing.assert_array_equal(result, expected)
+
+def test_extract_sp500_winds_different_column_name():
+    df = pd.DataFrame({'returns': np.arange(15)})
+    out_win_idxs = [(1,4), (8,11)]
+    result = extract_sp500_winds(df, 'returns', out_win_idxs)
+    expected = np.array([df['returns'].iloc[1:4].values, df['returns'].iloc[8:11].values])
+    np.testing.assert_array_equal(result, expected)
+
+# -------------------- Tests for calc_in_out_idx -------------------- #
 def test_calc_in_out_idx_typical():
     # Create a DataFrame with 100 rows, no NaNs
     df = pd.DataFrame(np.random.randn(100, 5))

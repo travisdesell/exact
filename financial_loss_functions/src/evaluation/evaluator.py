@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Callable
@@ -8,6 +9,7 @@ class Evaluator:
     for all windows againsts each other as well as benchmarks.
     """
     spread_cost_factor = 0.5
+    rounding_digits = 4
     
     def __init__(
             self, 
@@ -33,7 +35,7 @@ class Evaluator:
         if eval_returns is not None and isinstance(eval_returns, np.ndarray):
             if eval_returns.ndim != 3:
                 raise ValueError(
-                    f'ERROR: Evaluation Returns must have 3 dim, got {self.eval_returns.ndim}.'
+                    f'ERROR: Evaluation Returns must have 3 dim, got {eval_returns.ndim}.'
                 )
             
             self.eval_returns = eval_returns
@@ -148,9 +150,7 @@ class Evaluator:
         if model_name in self.all_daily_returns:
             self.all_daily_returns.update({model_name: new_returns})
         else:
-            raise Warning(
-                f'Returns for {model_name} do not exist, hence not updating any returns.'
-            )
+            warnings.warn(f'Returns for {model_name} do not exist. Not updating.')
     
     def add_benchmark_rets(self, bench_name: str, bench_rets: np.ndarray):
         """
@@ -186,7 +186,7 @@ class Evaluator:
             model_rets = []
             for i in range(all_rets.shape[0]):
                 window_metric = metric_func(all_rets[i])
-                model_rets.append(round(window_metric, 4))
+                model_rets.append(round(window_metric, self.rounding_digits))
             
             metric_perfomances[model] = model_rets
         if mean:
@@ -195,7 +195,13 @@ class Evaluator:
             return pd.DataFrame(metric_perfomances)
     
     def calc_avg_performance(self) -> pd.DataFrame | None:
+        """
+        Calculates average portfolio performance metrics over all windows of the walk forward.
+        This does not calculate actual overall performance of a portfolio for the entire data split period.
         
+        Returns:
+            avg_perf (pd.DataFrame | None): Average portfolio performances over all windows.
+        """
         if self.metrics_lib:
             all_metrics_perf = []
             for met_name, met_func in self.metrics_lib.items():
@@ -211,10 +217,81 @@ class Evaluator:
             print('No metrics library or dict provided. Cannot run average performance over metrics.')
             return None
 
+    def _combine_rets_winds(self) -> dict[str, np.ndarray]:
+        """
+        Combine all windows to make one time series over entire validation period.
+        
+        Returns:
+            combined_returns (dict[str, np.ndarray]): Dictionary containing the daily returns 
+                for each model over the entire out-of-sample period.
+        """
+        combined_returns = {
+            model: np.concatenate(arr) for model, arr in self.all_daily_returns.items()
+        }
+
+        return combined_returns
+
+    def _calc_overall_metric_perf(
+            self, metric_func: Callable, daily_rets: dict[str, np.ndarray]
+        ) -> dict[str, np.float64]:
+
+        metric_perfomances = {}
+        for model, all_rets in daily_rets.items():
+            metric_value = metric_func(all_rets)
+            metric_perfomances[model] = round(metric_value, self.rounding_digits)
+        
+        return metric_perfomances
+   
+    def calc_pf_performances(self) -> pd.DataFrame | None:
+        """
+        Calculate the overall portfolio performances for all metrics by concatenating returns 
+        from all windows and then calculating portfolio the portfolio performance metrics for one
+        time series array of returns for the entire evaluation (out-of-sample) period.
+
+        Returns:
+            all_metric_perf (pd.DataFrame | None): Performance of each portfolio for the entire
+                evaluation (out-of-sample) period.
+        """
+        self._daily_rets_calcd_check()
+        if self.metrics_lib:
+            
+            # Combine all windows to make one time series over entire validation period.
+            combined_returns = {
+                model: np.concatenate(arr) for model, arr in self.all_daily_returns.items()
+            }
+
+            all_metric_perf = {}
+            for met_name, met_func in self.metrics_lib.items():
+                met_perf = self._calc_overall_metric_perf(met_func, combined_returns)
+                all_metric_perf[met_name] = met_perf
+
+            return pd.DataFrame(all_metric_perf)
+        else:
+            print(
+                'No metrics library or dict provided. Cannot run portfolio performances over metrics.'
+            )
+            return None
+
     def get_all_daily_returns(self):
+        """
+        Get daily returns for all windows and all models
+        
+        Returns:
+            all_daily_returns (dict[str, np.ndarray]): Dictionary containing the daily returns for 
+                all windows and all models.
+        """
         return self.all_daily_returns
     
     def update_spread_cost_factor(self, spread_cost_factor: float):
+        """
+        Update the Bid-Ask spread cost factor. Factor value must be < 1.0.
+
+        Args:
+            spread_cost_factor (float): New spread cost factor value.
+        
+        Raises:
+            ValueError: Spread Cost factor cannot be greater than 1.
+        """
         if spread_cost_factor > 1.0:
             raise ValueError('Spread Cost factor cannot be greater than 1.')
         else:
@@ -280,7 +357,7 @@ class EqualWeightCalculator:
         Returns:
             eq_weights (np.ndarray | None): Array containing weights for every window from the data.
         """
-        if self.eq_weights:
+        if self.eq_weights is not None:
             return self.eq_weights
         else:
             print(
@@ -288,36 +365,3 @@ class EqualWeightCalculator:
                 'Run `EqualWeightCalculator.calc_eq_wt_daily_rets()` first.'
             )
             return None
-
-def filter_models(
-        avg_perf: pd.DataFrame, bench_name: str, bench_met: str, keep: list[str]
-    ) -> tuple[pd.DataFrame, list[str]]:
-    """
-    Filter out models that do not beat the benchmark (eg. Equal_Weight) and keep ones that do.
-
-    Args:
-        avg_perf (pd.DataFrame): Average Performance of all models across all metrics.
-        bench_name (str): String name of the benchmark that exists in the avg_per dataframe.
-        bench_met (str): String name of the metric that should be used to compare the models.
-        keep (list[str]): List of all benchmarks or indexes to keep.
-    
-    Returns:
-        tuple: A tuple containing,
-            - filtered_avg_perf (pd.DataFrame): Dataframe containing only models that 
-            outperformed the benchmark on the specified metric.
-            - filtered_models (list[str]): List of names of the models that beat the benchmark.
-    """
-
-    # Get the equal‑weight Metric (Sharpe) value
-    ew_sharpe = avg_perf.loc[bench_name, bench_met]
-
-    # Create mask: keep if (1) it's a benchmark OR (2) its Sharpe > ew_sharpe
-    mask = avg_perf.index.isin(keep) | (avg_perf[bench_met] > ew_sharpe)
-
-    filtered_df = avg_perf[mask]
-
-    filtered_models = filtered_df.index[
-        ~filtered_df.index.isin(keep)
-    ].to_list()
-
-    return filtered_df, filtered_models

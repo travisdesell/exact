@@ -3,6 +3,8 @@ import json
 import pickle
 import pytest
 import pandas as pd
+from pathlib import Path
+from unittest.mock import patch
 from pandas.testing import assert_frame_equal
 from src.utils.io import (
     data_dir_check,
@@ -17,12 +19,11 @@ from src.utils.io import (
     load_pickle_temp,
     reset_data_stage,
     load_path_config, 
-    load_json   
+    load_json,
+    artifact_paths_setup
 )
 
-from src.utils.formatting import extract_req_cols
-
-# ---------- Tests for create_directory ---------- #
+# ------------------- Tests for create_directory -------------------- #
 def test_create_directory_creates_and_prints(tmp_path, capsys):
     d = tmp_path / 'new_dir'
     assert not d.exists()
@@ -121,33 +122,21 @@ def test_check_if_files_exist_with_string_paths(tmp_path):
     assert result[missing_str] is False
 
 # -------------------- Tests for raise_file_not_found --------------------
-def test_raise_file_not_found_all_exist(tmp_path):
-    file1 = tmp_path / "a.csv"
-    file2 = tmp_path / "b.csv"
-    file1.touch()
-    file2.touch()
+def test_raise_file_not_found_file_exists(tmp_path):
+    file_path = tmp_path / "existing.txt"
+    file_path.touch()
     # Should not raise
-    raise_file_not_found([file1, file2])
+    raise_file_not_found(file_path)
 
-def test_raise_file_not_found_missing_file(tmp_path):
-    exists = tmp_path / "exists.txt"
-    missing = tmp_path / "missing.txt"
-    exists.touch()
-    with pytest.raises(FileNotFoundError, match=f"Required file not found: {missing}"):
-        raise_file_not_found([exists, missing])
+def test_raise_file_not_found_file_missing(tmp_path):
+    missing_path = tmp_path / "missing.txt"
+    with pytest.raises(FileNotFoundError, match=f"Required file not found: {missing_path}"):
+        raise_file_not_found(missing_path)
 
-def test_raise_file_not_found_empty_list():
-    # Should not raise
-    raise_file_not_found([])
-
-def test_raise_file_not_found_multiple_missing(tmp_path):
-    missing1 = tmp_path / "miss1"
-    missing2 = tmp_path / "miss2"
-    with pytest.raises(FileNotFoundError) as exc_info:
-        raise_file_not_found([missing1, missing2])
-    # The error message should contain the first missing file (order depends on iteration)
-    assert "Required file not found:" in str(exc_info.value)
-    # It may report only the first missing file encountered; that's acceptable.
+def test_raise_file_not_found_with_string_path(tmp_path):
+    missing_str = str(tmp_path / "does_not_exist.dat")
+    with pytest.raises(FileNotFoundError, match=f"Required file not found: {missing_str}"):
+        raise_file_not_found(missing_str)
 
 # ---------- Tests for data_dir_check ---------- #
 def test_data_dir_check_create(tmp_path):
@@ -155,7 +144,6 @@ def test_data_dir_check_create(tmp_path):
     Test data_dir_check when the directory does not exist.
     It should create the directory and return True.
     """
-    # tmp_path is a pytest fixture that gives a temporary directory
     temp_dir = tmp_path / 'macro'
 
     # Run the function
@@ -212,7 +200,7 @@ def test_save_to_csv_writes_file_and_content(tmp_path):
     df_read = df_read.reset_index(drop=True)
     assert_frame_equal(df_read, df)
 
-# -------------------- Tests for save_to_json --------------------
+# -------------------- Tests for save_to_json -------------------- #
 def test_save_to_json(tmp_path):
     data = {'a': 1, 'b': [2, 3], 'c': {'d': 4}}
     output_file = tmp_path / 'test.json'
@@ -231,7 +219,7 @@ def test_save_to_json_empty_dict(tmp_path):
         loaded = json.load(f)
     assert loaded == data
 
-# -------------------- Tests for save_pickle_temp and load_pickle_temp --------------------
+# -------------------- Tests for save_pickle_temp and load_pickle_temp -------------------- #
 def test_save_and_load_pickle_temp(tmp_path):
     data = {'key': [1, 2, 3], 'nested': {'x': 10, 'y': 20}}
     pickle_file = tmp_path / 'temp.pkl'
@@ -341,7 +329,7 @@ def test_load_path_config_resolves_relative_and_default_crsp(tmp_path):
     # create the macro dir referenced in config
     (repo_root / 'data' / 'raw' / 'macro').mkdir(parents=True)
 
-    # Now call without providing crsp_data_dir - should pick up default
+    # Call without providing crsp_data_dir, should pick up default
     out = load_path_config(str(config_path))
 
     # data.processed_dir and raw_macro_dir should be converted to absolute strings under repo_root
@@ -417,3 +405,33 @@ def test_load_path_config_raises_when_default_missing(tmp_path):
     # calling without crsp_data_dir when default doesn't exist should raise FileNotFoundError
     with pytest.raises(FileNotFoundError):
         _ = load_path_config(str(config_path))
+    
+# -------------------- Tests for artifact_paths_setup -------------------- #
+def test_artifact_paths_setup_creates_directories(tmp_path):
+    # Create a config with a few artifact directories
+    config = {
+        'artifacts': {
+            'avg_perf_dir': tmp_path / 'avg_perf',
+            'hparams_dir': tmp_path / 'hparams',
+            'temp_dir': tmp_path / 'temp'
+        }
+    }
+    with patch('src.utils.io.create_directory') as mock_create_dir:
+        result = artifact_paths_setup(config)
+        # Check that create_directory was called for each path
+        for name, path in config['artifacts'].items():
+            mock_create_dir.assert_any_call(Path(path))
+        # Check returned dict
+        assert result['avg_perf_dir'] == Path(config['artifacts']['avg_perf_dir'])
+        assert result['hparams_dir'] == Path(config['artifacts']['hparams_dir'])
+        assert result['temp_dir'] == Path(config['artifacts']['temp_dir'])
+
+def test_artifact_paths_setup_missing_artifacts_key():
+    config = {'some_other_key': {}}
+    with pytest.raises(KeyError):
+        artifact_paths_setup(config)
+
+def test_artifact_paths_setup_empty_artifacts():
+    config = {'artifacts': {}}
+    result = artifact_paths_setup(config)
+    assert result == {}

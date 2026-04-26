@@ -49,6 +49,9 @@ class LossLibrary:
             cat = category
             sub = subcategory or '__default__'
             nm = name or fn.__name__
+            # Prevent duplicate registration
+            if nm in cls._registry.get(cat, {}).get(sub, {}):
+                raise KeyError(f"Function '{nm}' already registered in category '{cat}', subcategory '{sub}'")
             cls._registry.setdefault(cat, {}).setdefault(sub, {})[nm] = fn
             return fn
         return decorator
@@ -1298,7 +1301,7 @@ def custom_loss_12(
             (risk_p_lambda * risk_parity)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_13(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
@@ -1319,10 +1322,10 @@ def custom_loss_13(
     loss = sharpe + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (ent_lambda + entropy)
+                (ent_lambda * entropy)
     return loss
 
-@LossLibrary.register(category='custom')
+# @LossLibrary.register(category='custom')
 def custom_loss_14(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
@@ -1338,7 +1341,7 @@ def custom_loss_14(
     loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (ent_lambda + entropy)
+                (ent_lambda * entropy)
     return loss
 
 # @LossLibrary.register(category='custom')
@@ -1362,7 +1365,7 @@ def custom_loss_15(
     loss = sharpe + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (hhi_lambda + hhi)
+                (hhi_lambda * hhi)
     return loss
 
 # @LossLibrary.register(category='custom')
@@ -1381,5 +1384,5 @@ def custom_loss_16(
     loss = omega + \
         (cvar_lambda * cvar) + \
             (risk_p_lambda * risk_parity) + \
-                (hhi_lambda + hhi)
+                (hhi_lambda * hhi)
     return loss

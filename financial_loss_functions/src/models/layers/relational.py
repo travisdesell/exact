@@ -11,7 +11,7 @@ class FeatureAttention(nn.Module):
             num_heads=nheads,
             batch_first=True
         )
-        self.ln = nn.LayerNorm(hidden_size)
+        # self.ln = nn.LayerNorm(hidden_size)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):

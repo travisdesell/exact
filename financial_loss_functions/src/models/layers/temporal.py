@@ -14,7 +14,7 @@ class TemporalAttention(nn.Module):
         ) 
 
         self.ln_attn = nn.LayerNorm(hidden_size) # Normalizes Attention output
-        self.dropout = nn.Dropout(dropout) # Branch dropout
+        # self.dropout = nn.Dropout(dropout) # Branch dropout
 
     def forward(self, x: Tensor) -> Tensor:
         
@@ -82,7 +82,7 @@ class ContextualCNNGate(nn.Module):
         return gate.unsqueeze(1) # (B, 1, H)
 
 class TemporalEncoder(nn.Module):
-    """Encodes the 120-day history of a single stock into a feature vector."""
+    """Encodes the 180-day history of a single stock into a feature vector."""
     def __init__(
             self, input_size: int, hidden_size:int, lstm_layers: int,
             trans_layers: int, nhead:int, dropout:float

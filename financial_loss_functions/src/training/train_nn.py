@@ -20,7 +20,7 @@ from src.data_processing.dataset import WindowDataset, Reshaper
 from src.utils.formatting import reformat_hparams, split_combo_names
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
-from src.evaluation.evaluator import Evaluator, EqualWeightCalculator
+from src.evaluation.evaluator import Evaluator
 from pydantic import BaseModel, TypeAdapter
 from typing import Callable, Dict, Literal
 from scipy import stats
@@ -647,19 +647,19 @@ class Tuner:
             self.min_n_startup
         )
 
-    def _calc_pf_metrics_for_seed(
-            self, model_name: str, loss_name: str, seed: int,
-            alloc_weights: np.ndarray, y_val: np.ndarray
-        ) -> dict[str, float]:
-        evaluator = Evaluator(y_val, None)
-        evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}-{seed}')
+    # def _calc_pf_metrics_for_seed(
+    #         self, model_name: str, loss_name: str, seed: int,
+    #         alloc_weights: np.ndarray, y_val: np.ndarray
+    #     ) -> dict[str, float]:
+    #     evaluator = Evaluator(y_val, None)
+    #     evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}-{seed}')
 
-        seed_metrics = {}
-        for met_name, met_dict in self.tune_metric.items():
-            metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
-            seed_metrics[met_name] = metric_mean.item() # .item() because we calculate only 1 value
+    #     seed_metrics = {}
+    #     for met_name, met_dict in self.tune_metric.items():
+    #         metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
+    #         seed_metrics[met_name] = metric_mean.item() # .item() because we calculate only 1 value
         
-        return seed_metrics
+    #     return seed_metrics
     
     def _calc_composite_scores(
             self, model_loss_name,alloc_weights: np.ndarray
@@ -1177,12 +1177,12 @@ class CandidatesGrid(WalkerGridUtilities):
                     "In the tuner_eval_items dict, add 'metric': {'<metric>': 'func': Callable, 'sign': '<sign>'}"
                 )
 
-            elif not tune_bench_rets:
+            elif tune_bench_rets is None:
                 raise ValueError(
                     'Provide tuning benchmark (eg. S&P500 or Equal Weight returns) if tune = True.',
                     "In the tuner_eval_items dict, add 'bench_rets': np.ndarray"
                 )
-            elif not tune_eval_winds:
+            elif tune_eval_winds is None:
                 raise ValueError(
                     'Provide evaluation windows reshaped and sliced from validation returns if tune = True.',
                     "In the tuner_eval_items dict, add 'eval_winds': np.ndarray"
