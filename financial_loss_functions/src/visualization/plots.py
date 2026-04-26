@@ -532,3 +532,90 @@ def plot_hist_by_model(
             axes[idx].axis('off')
         fig.tight_layout()
         plt.show()
+
+def plot_box_models_and_benchs(
+    all_seed_perf: pd.DataFrame,
+    bench_perfs: pd.DataFrame,
+    metrics: list[str],
+    figsize: tuple = (10, 6),
+    palette: str = 'Set2',
+    benchmark_marker: str = 'D',
+    benchmark_markersize: int = 8
+):
+    """
+    Create a vertically stacked figure with one subplot per metric.
+    Each subplot shows boxplots for neural models (30 seeds) and markers
+    for deterministic benchmarks as separate x-axis categories.
+
+    Args:
+        all_seed_perf : pd.DataFrame
+            Index: model names (repeated 30 times per model). Columns: metric values.
+        bench_perfs : pd.DataFrame
+            Index: benchmark names (e.g., 'S&P500', 'Equal_Weight', 'NCO').
+            Columns: same metrics.
+        metrics : list[str]
+            List of metric column names to plot (e.g., ['sharpe', 'calmar', 'neg_cvar']).
+        figsize : tuple, default (10,6)
+            Size of each subplot (width, height). Total figure height scales with number of metrics.
+        palette : str, default 'Set2'
+            Seaborn colour palette for neural model boxplots.
+        benchmark_marker : str, default 'D'
+            Marker style for benchmark points.
+        benchmark_markersize : int, default 8
+            Size of benchmark markers.
+    """
+    # Prepare neural data: convert index to column
+    df_neural = all_seed_perf.reset_index().rename(columns={'index': 'model'})
+    # Prepare benchmark data
+    bench_long = bench_perfs.reset_index().rename(columns={'index': 'model'})
+    # Get ordered lists
+    neural_models = df_neural['model'].unique()
+    benchmark_models = bench_long['model'].unique()
+    all_categories = list(neural_models) + list(benchmark_models)
+
+    n_metrics = len(metrics)
+    # Create figure with n_metrics subplots (one per row)
+    fig, axes = plt.subplots(n_metrics, 1, figsize=(figsize[0], figsize[1] * n_metrics))
+    if n_metrics == 1:
+        axes = [axes]
+
+    for ax, metric in zip(axes, metrics):
+        # Boxplot for neural models (only)
+        sns.boxplot(data=df_neural, x='model', y=metric, ax=ax,
+                    palette=palette, order=neural_models, hue='model', legend=False,
+                    showfliers=False, linewidth=1)
+        
+        # Add benchmark points as separate x‑positions
+        # Get current x positions (0,1,... for neural models)
+        current_ticks = np.arange(len(neural_models))
+        # Extend ticks to include benchmarks
+        new_ticks = np.append(current_ticks, current_ticks[-1] + 1 + np.arange(len(benchmark_models)))
+        ax.set_xticks(new_ticks)
+        ax.set_xticklabels(all_categories, rotation=45, ha='right')
+        
+        # Plot benchmark points
+        for i, bench_name in enumerate(benchmark_models):
+            if metric not in bench_long.columns:
+                continue
+            bench_val = bench_long[bench_long['model'] == bench_name][metric].values[0]
+            x_pos = len(neural_models) + i
+            ax.scatter(x_pos, bench_val, marker=benchmark_marker,
+                       s=benchmark_markersize**2, color='red', edgecolor='black',
+                       zorder=10, label=bench_name if i == 0 else "")
+        
+        # Add legend for benchmarks (only once)
+        handles, labels = ax.get_legend_handles_labels()
+        # Remove duplicate benchmark labels
+        # unique = dict(zip(labels, handles))
+        # if unique:
+        #     ax.legend(unique.values(), unique.keys(), loc='upper left', fontsize=8)
+        
+        ax.set_title(f'{metric.upper()} Distribution')
+        ax.set_xlabel('Model / Benchmark')
+        ax.set_ylabel(metric.replace('_', ' ').title())
+        ax.grid(True, alpha=0.3)
+        # Adjust y‑axis limits if needed (optional)
+        # ax.autoscale(enable=True, axis='y')
+
+    plt.tight_layout()
+    plt.show()
