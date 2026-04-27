@@ -619,3 +619,128 @@ def plot_box_models_and_benchs(
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_2d_pareto_diff_colrs(
+    df: pd.DataFrame,
+    x_col: str,
+    y_col: str,
+    dominated_col: str = 'dominated',
+    title: str = None,
+    xlabel: str = None,
+    ylabel: str = None,
+    figsize: tuple = (8, 6),
+    color_dominated: str = 'gray',
+    alpha_dominated: float = 0.6,
+    size_dominated: int = 80,
+    size_frontier: int = 120,
+    edgecolor_frontier: str = 'black',
+    edgewidth_frontier: float = 1.5,
+    show_line: bool = True,
+    line_style: str = '--',
+    line_width: int = 2,
+    line_color: str = 'green',
+    annotate: bool = False,
+    annotation_fontsize: int = 9,
+    annotation_alpha: float = 0.8,
+    grid: bool = True,
+    grid_alpha: float = 0.3,
+    colormap: str = 'Set1'   # better contrast default
+) -> plt.Figure:
+    """
+    Plot a 2D Pareto frontier with distinct colors for each frontier model.
+    Frontier line is drawn behind points. Model names appear in the legend.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame with models as index, containing x_col, y_col, and dominated_col.
+    x_col, y_col : str
+        Column names for the two metrics.
+    dominated_col : str
+        Boolean column indicating dominated models.
+    title, xlabel, ylabel : str, optional
+        Plot labels.
+    figsize : tuple, default (8,6)
+        Figure size.
+    color_dominated : str, default 'gray'
+        Color for dominated points.
+    alpha_dominated : float, default 0.6
+        Transparency for dominated points.
+    size_dominated, size_frontier : int
+        Marker sizes.
+    edgecolor_frontier : str, default 'black'
+        Edge color for frontier markers.
+    edgewidth_frontier : float, default 1.5
+        Edge linewidth for frontier markers.
+    show_line : bool, default True
+        Whether to draw a line connecting frontier points.
+    line_style, line_width, line_color : str, int, str
+        Line style, width, and color.
+    annotate : bool, default False
+        If True, add text labels next to frontier points.
+    annotation_fontsize, annotation_alpha : int, float
+        Font size and transparency for annotations.
+    grid, grid_alpha : bool, float
+        Grid settings.
+    colormap : str or list
+        Name of a matplotlib colormap (e.g., 'Set1', 'tab10', 'viridis') or a list of colors.
+
+    Returns
+    -------
+    plt.Figure
+        The figure object.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+
+    dominated = df[df[dominated_col]]
+    frontier = df[~df[dominated_col]]
+
+    # Step 1: Draw frontier line (if requested) – behind points
+    if show_line and not frontier.empty:
+        frontier_sorted = frontier.sort_values(x_col, ascending=False)
+        ax.plot(frontier_sorted[x_col], frontier_sorted[y_col],
+                linestyle=line_style, color=line_color, linewidth=line_width,
+                label='Frontier Line', zorder=1)
+
+    # Step 2: Dominated points
+    ax.scatter(dominated[x_col], dominated[y_col],
+               c=color_dominated, marker='o', s=size_dominated,
+               alpha=alpha_dominated, label='Dominated', zorder=2)
+
+    # Step 3: Assign distinct colors to frontier models
+    if isinstance(colormap, str):
+        cmap = plt.get_cmap(colormap)
+        colors = [cmap(i) for i in np.linspace(0, 1, len(frontier))]
+    else:
+        colors = colormap[:len(frontier)]
+
+    # Step 4: Plot each frontier point (on top)
+    for (idx, row), color in zip(frontier.iterrows(), colors):
+        ax.scatter(row[x_col], row[y_col],
+                   c=color, marker='X', s=size_frontier,
+                   edgecolors=edgecolor_frontier, linewidth=edgewidth_frontier,
+                   label=row.name, zorder=3)
+
+    # Step 5: Optional annotations
+    if annotate:
+        for _, row in frontier.iterrows():
+            ax.annotate(row.name, (row[x_col], row[y_col]),
+                        xytext=(5, 5), textcoords='offset points',
+                        fontsize=annotation_fontsize, alpha=annotation_alpha)
+
+    # Labels and title
+    ax.set_xlabel(xlabel if xlabel else x_col, fontsize=12)
+    ax.set_ylabel(ylabel if ylabel else y_col, fontsize=12)
+    ax.set_title(title if title else f'Pareto Frontier - {x_col} vs {y_col}', fontsize=14)
+
+    # Legend: remove duplicate entries if any
+    handles, labels = ax.get_legend_handles_labels()
+    unique = dict(zip(labels, handles))
+    ax.legend(unique.values(), unique.keys(), loc='best', fontsize=10)
+
+    if grid:
+        ax.grid(True, alpha=grid_alpha)
+
+    fig.tight_layout()
+    return fig
