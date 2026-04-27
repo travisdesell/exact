@@ -1216,7 +1216,7 @@ def test_custom_loss_13(weights_2d, returns_2d, sample_returns):
         return (mock_vals['sharpe'] +
                 kwargs['cvar_lambda'] * mock_vals['cvar'] +
                 kwargs['risk_p_lambda'] * mock_vals['rp'] +
-                (kwargs['ent_lambda'] + mock_vals['entropy']))
+                (kwargs['ent_lambda'] * mock_vals['entropy']))
     _run_custom_loss_test(custom_loss_13, expected_calls, args, kwargs, expected_formula)
 
 def test_custom_loss_14(weights_2d, returns_2d, sample_returns):
@@ -1232,7 +1232,7 @@ def test_custom_loss_14(weights_2d, returns_2d, sample_returns):
         return (mock_vals['omega'] +
                 kwargs['cvar_lambda'] * mock_vals['cvar'] +
                 kwargs['risk_p_lambda'] * mock_vals['rp'] +
-                (kwargs['ent_lambda'] + mock_vals['entropy']))
+                (kwargs['ent_lambda'] * mock_vals['entropy']))
     _run_custom_loss_test(custom_loss_14, expected_calls, args, kwargs, expected_formula)
 
 def test_custom_loss_15(weights_2d, returns_2d, sample_returns):
@@ -1248,7 +1248,7 @@ def test_custom_loss_15(weights_2d, returns_2d, sample_returns):
         return (mock_vals['sharpe'] +
                 kwargs['cvar_lambda'] * mock_vals['cvar'] +
                 kwargs['risk_p_lambda'] * mock_vals['rp'] +
-                (kwargs['hhi_lambda'] + mock_vals['hhi']))
+                (kwargs['hhi_lambda'] * mock_vals['hhi']))
     _run_custom_loss_test(custom_loss_15, expected_calls, args, kwargs, expected_formula)
 
 def test_custom_loss_16(weights_2d, returns_2d, sample_returns):
@@ -1264,5 +1264,5 @@ def test_custom_loss_16(weights_2d, returns_2d, sample_returns):
         return (mock_vals['omega'] +
                 kwargs['cvar_lambda'] * mock_vals['cvar'] +
                 kwargs['risk_p_lambda'] * mock_vals['rp'] +
-                (kwargs['hhi_lambda'] + mock_vals['hhi']))
+                (kwargs['hhi_lambda'] * mock_vals['hhi']))
     _run_custom_loss_test(custom_loss_16, expected_calls, args, kwargs, expected_formula)
