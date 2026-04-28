@@ -1,6 +1,9 @@
+#### DEPRECATED ####
+
 import argparse
 import os
 from pathlib import Path
+import sys
 
 from dotenv import load_dotenv
 
@@ -15,6 +18,8 @@ def _parse_lags(lags_arg: str) -> list[int]:
 
 
 if __name__ == '__main__':
+    print('DEPRECATED: Feature Selection for macro-economic data is no longer in use..')
+    sys.exit(0)
     load_dotenv()
 
     parser = argparse.ArgumentParser(
