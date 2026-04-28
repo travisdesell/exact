@@ -72,7 +72,7 @@ def test_reformat_hparams_no_scheduler():
     }
     loss_cfg = {'lambdas': {}}
     result = reformat_hparams(model_cfg, loss_cfg)
-    assert result['scheduler'] is None
+    assert result['scheduler'] == {}
     assert result['loss'] == {}
 
 def test_reformat_hparams_no_loss_lambdas():
