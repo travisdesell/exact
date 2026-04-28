@@ -29,13 +29,6 @@ from src.evaluation.metrics import MetricLibrary
 from src.models.registry import NNModelLibrary
 
 
-# def _create_dirs(artifacts_paths: dict[str, Path|str]):
-#     """
-#     Create directories if they dont exist in artifacts directory.
-#     """
-#     for dir_path in artifacts_paths.values():
-#         create_directory(dir_path)
-
 def run_tuning_pipeline(
     paths_config: dict,
     hparams_config: dict,

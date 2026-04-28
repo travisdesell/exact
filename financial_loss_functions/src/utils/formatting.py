@@ -45,7 +45,7 @@ def reformat_hparams(
         'model': copy.deepcopy(model_cfg['model']),
         'optimizer': copy.deepcopy(model_cfg['optimizer']),
         'train': copy.deepcopy(model_cfg['train']),
-        'scheduler': copy.deepcopy(model_cfg.get('scheduler')),
+        'scheduler': copy.deepcopy(model_cfg.get('scheduler', {})),
         'loss': copy.deepcopy(loss_cfg.get('lambdas', {}))
     }
 

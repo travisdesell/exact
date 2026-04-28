@@ -1644,6 +1644,7 @@ class WalkForwardValidator(WalkerGridUtilities):
             temp_dir: str | None = None,
             optimized_hparams = None
         ):
+        print('DEPRECATED: WalkForwardValidator as a separate pipeline is removed.')
 
         super().__init__(
             model_lib, loss_lib, hparams_config, torch_device, mpi, temp_dir
