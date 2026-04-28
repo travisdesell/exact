@@ -3,8 +3,11 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+from src.utils.io import load_json
+from src.evaluation.metrics import MetricLibrary
+
 # Syntheitc processed CSV files
-def _create_minimal_processed_data(processed_dir: Path, num_train=360, num_val=60):
+def _create_minimal_processed_data(processed_dir: Path, num_train=360, num_val=120):
     num_stocks = 50
     num_features_per_stock = 5
     tickers = [f'stock{i}' for i in range(num_stocks)]
@@ -125,6 +128,36 @@ def test_training_pipeline_smoke(tmp_path):
     )
 
     # Checks if output files exist
-    assert (artifacts_dir / 'avg_perf' / 'avg_perf_BaseLSTM.csv').exists()
-    assert (artifacts_dir / 'daily_rets' / 'daily_rets_BaseLSTM.json').exists()
-    assert (artifacts_dir / 'hparams' / 'optimized_BaseLSTM.json').exists()
+    avg_perf_path = artifacts_dir / 'avg_perf' / 'avg_perf_BaseLSTM.csv'
+    daily_rets_path = artifacts_dir / 'daily_rets' / 'daily_rets_BaseLSTM.json'
+    opti_hparams_path = artifacts_dir / 'hparams' / 'optimized_BaseLSTM.json'
+    assert (avg_perf_path).exists(), 'Average performance File does not exist.'
+    assert (daily_rets_path).exists(), 'Daily returns file does not exist.'
+    assert (opti_hparams_path).exists(), 'Optimized hyperparameters file does not exist.'
+
+    # Check contents of average performance file
+    avg_perf_df = pd.read_csv(avg_perf_path, index_col=0)
+    
+    total_models = len(hparams_config['nn_models']) * len(hparams_config['losses'])
+    pf_metrics = MetricLibrary.items().keys()
+    assert avg_perf_df.shape == (total_models + 2, len(pf_metrics)) # 2 is for benchmarks & 7 is for portfolio metrics
+    assert 'BaseLSTM-custom_loss_10' in avg_perf_df.index
+    assert 'BaseLSTM-custom_loss_11' in avg_perf_df.index
+    assert list(avg_perf_df.columns) == list(pf_metrics)
+
+    # Check contents of daily returns file
+    daily_rets = load_json(daily_rets_path)
+    assert 'BaseLSTM-custom_loss_10' in daily_rets.keys()
+    assert 'BaseLSTM-custom_loss_11' in daily_rets.keys()
+
+    for modl_name, wind_rets in daily_rets.items():
+        assert len(wind_rets) == 2, f'{modl_name} got more than 2, output window in the validation.' 
+        # Since we use 1 output window in the validation
+
+    # Check the contents of optimized hyperparameters file
+    opti_hparams = load_json(opti_hparams_path)
+    assert 'BaseLSTM-custom_loss_10' in opti_hparams.keys()
+    assert 'BaseLSTM-custom_loss_11' in opti_hparams.keys()
+
+    for modl_name, hparams in opti_hparams.items():
+        assert len(hparams) != 0, f'{modl_name} optimized hyperparameters file is empty.'

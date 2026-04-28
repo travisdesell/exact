@@ -50,7 +50,7 @@ def _build_expected_feats(df: pd.DataFrame, common_feats: list[str]) -> tuple[li
     return all_features, tickers, order_ba_spreads
 
 @pytest.mark.integration
-def test_processing_with_committed_sample(tmp_path):
+def test_processing_pipeline_smoke(tmp_path):
     repo_root = Path(__file__).resolve().parents[2]  # adjust if tests nested differently
     sample_raw_dir = repo_root / 'data' / 'raw' / 'sample'
     assert sample_raw_dir.exists(), 'Please commit a small sample dataset at data/raw/sample'

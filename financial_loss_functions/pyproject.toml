@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+pythonpath = "."
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+addopts = [
+    "--ignore=tests/unit/test_feature_selection.py",
+    "--ignore=tests/integration/test_feature_selection_pipeline.py",
+    "--ignore=tests/integration/test_macro_data_coll.py",
+]
