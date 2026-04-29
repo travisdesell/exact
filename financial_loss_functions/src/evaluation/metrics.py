@@ -15,15 +15,11 @@ class MetricLibrary:
         name: str | None = None
     ):
         """
-        Decorator to register a standalone function into the class registry.
+        Decorator to register a standalone function portfolio performance metric 
+        function into the class registry.
 
-        Example:
-            @LossCollectio.register('regularizers', 'diversification', 'herfindahl_index')
-            def herfindahl_index(weights):
-                return (weights**2).sum(dim=-1).mean()
-        
         Args:
-            name (str | None): Name of the loss function. Default = None. 
+            name (str | None): Name of the portfolio metric function. Default = None. 
                 If None, name of the function will be used as default.
         """
         def decorator(fn: Callable):
@@ -39,32 +35,35 @@ class MetricLibrary:
     @classmethod
     def items(cls) -> Registry:
         """
-        Get the entire nesed dictionary of the library of metrics functions.
+        Get the entire registry (dictionary) of portfolio performance metrics.
 
         Returns:
-            Registry: Dictionary of all loss terms and functions.
+            Registry: Dictionary of all portfolio performance metrics.
         """
         return cls._registry
 
     @classmethod
     def get(cls, name: str) -> Callable:
         """
-        Get a particular model that belongs to a subcategory (with or without subcategory).
+        Get a function for a portfolio performance metric.
 
         Args:
-            category (str): Category that the loss function/term belongs to.
-            name (str): Name of the required loss function/term.
-            subcategory (str | None): Subcategory of the loss function/term.
+            name (str): Name of the required performance metric.
 
         Returns:
-            Callable: Callable loss function from the library.
+            Callable: Callable performance metric..
         """
         return cls._registry[name]
 
 
 @MetricLibrary.register()
 def compunded_return(returns_arr: np.ndarray) -> np.float64:
-    """Calculate cummulative returns for given window"""
+    """
+    Calculate compunded (cumulative) returns for given window.
+
+    Args:
+        returns_arr (np.ndarray): Array of returns for a window/period.
+    """
     return np.prod(1 + returns_arr) - 1
 
 @MetricLibrary.register()
@@ -72,33 +71,41 @@ def sharpe(
         returns_arr: np.ndarray, risk_free_rate: float = 0.0, annualized: bool = False
     ) -> np.float64:
     """
-    Calculates Sharpe ratio for given window of returns.
+    Calculates Sharpe ratio for for a given portfolio's returns.
     
     Args:
         returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
         risk_free_rate (float): Risk free rate for window used for returns. Default = 0.0.
+        annualized (bool): Multiply the sharpe ratio by sqrt(252) to annualize the metric.
+            Default = False.
     
     Returns:
-        sharpe (float): Sharpe ratio for the given portfolio.
+        sharpe_value (np.float64): Sharpe ratio for the given portfolio.
     """
     mean_ret = np.mean(returns_arr)
     std_ret = np.std(returns_arr)
-    sharpe = (mean_ret - risk_free_rate) / std_ret
+    sharpe_value = (mean_ret - risk_free_rate) / std_ret
 
     if annualized:
-        sharpe = sharpe * np.sqrt(252)
+        sharpe_value = sharpe_value * np.sqrt(252)
 
-    return sharpe
+    return sharpe_value
 
 @MetricLibrary.register()
-def sortino(returns_arr: np.ndarray, target: float = 0.0, annualized: bool = False) -> np.float64:
+def sortino(
+    returns_arr: np.ndarray, target: float = 0.0, annualized: bool = False
+) -> np.float64:
     """
-    Calculates Sortino ratio (downside risk only).
+    Calculates Sortino ratio (downside risk only) for a given portfolio's returns.
     
     Args:
         returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
-        target (float): Minimum acceptable return (MAR), often 0.
-            Default = 0.0.
+        target (float): Minimum acceptable return (MAR), often 0. Default = 0.0.
+        annualized (bool): Multiply the sortino ratio by sqrt(252) to annualize the metric.
+            Default = False.
+    
+    Returns:
+        sortino_value (np.float64): Sharpe ratio for the given portfolio.
     """
     downside_returns = returns_arr[returns_arr < target]
     if len(downside_returns) == 0:
@@ -107,11 +114,11 @@ def sortino(returns_arr: np.ndarray, target: float = 0.0, annualized: bool = Fal
     expected_return = np.mean(returns_arr)
     downside_std = np.std(downside_returns)
 
-    sortino = (expected_return - target) / downside_std
+    sortino_value = (expected_return - target) / downside_std
     if annualized:
-        sortino = sortino * np.sqrt(252)
+        sortino_value = sortino_value * np.sqrt(252)
     
-    return sortino
+    return sortino_value
 
 @MetricLibrary.register()
 def max_drawdown(returns_arr: np.ndarray) -> np.float64:
@@ -122,30 +129,60 @@ def max_drawdown(returns_arr: np.ndarray) -> np.float64:
         returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
     
     Returns:
-        float: Maximum peak-to-trough decline for the given portfolio
+       mdd_value (np.float64): Maximum peak-to-trough decline for the given portfolio.
     """
     cumulative = np.cumprod(1 + returns_arr)
     running_max = np.maximum.accumulate(cumulative)
     drawdowns = (cumulative - running_max) / running_max
-    return np.min(drawdowns)
+    mdd_value = np.min(drawdowns)
+    return mdd_value
 
 @MetricLibrary.register()
 def cvar(returns_arr: np.ndarray, alpha: float = 0.05) -> np.float64:
-    """Calculates the average loss in the worst alpha% of cases."""
+    """
+    Calculates the Conditional Value-at-Risk, i.e., average loss in the worst alpha % of cases.
+    
+    Args:
+        returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
+        alpha (float): Alpha value as a float. Default = 0.05 (5%).
+    
+    Returns:
+        cvar_value (np.float64): CVaR value for the given portfolio. 
+            Most likely this value will always be negative. 
+    """
     sorted_returns = np.sort(returns_arr)
     n_cutoff = int(alpha * len(sorted_returns))
-    return np.mean(sorted_returns[:n_cutoff])
+    cvar_value = np.mean(sorted_returns[:n_cutoff])
+    return cvar_value
 
 @MetricLibrary.register()
 def omega(returns_arr: np.ndarray, threshold: float = 0.0) -> np.float64:
-    """Calculates the ratio of weighted gains to weighted losses."""
+    """
+    Calculates the Omega Ratio, i.e., ratio of weighted gains to weighted losses.
+    
+    Args:
+        returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
+        threshold (float): threshold value to decide the gains and losses.. Default = 0.0.
+    
+    Returns:
+        omega_value (np.float64): Omega ratio for the given portfolio.
+    """
     gains = np.sum(returns_arr[returns_arr > threshold] - threshold)
     losses = np.sum(threshold - returns_arr[returns_arr < threshold])
-    return gains / losses if losses != 0 else np.inf
+    omega_value = gains / losses if losses != 0 else np.inf
+    return omega_value
 
 @MetricLibrary.register()
 def calmar(returns_arr: np.ndarray) -> np.float64:
-    """Ratio of annualized return to maximum drawdown."""
-    mdd = abs(max_drawdown(returns_arr))
+    """
+    Calculates the Calmar Ratio, i.e., ratio of mean returns to maximum drawdown.
     
-    return np.mean(returns_arr) / mdd if mdd != 0 else 0.0
+    Args:
+        returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
+    
+    Returns:
+        calmar_value (np.float64): Calmar ratio for thr given portfolio.
+    """
+    mdd = abs(max_drawdown(returns_arr))
+    calmar_value = np.mean(returns_arr) / mdd if mdd != 0 else 0.0
+    return calmar_value
