@@ -1,4 +1,4 @@
-# Data Collection & CRSP Data Set
+# DEPRECATED: Data Collection & CRSP Data Set
 [<- Back to Main README](/financial_loss_functions/README.md)
 
 This project utilizes daily stock data of 50 stocks from the S&P500 along with macro-economic data from Federal Reserve pf St. Louis API (FRED). As the CRSP data cannot be redistributed, a synthetic sample dataset is provided. Instruction to collected macro-economic data and placement of a CRSP or CRSP-like dataset if given below.

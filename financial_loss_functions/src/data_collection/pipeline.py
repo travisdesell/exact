@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from src.data_collection.macro_api import FredAPI
 from src.data_collection.const import FRED_SERIES
@@ -8,6 +9,7 @@ def run_macro_pipeline(
         api_key: str, paths_config: dict, fred_series: dict = FRED_SERIES
     ):
     """
+    DEPRECATED
     Macro-economic Data Collection Pipeline Entry point
 
     @param api_key str API key for FRED API
@@ -17,6 +19,8 @@ def run_macro_pipeline(
         Default = src.data_collection.const.FRED_SERIES
     """
     print('\n','=' * 20, ' Fred API Macro-Economic Data Pipeline ', '=' * 20)
+    print('DEPRECATED: Macro-economic data pipeline is no longer in use.')
+    sys.exit(0)
     
     macro_data_path = Path(paths_config['data']['raw_macro_dir'])
     

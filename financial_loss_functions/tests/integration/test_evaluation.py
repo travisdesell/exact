@@ -63,9 +63,7 @@ def _create_minimal_processed_data(
     benchmark_train.to_csv(processed_dir / 'benchmark_train.csv')
 
 
-# ----------------------------------------------------------------------
 # Helper to create optimized hyperparameters JSON artifact
-# ----------------------------------------------------------------------
 def _create_optimized_hparams(artifacts_dir: Path, model_loss: str, model_name: str):
     """Create dummy optimized hyperparameters file named by model name."""
     hparams_dir = artifacts_dir / 'optimized_hparams/'
@@ -204,6 +202,3 @@ def test_evaluation_pipeline_smoke(tmp_path):
         assert trad_mod in benchmarks
 
         assert len(rets_dict) == 2, 'There must be only 2 output windows in the test set for this test'
-
-
-    # Check contents of loss curves file

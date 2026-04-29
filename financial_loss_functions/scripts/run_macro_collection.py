@@ -1,4 +1,8 @@
 #### DEPRECATED ####
+"""
+DEPRECATED
+This is a script file to run marco-economic data collection pipeline.
+"""
 
 import os
 import sys

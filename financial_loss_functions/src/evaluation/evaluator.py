@@ -5,8 +5,13 @@ from typing import Callable
 
 class Evaluator:
     """
-    Class to evaulate and compare all generated weights from all models/methods,
-    for all windows againsts each other as well as benchmarks.
+    Class to evaluate and compare all generated weights from all models/methods,
+    for all windows againsts each other as well as benchmarks (if provided).
+
+    Attributes:
+        spread_cost_factor (float): Spread cost factor is used to calculate single direction buy 
+            transaction costs.
+        rounding_digits (int): Round digits after the decimal point.
     """
     spread_cost_factor = 0.5
     rounding_digits = 4
@@ -19,8 +24,8 @@ class Evaluator:
             all_daily_returns: dict[str, np.ndarray] | None = None
         ):
         """
-        Initialize Evaluator to calculate the portfolio returns, 
-        evaulate them and compare all generated weights.
+        Initialize Evaluator to calculate the portfolio returns, account for Bid-Ask spread costs, 
+        evaulate them and compare all generated weights with market benchmarks.
 
         Args:
             eval_windows (np.ndarray | None): Array of evaluation (out-of-sample)
@@ -30,6 +35,12 @@ class Evaluator:
                 if provided. Default = None.
             metrics_lib (dict[str, Callable] | None): Metrics library dictionary containing metric 
                 name and metric function. Default = None.
+            all_daily_returns (dict[str, np.ndarray] | None): All daily returns for all provided 
+                models/approaches.
+                Must be provided if 'eval_windows' is not provided. Default = None.
+        Raises:
+            ValueError: If evaluation returns data does not have 3 dimensions.
+            ValueError: If 'all_daily_returns' and 'eval_returns' is not provided.
         """
 
         if eval_returns is not None and isinstance(eval_returns, np.ndarray):
@@ -55,7 +66,8 @@ class Evaluator:
         else:
             if all_daily_returns is None:
                 raise ValueError(
-                    'If out-of-sample evaluation data is not provided, daily returns of all models must be provided.'
+                    'If out-of-sample evaluation data is not provided, daily returns of all ' \
+                    'models must be provided.'
                 )
             else:
                 self.eval_returns = None
@@ -70,7 +82,18 @@ class Evaluator:
             curr_weights: np.ndarray,
             first_d_bas: np.ndarray
         ) -> np.float64:
+        """
+        Calculate the Bid-Ask Spread transaction cost for each walk step.
         
+        Args:
+            prev_weights (np.ndarray | None): Portfolio allocation weights from the previous step.
+            curr_weights (np.ndarray): Portfolio allocation weights for the current step.
+            first_d_bas (np.ndarray): Array of BA spreads, for all stocks, for the first day of 
+                the rebalance period.
+        
+        Returns:
+            cost (np.float64): Cost value for rebalancing on the first day of the rebalancing period.
+        """
         # Compute cost
         if prev_weights is None:
             delta = curr_weights # For the first step
@@ -84,11 +107,23 @@ class Evaluator:
     
     @staticmethod
     def _calc_net_returns(pf_daily_rets: np.ndarray, cost: float) -> np.ndarray:
-        # Apply cost to the first  to get Net returns
+        """
+        Calculate net returns by accounting for Bid-Ask spread cost for the first day of 
+        rebalancing on the gross returns.
+
+        Args:
+            pf_daily_rets (np.ndarray): Gross daily returns for the rebalancing period.
+            cost (float | np.float64): Cost value to be applied on the first day of rebalancing.
+        
+        Returns:
+            pf_daily_rets (np.ndarray): Net returns afteraccounting for BA spread costs.
+        """
+        # Apply cost to the first day to get Net returns
         pf_daily_rets[0] = (1 + pf_daily_rets[0]) * (1 - cost) - 1
 
         return pf_daily_rets
 
+    #### TODO: Continue docstring updates from here
     def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
         """
         Calculates daily returns for the given portfolio weights for each given window.

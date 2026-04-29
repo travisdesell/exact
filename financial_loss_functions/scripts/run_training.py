@@ -1,3 +1,7 @@
+"""
+This is a script file to run the Training and Tuning Pipeline.
+"""
+
 import os
 import sys
 import signal

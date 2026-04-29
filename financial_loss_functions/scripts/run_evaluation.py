@@ -1,3 +1,7 @@
+"""
+This is a script file to run the Evaluation (Test Set) Pipeline.
+"""
+
 import os
 import sys
 import signal

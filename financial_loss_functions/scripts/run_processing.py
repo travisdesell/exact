@@ -1,3 +1,7 @@
+"""
+This is a script file to run the Data Preprocessing Pipeline.
+"""
+
 import os
 from dotenv import load_dotenv
 from src.utils.io import load_path_config, load_json
