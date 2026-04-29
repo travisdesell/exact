@@ -46,12 +46,20 @@ def run_evaluation_pipeline(
         mpi: bool = False
 ):
     """
-    Run Dynamic Walk-Foward Evaluation on the test set to mimic real-life 
-    continous learning for selected models.
-    
+    Train and evaluate the selected model-loss combinations with best found hyperparameters
+    on the test data.
+
     Args:
-        paths_config (dict): Dictionary containing paths
-        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
+        paths_config (dict): Dictionary containing paths to all required diretories and files.
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges.
+        features_config (dict): Dictionary containing hyperparameter information 
+            (eg. common features).
+        prev_grid_mode (str): `one_model` or `one`. This is used to collect and aggregate artifacts
+            from the previous stage (tuning).
+        model_losses (list[str]): List of model-loss combinations that were selected to run on the 
+            test data. It must be in format - [<model_name>-<loss_name>,...].
+        mpi (bool): Toggle the use of mpi for distributed training and evaluation of model-loss 
+            combinations. Default = False
     """
     
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)

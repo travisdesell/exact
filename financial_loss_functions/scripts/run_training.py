@@ -132,9 +132,9 @@ if __name__ == '__main__':
             paths_config,
             hparams_config, 
             features_config,
+            model_name = args.model,
             grid_mode = args.grid_mode, 
             loss_mode = args.loss_mode, 
-            model_name = args.model,
             loss_name = args.loss,
             tune = args.tune,
             mpi = args.mpi

@@ -34,20 +34,38 @@ def filter_models(
 
     return filtered_df, filtered_models
 
-def high_corr_with_each_metric(corr, threshold=0.8):
+def high_corr_with_each_metric(corr: pd.DataFrame, threshold: float=0.8):
+    """
+    Print the correlation of each portfolio performance metric with all others,
+    with a threshold for correlation,
+
+    Args:
+        corr (pd.DataFrame): Correlation matrix of the performance metrics.
+        threshold (float): Threshold to print the correlations. Default = 0.8.
+    """
     for metric in corr.columns:
         # Exclude self (corr=1.0)
         others = corr[metric][corr[metric].index != metric]
         high = others[abs(others) > threshold]
         if not high.empty:
-            print(f"\n{metric} is highly correlated with:")
+            print(f'\n{metric} is highly correlated with:')
             for name, val in high.items():
-                print(f"  {name}: {val:.3f}")
+                print(f'  {name}: {val:.3f}')
 
 def pareto_dominance(df: pd.DataFrame, columns: list[str]) -> pd.Series:
     """
     Returns a boolean Series indicating whether each row is dominated.
     Assumes all columns are "higher is better".
+
+    Args:
+        df (pd.DataFrame): Dataframe from which we select dominating models/methods
+            in the index based on the multi-metric columns. Models/methods must be in 
+                the index and metrics must be in the columns
+        columns (lis[str]): List of column names from the dataframe, that must be used 
+            for the pareto dominance.
+    
+    Returns:
+        pd.Series: Series containing the dominated status and the names of the model/methods.
     """
     n_rows = len(df)
     dominated = np.zeros(n_rows, dtype=bool)

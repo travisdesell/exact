@@ -10,6 +10,18 @@ from src.training.train_nn import WalkerGridUtilities, Walker
 from src.utils.io import save_pickle_temp, load_pickle_temp, delete_file
 
 class WFTester(WalkerGridUtilities):
+    """
+    Class to evaluate selected neural network model + loss function combinations on 
+    the unseen test data.
+
+    Attributes:
+        temp_wts_prefix (str): This is the prefix to be used while saving temporary portfolio 
+            allocation weight files used during distributed evaluation using mpi.
+        temp_losses_prefix (str): This is the prefix to be used while saving temporary model 
+            train-eval loss curve files used during distributed evaluation using mpi.
+        seed_list_key (str): This is the string key in the hparams config file that contains the 
+            list of seeds.
+    """
     temp_wts_prefix = 'test_temp_alloc_wts'
     temp_losses_prefix = 'test_temp_losses'
     seed_list_key = 'seed_list'
@@ -18,16 +30,42 @@ class WFTester(WalkerGridUtilities):
             self,
             model_lib: dict[str, dict[str, Type]],
             loss_lib: dict[str, dict[str, dict[str, Callable]]],
-            hparams_config: dict[str, dict[str, Any]],
+            hparams_config: dict[str, Any],
             num_steps: int,
             common_features: list[str],
             torch_device: torch.device | str,
             mpi: bool = False,
             temp_dir: str | None = None,
-            optimized_hparams: dict = None,
+            optimized_hparams: dict | None = None,
             enable_diagnostics: bool = False
         ):
+        """
+        Initialize WFTester object to evaluate the selected model-loss combinations 
+        on the test data. This object can run sequentially as well as parallel using
+        mpi for distributed evaluation.
 
+        train_eval_* methods can be run only once with each instance.
+
+        Args:
+            model_lib (dict[str, dict[str, Type]]): Neural network model architecture 
+                library as a dict.
+            loss_lib (dict[str, dict[str, dict[str, Callable]]]): Loss functions library 
+                as a dict.
+            hparams_config (dict[str, Any]): Dictionary containing default hyperparameters 
+                and tuning ranges.
+            num_steps: (int): Number of walk forward steps to be taken.
+            common_features (list[str]): List of common features in the dataset, eg., S&P500 returns.
+                This is used for reshaping for different types of broadcasting + reshaping.
+            torch_device (torch.device | str): Device to run the PyTorch models.
+            mpi (bool): Toggle the use of mpi for distributed evaluation of model-loss combinations.
+            temp_dir: (str | None): Directory to save temporary files after a rank has completed its
+                work.
+            optimized_hparams (dict | None): Dictionary containing optimized hyperparameters for each 
+                model-loss combination. Default = False.
+            enable_diagnostics (bool): Toggle to print statements about memory usuage during 
+                train_eval_* methods. Default = False.
+
+        """
         super().__init__(
             model_lib, loss_lib, hparams_config, num_steps, 
             common_features, torch_device, mpi, temp_dir
@@ -47,11 +85,26 @@ class WFTester(WalkerGridUtilities):
     
     def _merge_all_results(
             self,
-            size,
-            temp_wts_prefix,
-            temp_losses_prefix
+            size: int,
+            temp_wts_prefix: str,
+            temp_losses_prefix: str
         ) -> tuple[dict, dict]:
-        """Merge all results into one dict if rank is 0, i.e., main process."""
+        """
+        Merge all temporary allocation weights and train-eval losses into one dict 
+        if rank is 0, i.e., main process. After the merging is done, it deletes the 
+        temporary pkl files.
+
+        Args:
+            size (int): Size of the mpi comm world.
+            temp_wts_prefix (str): The prefix used while saving temporary portfolio 
+                allocation weight files.
+            temp_losses_prefix (str): The prefix used while saving temporary model 
+                train-eval loss curve files.
+        
+        Returns:
+            tuple[dict, dict]: Dictionary [0] is the combined portfolio allocation weights
+                and dictionary [1] is the combined train-eval loss curve values.
+        """
         all_alloc_weights = {}
         train_eval_losses = {} #### Must be same as in constructor ####
         
@@ -83,6 +136,19 @@ class WFTester(WalkerGridUtilities):
     def _build_combos(
             self, selected_combos: list[tuple[str, str]]
         ) -> list[tuple[str, Type, str, Callable]]:
+        """
+        Collect classes and functions of the selected model-loss combinations from the 
+        NNModelLibrary and the LossFunctionLibrary. The build a list of tuples with all the names, 
+        classes, and functions.
+
+        Args:
+            selected_combos (list[tuple[str, str]]): The string names of models and loss functions 
+                in the format [(<model_name>, <loss_name>),...]
+        
+        Returns:
+            all_combos (list[tuple[str, Type, str, Callable]]): List of tuples containing the loss name, 
+                loss function, model name and model class.
+        """
         # Collect models and losses from libraries
         collected_from_libraries = {}
 
@@ -134,7 +200,23 @@ class WFTester(WalkerGridUtilities):
         np.ndarray | dict[str, np.ndarray], 
         dict[str, list] | dict[str, dict[str, list]]
         ]:
+        """
+        Walk the given model loss combination over the test data set with retraining at each step.
+
+        Args:
+            model_name (str): Name of the neural network model architecture.
+            model_class (Type): Class of the neural network model architecture.
+            loss_name (str): Name of the loss function to be used for the training.
+            loss_func (Callable): Loss function to be used for the training.
+            train_data (np.ndarray): Train data split that contains all the features.
+            rets_train (np.ndarray): Train data split that contains only returns data for all stocks.
+            test_data (np.ndarray): Test data split that contains all the features.
+            rets_test (np.ndarray): Test data split that contains only the returns data for all stocks.
         
+        Returns:
+            tuple[np.ndarray | dict[str, np.ndarray], dict[str, list] | dict[str, dict[str, list]]]:
+                Tuple containing the alloc_weights ([0]), train_val_losses ([1]).
+        """
         model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
         
         if self.enable_diagnostics:
@@ -227,6 +309,30 @@ class WFTester(WalkerGridUtilities):
             global_rank = None,
             size = None
         ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Run evaluation of all the selected model-loss combinations on the test data. 
+        This is an entry point method for this process. It can run sequentially as well as
+        in parallel using mpi to distribute the model-loss combinations across nodes and gpus.
+        
+        Args:
+            selected_combos (list[tuple[str, str]]): Selected model-loss combinations to be evaluated 
+                on the test data.
+            train_data (pd.DataFrame): Train data split that contains all the features. 
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_train (pd.DataFrame): Train data split that contains only returns data for all stocks.
+                Returns columns must be in the format <ticker>.
+            test_data (pd.DataFrame): Test data split that contains all the features.
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_test (pd.DataFrame): Test data split that contains only the returns data for all stocks.
+                Returns columns must be in the format <ticker>.
+            comm: MPI Communication object. Default = None.
+            global_rank: Global rank of the current rank this is being executed on. Default = None.
+            size: Size of the mpi communication world, i.e., number of ranks. Default = None.
+
+        Returns:
+            all_alloc_weights (dict[str, dict[str, np.ndarray]] | None): Portfolio allocation weights for all 
+                the portfolio optimizer and for all out windows. Return is None only for non-zero ranks.
+        """
 
         self._data_check(train_data, rets_test)
         self._trained_check()
@@ -351,6 +457,26 @@ class WFTester(WalkerGridUtilities):
             test_data: pd.DataFrame,
             rets_test: pd.DataFrame,
         ) -> dict[str, dict[str, np.ndarray]]:
+            """
+            Run evaluation of one model-loss combination on the test data. 
+            This is an entry point method for this process. It can run only sequentially.
+            
+            Args:
+                model_name (str): Name of the neural network model architecture.
+                loss_name (str): Name of the loss function to be used with the neural network model.
+                train_data (pd.DataFrame): Train data split that contains all the features. 
+                    Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+                rets_train (pd.DataFrame): Train data split that contains only returns data for all stocks.
+                    Returns columns must be in the format <ticker>.
+                test_data (pd.DataFrame): Test data split that contains all the features.
+                    Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+                rets_test (pd.DataFrame): Test data split that contains only the returns data for all stocks.
+                    Returns columns must be in the format <ticker>.
+
+            Returns:
+                all_alloc_weights (dict[str, dict[str, np.ndarray]]): Portfolio allocation weights for one 
+                    model-loss portfolio optimizer for all out windows.
+            """
 
             self._data_check(train_data, rets_test)
             self._trained_check()
@@ -401,6 +527,17 @@ class WFTester(WalkerGridUtilities):
             return self.all_alloc_weights
     
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        """
+        Get the train-eval loss curves from training at each walk step. 
+        This method reformats the internal dictionary.
+
+        Returns:
+            reformatted_dict (dict[str, dict[str, list[float]]]): Dictionary containing the
+                train-eval losses at each walk step.
+        
+        Raises:
+            RunTimeError:
+        """
         if self.train_eval_losses:
             reformatted_dict = {}
             

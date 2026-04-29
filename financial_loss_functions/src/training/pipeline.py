@@ -33,24 +33,34 @@ def run_tuning_pipeline(
     paths_config: dict,
     hparams_config: dict,
     features_config: dict, 
+    model_name: str,
     grid_mode: str = 'one_model', 
     loss_mode: str = 'custom',
-    model_name: str | None = None,
     loss_name: str | None = None,
     tune: bool = False,
     mpi: bool = False
 ):
     """
-    Tune and train with best hyperparameters and compare against equal weight and S&P 500.
+    Tune one model with all loss functions, train with best found hyperparameters on the 
+    validation data.
 
     Args:
-        paths_config (dict): Dictionary containing paths
-        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges
-        features_config (dict): Dictionary containing hyperparameter information
-        grid_mode (str): `all`, `one_model`, `one_loss` of `one`
-        loss_mode (str): `all` or `custom`, Default = `custom`
-        model (str): Name of the model to be run
-        loss (str): Name of the loss function to be used
+        paths_config (dict): Dictionary containing paths to all required diretories and files.
+        hparams_config (dict): Dictionary containing default hyperparameters and tuning ranges.
+        features_config (dict): Dictionary containing hyperparameter information 
+            (eg. common features).
+        model_name (str): Name of the neural network model acrchitecture to be run.
+        grid_mode (str): `one_model` or `one`. 
+            - If `one_model`, the pipeline takes one model 
+            architecture and pairs it with all available loss functions (based on 'loss_mode'). 
+            - If `one`, the pipeline tunes and trains one model-loss combination (model name and 
+            loss name must be provided). Default = 'one_model'.
+        loss_mode (str): `all` or `custom`. To use all loss functions including objective only 
+            functions or only custom loss function. Default = `custom`
+        loss_name (str): Name of the loss function to be used. This is only required when grid mode
+            is `one`. Default = None.
+        tune (bool): Toggle to tune hyperparameters or use default hyperparameters. Default = False.
+        mpi (bool): Toggle the use of mpi for distributed training or tuning of model-loss combinations.
     """
     print('\n', '=' * 40, ' Training Grid Pipeline ', '=' * 40)
     start_time = time.time()
