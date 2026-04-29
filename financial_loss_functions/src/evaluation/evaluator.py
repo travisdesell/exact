@@ -123,16 +123,16 @@ class Evaluator:
 
         return pf_daily_rets
 
-    #### TODO: Continue docstring updates from here
     def calc_pf_daily_rets(self, eval_weights: np.ndarray, model_name: str):
         """
         Calculates daily returns for the given portfolio weights for each given window.
-        Portfolio Weights (n,) x Returns (T, n) = weighted returns.
+        Portfolio Weights (n,) x Returns (T, n) = weighted returns. Calculates gross returns or 
+        net returns after Bid-Ask spread costs.
 
-        @param eval_weights np.ndarray
-            Portfolio allocation weights for which weighted returns need to be calculated
-        @param model_name str
-            Name of the model which generated the portfolio allocation weights
+        Args:
+            eval_weights (np.ndarray): Portfolio allocation weights for each output window for which 
+                weighted returns need to be calculated.
+            model_name (str): Name of the model/method which generated the portfolio allocation weights.
         """
         
         pf_daily_returns = []
@@ -178,10 +178,23 @@ class Evaluator:
                 f'Skipping {model_name}!'
             )
     
-    def get_rets_for_one(self, model_name: str) -> np.ndarray:
+    def get_rets_for_one(self, model_name: str) -> np.ndarray | None:
+        """
+        Get daily returns for each output window for the required model/method.
+
+        Returns:
+            np.ndarray | None: Daily returns for each window for the required model.
+        """
         return self.all_daily_returns.get(model_name)
 
     def update_rets_for_one(self, model_name: str, new_returns: np.ndarray):
+        """
+        Update the daily returns for the given model.
+
+        Args:
+            model_name (str): model/method name for which returns are updated.
+            new_returns (np.ndarray): Daily returns for each output window.
+        """
         if model_name in self.all_daily_returns:
             self.all_daily_returns.update({model_name: new_returns})
         else:
@@ -189,11 +202,24 @@ class Evaluator:
     
     def add_benchmark_rets(self, bench_name: str, bench_rets: np.ndarray):
         """
-        Add benchmark returns for the respective evalulation output windows. eg., S&P500 daily returns
+        Add benchmark returns for the respective evalulation output windows. 
+        eg., S&P500 daily returns.
+        
+        Args:
+            bench_name (str): Name of the benchmark being added.
+            bench_rets (np.ndarray): Array of windowed returns for the benchmark which matches the 
+                evaluation data.
         """
         self.all_daily_returns.update({bench_name: bench_rets})
 
     def _daily_rets_calcd_check(self):
+        """
+        Checks if daily returns are calculated or not.
+
+        Raises:
+            ValueError: If no daily returns are found or calculated prior to the execution of 
+                this method.
+        """
         if not self.all_daily_returns:
             raise ValueError(
                 'No daily returns calculated.',
@@ -212,7 +238,9 @@ class Evaluator:
             mean (bool): If True, mean of the metric over the entire provided split of returned.
 
         Returns:
-            Dict[str, list]: Dictionary containing calculated performance metric for each validation window
+            pd.Series | pd.DataFrame: A DataFrame containing calculated performance metric for each 
+                evaluation window or a Series containing the mean for every performance metric over 
+                the evaulation period.
         """
         self._daily_rets_calcd_check()
         
@@ -232,10 +260,12 @@ class Evaluator:
     def calc_avg_performance(self) -> pd.DataFrame | None:
         """
         Calculates average portfolio performance metrics over all windows of the walk forward.
-        This does not calculate actual overall performance of a portfolio for the entire data split period.
+        This does not calculate actual overall performance of a portfolio for the entire data 
+        split period.
         
         Returns:
-            avg_perf (pd.DataFrame | None): Average portfolio performances over all windows.
+            avg_perf (pd.DataFrame | None): Average portfolio performances over all windows. 
+                Will return None if metrics library was not provided.
         """
         if self.metrics_lib:
             all_metrics_perf = []
@@ -249,12 +279,16 @@ class Evaluator:
             return avg_perf
 
         else:
-            print('No metrics library or dict provided. Cannot run average performance over metrics.')
+            print(
+                'No metrics library or dict provided.',
+                'Cannot run average performance over metrics.'
+            )
             return None
 
     def _combine_rets_winds(self) -> dict[str, np.ndarray]:
         """
-        Combine all windows to make one time series over entire validation period.
+        DEPRECATED
+        Combine all windows to make one time series over entire evaluation period.
         
         Returns:
             combined_returns (dict[str, np.ndarray]): Dictionary containing the daily returns 
@@ -269,7 +303,20 @@ class Evaluator:
     def _calc_overall_metric_perf(
             self, metric_func: Callable, daily_rets: dict[str, np.ndarray]
         ) -> dict[str, np.float64]:
+        """
+        Calculate given performance metric for every portfolio over the entire evaulation period.
+        This is not an average over windows. It's how the model/method would've performed over
+        the entire evaulation period.
 
+        Args:
+            metric_func (Callable): Portfolio performance metric function.
+            daily_rets (dict[str, np.ndarray]): Combined daily returns for every model/method
+                over the entire evaulation period.
+        
+        Returns:
+            metric_perfomances (dict[str, np.float64]): Dictionary containing the name of the 
+                model/method as key and metric value as value for the entire evaulation period.
+        """
         metric_perfomances = {}
         for model, all_rets in daily_rets.items():
             metric_value = metric_func(all_rets)
@@ -279,13 +326,14 @@ class Evaluator:
    
     def calc_pf_performances(self) -> pd.DataFrame | None:
         """
-        Calculate the overall portfolio performances for all metrics by concatenating returns 
+        Calculate the actual portfolio performances for all metrics by concatenating returns 
         from all windows and then calculating portfolio the portfolio performance metrics for one
-        time series array of returns for the entire evaluation (out-of-sample) period.
+        time series array of returns for the entire evaluation (out-of-sample) period. 
+        These returns are net returns after Bid-Ask Spread costs if ba_eval was provided.
 
         Returns:
-            all_metric_perf (pd.DataFrame | None): Performance of each portfolio for the entire
-                evaluation (out-of-sample) period.
+            all_metric_perf (pd.DataFrame | None): Performance metrics of each portfolio optimizer 
+                model/method for the entire evaluation (out-of-sample) period.
         """
         self._daily_rets_calcd_check()
         if self.metrics_lib:
@@ -303,17 +351,18 @@ class Evaluator:
             return pd.DataFrame(all_metric_perf)
         else:
             print(
-                'No metrics library or dict provided. Cannot run portfolio performances over metrics.'
+                'No metrics library or dict provided.', 
+                'Cannot run portfolio performances over metrics.'
             )
             return None
 
     def get_all_daily_returns(self):
         """
-        Get daily returns for all windows and all models
+        Get daily returns for all windows and all models/methods.
         
         Returns:
-            all_daily_returns (dict[str, np.ndarray]): Dictionary containing the daily returns for 
-                all windows and all models.
+            all_daily_returns (dict[str, np.ndarray]): Dictionary containing the 
+                daily returns for all windows and all models.
         """
         return self.all_daily_returns
     
@@ -357,19 +406,24 @@ class EqualWeightCalculator:
     def _equal_weight_pf(num_tickers: int) -> np.ndarray:
         """
         Calculates simple equal weights for a portfolio
-        weight for each stock = 1/num_tickers
+        weight for each stock = 1/num_tickers.
         
         Args:
-            num_tickers (int): Number of tickers in the dataset
+            num_tickers (int): Number of tickers in the dataset.
 
         Returns:
-            np.array: Equal weight portfolio allocation weights
+            np.array: Equal weight portfolio allocation weights.
         """
         return np.full((num_tickers), 1/num_tickers)
     
     def calc_eq_wt_daily_rets(self) -> np.ndarray: 
         """
-        Calculates daily returns for the Equal Weighted portfolio for each given window.
+        Calculates daily returns for the Equal Weighted portfolio for each given 
+        output window.
+
+        Returns:
+            eq_weights_rets (np.ndarray): Array containing the daily returns for each 
+                output window for the equal weight portfolio.
         """
         # For equal weight portfolio
         self.eq_weights = self._equal_weight_pf(self.eval_returns.shape[2])
