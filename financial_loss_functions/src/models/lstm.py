@@ -1,13 +1,13 @@
 import torch
-# import numpy as np
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
-from src.models.layers.relational import FeatureAttention, VariableSelectionLayer
+from src.models.layers.relational import (
+    FeatureAttention, VariableSelectionLayer
+)
 from src.models.layers.temporal import (
     TemporalAttention,
-    ContextualGate,
-    ContextualCNNGate
+    ContextualGate
 )
 
 #### All models MUST get a registration decorator with a category.
@@ -15,9 +15,7 @@ from src.models.layers.temporal import (
 
 @NNModelLibrary.register(category='lstm')
 class BaseLSTM(nn.Module):
-    """
-    Implementation BaseLSTM Model with an initial equal prior option.
-    """
+    """BaseLSTM Model"""
     def __init__(
             self,
             input_size: int, 
@@ -32,15 +30,16 @@ class BaseLSTM(nn.Module):
         Initialize BaseLSTM model which inherits from `torch.nn.Module`
 
         Args:
-            input_size (int): Size of input window.
+            input_size (int): Size of input features.
             hidden_size (int): Number of nodes in hidden layers.
             num_layers (int): Number of hidden layers.
             num_stocks (int): Number of stocks in dataset.
                 It is the number of output nodes.
-            dropout (float): Dropout rate. Default = 0.2.
+            dropout (float): Dropout rate.
             equal_prior (bool): Initialize logits to 0 to start model with equal 
                 portfolio allocation weights. This does not initialize internal
                 models weights other than the final fully connected layer weights.
+                Default = False.
         """
         super().__init__()
         self.lstm = nn.LSTM(
@@ -69,7 +68,7 @@ class BaseLSTM(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """
-        Forward pass method for the neural network.
+        Forward pass method for the BaseLSTM.
 
         Args:
             x (Tensor): Input window for forward pass. Shape = (B, T, E)
@@ -105,19 +104,20 @@ class AttentionLSTM(nn.Module):
         **kwargs
     ):
         """
-        Initialize Attention LSTM object which inherits from `torch.nn.Module`.
+        Initialize AttentionLSTM object which inherits from `torch.nn.Module`.
 
         Args:
-            input_size (int): Size of input window.
+            input_size (int): Size of input features.
             hidden_size (int): Number of nodes in hidden layers.
             num_layers (int): Number of hidden layers.
             num_stocks (int): Number of stocks in dataset.
                 It is the number of output nodes.
-            attention_heads (int): Number of attention heads.
-            dropout (float): Dropout rate. Default = 0.2.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
             equal_prior (bool): Initialize logits to 0 to start model with equal 
                 portfolio allocation weights. This does not initialize internal
                 models weights other than the final fully connected layer weights.
+                Default = False.
         """
         super().__init__()
         self.lstm = nn.LSTM(
@@ -152,7 +152,7 @@ class AttentionLSTM(nn.Module):
 
     def forward(self, x: Tensor) -> Tensor:
         """
-        Forward pass method for the neural network.
+        Forward pass method for the AttentionLSTM.
 
         Args:
             x (Tensor): Input window for forward pass. Shape = (B, T, E)
@@ -181,6 +181,7 @@ class AttentionLSTM(nn.Module):
 
 @NNModelLibrary.register(category='lstm')
 class InvertedAttentionLSTM(nn.Module):
+    """InvertedAttentionLSTM"""
     def __init__(
         self,
         input_size: int,
@@ -190,8 +191,25 @@ class InvertedAttentionLSTM(nn.Module):
         nheads: int,
         dropout: float,
         max_seq_len: int, # Needed for the inverted Attention/Norm layers,
-        equal_prior: bool
+        equal_prior: bool = False
     ):
+        """
+        Initialize InvertedAttentionLSTM object which inherits from `torch.nn.Module`.
+
+        Args:
+            input_size (int): Size of input features.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
+                Default = False.
+        """
         super().__init__()
         # 1. Temporal Extraction (Standard)
         self.lstm = nn.LSTM(
@@ -237,6 +255,15 @@ class InvertedAttentionLSTM(nn.Module):
             nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for the InvertedAttentionLSTM.
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
         # Step 1: Standard LSTM processing
         # x shape: (Batch, Time, Features) -> (B, 120, 251)
         out, _ = self.lstm(x)  # (B, 120, hidden_size)
@@ -393,9 +420,28 @@ class VLSTM(nn.Module):
         nheads: int,
         dropout: float = 0.2,
         equal_prior: bool = False,
-        vsn_hidden_size: int | None = None,          # new parameter
+        vsn_hidden_size: int | None = None,
         **kwargs
     ):
+        """
+        Initialize VSN-LSTM object which inherits from `torch.nn.Module`.
+        In this project, to shorten the name, we call this VLSTM.
+
+        Args:
+            input_size (int): Size of input features.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
+                Default = False.
+            vsn_hidden_size (int): Hidden size of the Variable Selection Network. If None,
+                the hidden size is calculate has 'hidden_size // 2'.
+        """
         super().__init__()
         self.equal_prior = equal_prior
 
@@ -438,6 +484,15 @@ class VLSTM(nn.Module):
             nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass method for the VLSTM (VSN-LSTM).
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
         # Step 1: Variable selection (feature weighting)
         x = self.vsn(x)                     # (B, T, F)
 
