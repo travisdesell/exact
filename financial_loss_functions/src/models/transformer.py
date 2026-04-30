@@ -1,5 +1,4 @@
 import torch
-# import numpy as np
 import torch.nn as nn
 from torch import Tensor
 from src.models.registry import NNModelLibrary
@@ -10,12 +9,21 @@ from src.models.layers.TFT_vsn import (
 )
 
 class LearnableTemporalWeight(nn.Module):
-    def __init__(self, max_seq_len):
+    """
+    Learnable Temporal Weights that can be used for pooling.
+    """
+    def __init__(self, max_seq_len: int):
+        """
+        Initialize object to learn temporal weights for pooling.
+        
+        Args:
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+        """
         super().__init__()
-        # 120 learnable weights, one for each day
+        # Learnable weights, one for each day
         self.day_weights = nn.Parameter(torch.ones(max_seq_len))
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         # x: (B, T, H)
         # Apply weights to the T dimension
         w = torch.softmax(self.day_weights[:x.size(1)], dim=0)
@@ -37,9 +45,29 @@ class TemporalTransformer(nn.Module):
         dropout: float,
         expansion_factor: int,
         max_seq_len: int,
-        equal_prior: bool,
+        equal_prior: bool = False,
         **kwargs
     ):
+        """
+        Initialize TemporalTransformer object which inherits from `torch.nn.Module`.
+
+        Args:
+            input_size (int): Size of input features.
+            hidden_size (int): Number of nodes in hidden layers.
+            lstm_layers (int): Number of hidden LSTM layers.
+            trans_layers (int): Number of transformer encoder layers.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
+            expansion_factor (int): Expansion factor to calculate feedforward dimension of each
+                transformer layer.
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
+                Default = False.
+        """
         super().__init__()
         
         # 1. Feature Projection (Initial step to clean up features), kind of denoising
@@ -72,6 +100,15 @@ class TemporalTransformer(nn.Module):
             nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for the TemporalTransformer.
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
         # x: (B, T, 251)
         
         # Initial Projection
@@ -101,6 +138,9 @@ class TemporalTransformer(nn.Module):
         return torch.softmax(logits, dim=-1)
 
     def _recency_pooling(self, x: Tensor) -> Tensor:
+        """
+        Pooling that weights depending on how recent the data in the input tensor is.
+        """
         # x shape: (B, T, H)
         T = x.size(1)
         # Create weights that increase linearly: [1, 2, 3, ... 120]
@@ -113,6 +153,7 @@ class TemporalTransformer(nn.Module):
 
 # @NNModelLibrary.register(category='transformer')
 class TFT(nn.Module):
+    """Temporal Fusion Transformer"""
     def __init__(
             self,
             input_size: int,
@@ -123,10 +164,29 @@ class TFT(nn.Module):
             dropout: float,
             expansion_factor: int,
             max_seq_len: int,
-            equal_prior: bool,
+            equal_prior: bool = False,
             **kwargs
         ):
         super().__init__()
+        """
+        Initialize TFT object which inherits from `torch.nn.Module`.
+
+        Args:
+            input_size (int): Size of input features.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers for the transformer encoder.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
+            expansion_factor (int): Expansion factor to calculate feedforward dimension of each
+                transformer layer.
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
+                Default = False.
+        """
         
         # 1. Feature Selection Layer (VSN)
         self.vsn = VariableSelectionNetwork(input_size, hidden_size, dropout)
@@ -160,6 +220,15 @@ class TFT(nn.Module):
             nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for TFT.
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
         # x: (B, T, 251)
         
         # Filter 251 features down to hidden_size
@@ -195,9 +264,31 @@ class PatchTST(nn.Module):
         dropout: float,
         expansion_factor: int,
         max_seq_len: int,
-        equal_prior: bool,
+        equal_prior: bool = False,
         **kwargs
     ):
+        """
+        Initialize PatchTST object which inherits from `torch.nn.Module`.
+
+        Args:
+            input_size (int): Size of input features.
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of hidden layers for the transformer encoder.
+            num_stocks (int): Number of stocks in dataset.
+                It is the number of output nodes.
+            patch_size (int): Patch size to break up the input window into patches.
+            stride (int): Stride to slide the patching window to create overlapping or 
+                non-overlapping patch windows.
+            nheads (int): Number of attention heads.
+            dropout (float): Dropout rate.
+            expansion_factor (int): Expansion factor to calculate feedforward dimension of each
+                transformer layer.
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+            equal_prior (bool): Initialize logits to 0 to start model with equal 
+                portfolio allocation weights. This does not initialize internal
+                models weights other than the final fully connected layer weights.
+                Default = False.
+        """
         super().__init__()
         self.patch_size = patch_size
         self.stride = stride
@@ -235,6 +326,15 @@ class PatchTST(nn.Module):
             nn.init.constant_(self.fc.bias, 0.0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass method for PatchTST.
+
+        Args:
+            x (Tensor): Input window for forward pass. Shape = (B, T, E)
+
+        Returns:
+            pf_weights (Tensor): Portfolio allocation weights calcuated from the forward pass.
+        """
         B, T, C = x.shape
 
         # Extract patches: (B, num_patches, patch_size, C)
