@@ -1407,9 +1407,9 @@ class CandidatesGrid(WalkerGridUtilities):
             mpi (bool): Toggle the use of mpi for distributed evaluation of model-loss combinations.
             tune (bool): Toggle if we need to tune models before finally running them on the validation 
                 set or use default values. Default = False,
-            tuner_eval_items dict[str, dict[str, MetricModel] | np.ndarray] Dictionary containing to be 
-                passed on to the tuner object. Default = None,
-            temp_dir: (str | None): Directory to save temporary files after a rank has completed its
+            tuner_eval_items (dict[str, dict[str, MetricModel] | np.ndarray]): Dictionary containing items 
+                to be passed on to the tuner object. Default = None.
+            temp_dir (str | None): Directory to save temporary files after a rank has completed its
                 work.
             enable_diagnostics (bool): Toggle to print statements about memory usuage during 
                 train_eval_* methods. Default = False.
@@ -1433,9 +1433,24 @@ class CandidatesGrid(WalkerGridUtilities):
 
         self.optimized_hparams = {} # Will be filled if tuned
     
-    #### TODO: CONTINUE DOCSTRING UPDTAES FROM HERE ####
     def _tuner_setup(self, tuner_eval_items: dict) -> Tuner | None:
+        """
+        Method to initalize and setup tuner object if tune flag is True. Use items like tuning metric, 
+        benchmark returns and BA spreads for the evaluation windows, to inistalize the tuner.
 
+        Args:
+            tuner_eval_items dict[str, dict[str, MetricModel] | np.ndarray]: Dictionary containing items 
+                to be passed on to the tuner object. Dictionary must contain 'metric', 'bench_rets', 
+                'eval_winds' and 'ba_eval_winds'.
+        
+        Returns:
+            tuner (Tuner): Tuner object (intialized) for None tune flag is set to False.
+
+        Raises:
+            ValueError: If tune metric is not provided.
+            ValueError: If benchmark returns is not provided.
+            ValueError: If evaluation windows (returns only) is not provided.
+        """
         if self.tune:
             tune_metric = tuner_eval_items.get('metric')
             tune_bench_rets = tuner_eval_items.get('bench_rets')
@@ -1492,7 +1507,17 @@ class CandidatesGrid(WalkerGridUtilities):
     
     
     def _map_new_params(self, best_config: dict, new_hparams: dict) -> dict:
+        """
+        Map best found hyperparameters to the reformatted hyperparameters dictionary.
         
+        Args:
+            best_config (dict): Dictionary containing the old (default) hyperparameters.
+            new_hparams (dict): Dictionary containing the new found hyperparameters.
+        
+        Returns:
+            best_config (dict): Dictionary containing all hyperparameters, including the 
+                new tuned hyperparameters.
+        """
         # Map the best Optuna parameters into our new dictionary
         for k, v in new_hparams.items():
             for cat, cat_dict in best_config.items():
@@ -1501,6 +1526,21 @@ class CandidatesGrid(WalkerGridUtilities):
         return best_config
     
     def _add_median_epoch(self, best_config: dict, best_epochs: list[int]):
+        """
+        Add the median of the best epochs from multiple seed runs, when early stopping is used.
+
+        `Currently, this is not in use.`
+
+        Args:
+            best_config (dict): Dictionary containing all hyperparameters, including the 
+                new tuned hyperparameters.
+            best_epochs (list[str]): List of the best epochs at which early stopping was 
+                triggered at across multiple seeds.
+        
+        Returns:
+            best_config (dict): Dictionary containing all hyperparameters, and the median 
+                of the best epochs from each seed.
+        """
         best_config['train']['median_epochs'] = int(np.median(best_epochs)) + 1
         # 1 is added because the epoch saved starts from 0 in the training loop
         return best_config
@@ -1516,6 +1556,30 @@ class CandidatesGrid(WalkerGridUtilities):
         val_data: np.ndarray,
         rets_val: np.ndarray
     ) -> tuple[np.ndarray, dict[str, list], dict | None]:
+        """
+        Method to tune a model-loss combination, train it, and then evaulate it on the validation 
+        data, or just evaulate it on the validation data. This method runs the Tuner._run_tuning_study 
+        method if tune flag is True. Memory diagnostics can be monitored in this method if 
+        CandidatesGrid.enable_diagnostics = True.
+
+        Args:
+            model_name (str): Name of the neural network model architecture.
+            model_class (Type): Class of the neural network model architecture.
+            loss_name (str): Name of the loss function to be used for the training.
+            loss_func (Callable): Loss function to be used for the training.
+            train_data (np.ndarray): Train data split that contains all the features.
+            rets_train (np.ndarray): Train data split that contains only returns data for all stocks.
+            val_data (np.ndarray): Validation data split that contains all the features.
+            rets_val (np.ndarray): Validation data split that contains only the returns data for all stocks.
+
+        Returns:
+            tuple (tuple[np.ndarray, dict[str, list], dict | None]):
+                - alloc_weights: Portfolio allocation weights for each window in this walk forward on the 
+                    validation data
+                - train_val_losses: Train val loss curves data at each walk step.
+                - optimized_hparams: Best found (optimized) hyperparameters from the Optuna study.
+                    This can be None if no tuning was done.
+        """
         # Extract base configs
         model_cfg = self.hparams_config[self.mdls_hparams_name][model_name]
         loss_cfg = self.hparams_config[self.ls_hparams_name].get(loss_name, {})
@@ -1623,9 +1687,23 @@ class CandidatesGrid(WalkerGridUtilities):
             temp_hparams_prefix
         ):
         """Merge all results into one dict if rank is 0, i.e., main process."""
+        """
+        Merge all temporary allocation weights, train-eval losses and optimized hyperparameters
+        into three combined dicts, if rank is 0, i.e., main process. After the merging is done, 
+        it deletes the temporary pkl files.
+
+        Args:
+            size (int): Size of the mpi comm world.
+            temp_wts_prefix (str): The prefix used while saving temporary portfolio 
+                allocation weight files.
+            temp_losses_prefix (str): The prefix used while saving temporary model 
+                train-eval loss curve files.
+            temp_hparams_prefix (str): The prefix used while saving temporary optimized 
+                hyperparameter files.
+        """
         self.all_alloc_weights = {}
         self.train_eval_losses = {}
-        self.optimized_hparams = {}
+        self.optimized_hparams = {} #### Must be same as in constructor ####
         for r in range(size):
             # Load all temp alloc wt files
             rank_alloc_weights = load_pickle_temp(
@@ -1665,7 +1743,24 @@ class CandidatesGrid(WalkerGridUtilities):
             model_name: str | None = None,
             model_class: Type | None = None
         ) -> list[tuple[str, Callable, str, Type]]:
+        """
+        Build a list of tuples with all the names, classes, and functions for models and 
+        loss functions.
+
+        Args:
+            losses_to_use (dict[str, Callable]): Dictionary containing the loss names and the 
+                callable functions
+            grid_mode (str): Grid mode being used in this instance. Must `all` or `one_model`.
+            model_name (str | None): Name of the model is required if grid mode is one_model.
+            model_class: (Type | None): Model class is required if the grid mode is one_model.
         
+        Returns:
+            all_combos (list[tuple[str, Type, str, Callable]]): List of tuples containing 
+                the loss name, loss function, model name and model class.
+        
+        Raises:
+            ValueError: If provided grid mode is `one`. This method cannot be used with `one`.
+        """
         all_combos = []
         if grid_mode == 'all':
             for loss_name, loss_func in losses_to_use.items():
@@ -1696,7 +1791,32 @@ class CandidatesGrid(WalkerGridUtilities):
             comm = None,
             global_rank = None,
             size = None
-        ) -> dict[str, dict[str, np.ndarray]]:
+        ) -> dict[str, dict[str, np.ndarray]] | None:
+        """
+        Run hyperparameter tuning and training of one neural network model architecture with all
+        available loss functions. This is an entry point method for this process. It can run 
+        sequentially as well as in parallel using mpi to distribute the model-loss combinations 
+        across nodes and gpus.
+        
+        Args:
+            model_name (str): Name of the neural network architecture to be used in this instance.
+            train_data (pd.DataFrame): Train data split that contains all the features. 
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_train (pd.DataFrame): Train data split that contains only returns data for all stocks.
+                Returns columns must be in the format <ticker>.
+            val_data (pd.DataFrame): Validation data split that contains all the features.
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_val (pd.DataFrame): Validation data split that contains only the returns data for all stocks.
+                Returns columns must be in the format <ticker>.
+            comm: MPI Communication object. Default = None.
+            global_rank: Global rank of the current rank this is being executed on. Default = None.
+            size: Size of the mpi communication world, i.e., number of ranks. Default = None.
+
+        Returns:
+            all_alloc_weights (dict[str, dict[str, np.ndarray]] | None): Portfolio allocation weights
+            for all the portfolio optimizer models and for all output windows. 
+            Return is None only for non-zero ranks.
+        """
         
         self._data_check(train_data, rets_val)
         self._trained_check()
@@ -1853,8 +1973,28 @@ class CandidatesGrid(WalkerGridUtilities):
             rets_train: pd.DataFrame, 
             val_data: pd.DataFrame,
             rets_val: pd.DataFrame,
-        ):
+        ) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Run hyperparameter tuning and evaluation of one model-loss combination on the 
+        validation data. This is an entry point method for this process. 
+        It can run only sequentially.
+        
+        Args:
+            model_name (str): Name of the neural network model architecture.
+            loss_name (str): Name of the loss function to be used with the neural network model.
+            train_data (pd.DataFrame): Train data split that contains all the features. 
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_train (pd.DataFrame): Train data split that contains only returns data for all stocks.
+                Returns columns must be in the format <ticker>.
+            val_data (pd.DataFrame): Validation data split that contains all the features.
+                Feature columns must be in the format <ticker>_<feature> and <comon_feature>.
+            rets_val (pd.DataFrame): Validation data split that contains only the returns data for all stocks.
+                Returns columns must be in the format <ticker>.
 
+        Returns:
+            all_alloc_weights (dict[str, dict[str, np.ndarray]]): Portfolio allocation weights for one 
+                model-loss portfolio optimizer for all output windows.
+        """
         self._data_check(train_data, rets_val)
         self._trained_check()
 
@@ -1904,9 +2044,23 @@ class CandidatesGrid(WalkerGridUtilities):
         return self.all_alloc_weights
     
     def get_optimized_hparams(self) -> dict:
+        """
+        Get the optimzed hyperparameters from tuning hyperparameters.
+        """
         return self.optimized_hparams
     
     def get_train_val_losses(self) -> dict[str, dict[str, list[float]]]:
+        """
+        Get the train-eval loss curves from training at each walk step. 
+        This method reformats the internal dictionary.
+
+        Returns:
+            reformatted_dict (dict[str, dict[str, list[float]]]): Dictionary containing the
+                train-eval losses at each walk step.
+        
+        Raises:
+            RunTimeError: If models are not yet training and evaluated on the test data
+        """
         if self.train_eval_losses:
             reformatted_dict = {}
             for model_loss, step_losses in self.train_eval_losses.items():
@@ -1941,6 +2095,9 @@ class WalkForwardValidator(WalkerGridUtilities):
             temp_dir: str | None = None,
             optimized_hparams = None
         ):
+        """
+        DEPRECATED
+        """
         print('DEPRECATED: WalkForwardValidator as a separate pipeline is removed.')
 
         super().__init__(

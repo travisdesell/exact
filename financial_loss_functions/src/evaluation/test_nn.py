@@ -89,7 +89,7 @@ class WFTester(WalkerGridUtilities):
             temp_losses_prefix: str
         ) -> tuple[dict, dict]:
         """
-        Merge all temporary allocation weights and train-eval losses into one dict 
+        Merge all temporary allocation weights and train-eval losses into two combined dicts, 
         if rank is 0, i.e., main process. After the merging is done, it deletes the 
         temporary pkl files.
 
@@ -137,7 +137,7 @@ class WFTester(WalkerGridUtilities):
         ) -> list[tuple[str, Type, str, Callable]]:
         """
         Collect classes and functions of the selected model-loss combinations from the 
-        NNModelLibrary and the LossFunctionLibrary. The build a list of tuples with all the names, 
+        NNModelLibrary and the LossFunctionLibrary. Build a list of tuples with all the names, 
         classes, and functions.
 
         Args:
@@ -307,7 +307,7 @@ class WFTester(WalkerGridUtilities):
             comm = None,
             global_rank = None,
             size = None
-        ) -> dict[str, dict[str, np.ndarray]]:
+        ) -> dict[str, dict[str, np.ndarray]] | None:
         """
         Run evaluation of all the selected model-loss combinations on the test data. 
         This is an entry point method for this process. It can run sequentially as well as
@@ -329,8 +329,9 @@ class WFTester(WalkerGridUtilities):
             size: Size of the mpi communication world, i.e., number of ranks. Default = None.
 
         Returns:
-            all_alloc_weights (dict[str, dict[str, np.ndarray]] | None): Portfolio allocation weights for all 
-                the portfolio optimizer and for all out windows. Return is None only for non-zero ranks.
+            all_alloc_weights (dict[str, dict[str, np.ndarray]] | None): Portfolio allocation weights 
+                for all the portfolio optimizer models and for all output windows. 
+                Return is None only for non-zero ranks.
         """
 
         self._data_check(train_data, rets_test)
@@ -474,7 +475,7 @@ class WFTester(WalkerGridUtilities):
 
             Returns:
                 all_alloc_weights (dict[str, dict[str, np.ndarray]]): Portfolio allocation weights for one 
-                    model-loss portfolio optimizer for all out windows.
+                    model-loss portfolio optimizer for all output windows.
             """
 
             self._data_check(train_data, rets_test)
@@ -535,7 +536,7 @@ class WFTester(WalkerGridUtilities):
                 train-eval losses at each walk step.
         
         Raises:
-            RunTimeError:
+            RunTimeError: If models are not yet training and evaluated on the test data
         """
         if self.train_eval_losses:
             reformatted_dict = {}
