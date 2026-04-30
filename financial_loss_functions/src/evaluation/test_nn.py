@@ -64,7 +64,6 @@ class WFTester(WalkerGridUtilities):
                 model-loss combination. Default = False.
             enable_diagnostics (bool): Toggle to print statements about memory usuage during 
                 train_eval_* methods. Default = False.
-
         """
         super().__init__(
             model_lib, loss_lib, hparams_config, num_steps, 

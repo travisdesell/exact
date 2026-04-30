@@ -2,8 +2,23 @@ import torch.nn as nn
 from torch import Tensor
 
 class FeatureAttention(nn.Module):
-    """Calculates dependencies between different stocks (Neural Covariance)."""
+    """
+    Multi-head attention applied across the feature dimension (stocks), not time.
+
+    Transposes the input from (B, T, H) to (B, H, T) so that attention operates on the
+    hidden features (across stocks) while treating the time steps as the embedding dimension.
+    This allows the model to learn cross-stock dependencies.
+    """
     def __init__(self, max_seq_len: int, hidden_size: int, nheads: int, dropout: float):
+        """Initializes the feature attention module.
+
+        Args:
+            max_seq_len (int): Length of the time sequence (T). Used as the embedding dimension
+                for the multi-head attention.
+            hidden_size (int): Hidden size (H). Not directly used except for consistency.
+            nheads (int): Number of attention heads (must divide max_seq_len).
+            dropout (float): Dropout probability applied to the attention output.
+        """
         super().__init__()
 
         self.attn = nn.MultiheadAttention(
@@ -15,6 +30,15 @@ class FeatureAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
+        """
+        Applies feature-wise attention.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, T, H).
+
+        Returns:
+            torch.Tensor: Attention output of the same shape (B, T, H), after dropout.
+        """
         # x: (B, T, H) -> (64, 120, 16)
         
         # 1. Flip to (B, H, T) -> (64, 16, 120)

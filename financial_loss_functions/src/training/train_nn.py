@@ -422,12 +422,27 @@ class Trainer:
             return None
     
     def get_best_losses(self) -> tuple[float, float]:
+        """
+        Get the best train and validation losses.
+
+        Returns:
+            tuple[float, float]: Best train loss and best validation loss.
+        """
         return self.best_train_loss, self.best_val_loss
     
     def get_best_epoch(self) -> int:
+        """
+        Get the best epoch which has the lowest validation loss, when using early stopping.
+
+        Returns:
+            best_epoch (int): Best epoch at which the validation loss is the lowest.
+        """
         return self.best_epoch
     
     def device_cleanup(self):
+        """
+        Device cleanup method to clean up caches in either CUDA device or MPS device.
+        """
         if self.device.type == 'mps':
             try:
                 torch.mps.empty_cache()
@@ -438,6 +453,12 @@ class Trainer:
             torch.cuda.ipc_collect()
 
 class Walker:
+    """
+    Class to handle expanding window walk-forward for a single model-loss combination. 
+
+    The Walker manages the entire process: expanding training data, reshaping,
+    training a model, and evaluating it at each step of the walk-forward.
+    """
 
     def __init__(
             self,
@@ -451,6 +472,19 @@ class Walker:
             reshaper: Reshaper,
             seed: int | None = None
         ):
+        """Initializes the Walker.
+
+        Args:
+            num_steps (int): Number of walk-forward steps.
+            model_name (str): Name of the model (for logging).
+            model_cls (Type): Model class (not instance).
+            loss_name (str): Name of the loss function.
+            loss_func (Callable): The loss function itself.
+            hparams (dict): Hyperparameters for model, optimizer, training, loss.
+            torch_device (torch.device or str): Device to run on.
+            reshaper (Reshaper): Helper for creating rolling windows.
+            seed (int, optional): Random seed for reproducibility. Defaults to None.
+        """
         self.num_steps = num_steps
         self.model_name = model_name
         self.model_cls = model_cls
@@ -474,8 +508,25 @@ class Walker:
             walk_rets_train: np.ndarray,
             walk_rets_val: np.ndarray    
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        # Reshaping entire training data
+        """Reshapes training data and the current inference window.
 
+        Uses the reshaper to create training samples (rolling windows) from the
+        training set, and extracts the last `in_size` rows of features
+        as the inference input for the next output period.
+
+        Args:
+            walk_train (np.ndarray): Cumulative features of the expanded training set.
+            walk_rets_train (np.ndarray): Cumulative asset returns of the expanded training set.
+            walk_rets_val (np.ndarray): Asset returns of the current validation/holding period.
+
+        Returns:
+            tuple: (X_train, y_train, X_val, y_val) where:
+                - X_train: training input windows (N, in_size, features)
+                - y_train: training target returns (N, out_size, assets)
+                - X_val: inference input (1, in_size, features)
+                - y_val: inference target returns (1, out_size, assets)
+        """
+        # Reshaping entire training data
         X_train, y_train, _ = self.reshaper.reshape(walk_train, walk_rets_train)
 
         # Reshaping only last window
@@ -495,6 +546,19 @@ class Walker:
             X_train_shape: torch.Size,
             y_train_shape: torch.Size
         ):
+        """
+        Trains the model on the training dataset and evaluates on the inference window.
+        Args:
+            train_ds (WindowDataset): Dataset containing training windows.
+            infer_ds (WindowDataset): Dataset containing the single inference window.
+            X_train_shape (torch.Size): Shape of the input tensor (used for Trainer).
+            y_train_shape (torch.Size): Shape of the target tensor.
+
+        Returns:
+            tuple: (alloc_weights, train_eval_losses) where:
+                - alloc_weights (np.ndarray): Portfolio weights for the evaluation window.
+                - train_eval_losses (dict): Contains 'train' (epoch losses) and 'eval' losses.
+        """
 
         #### FOR TESTING ####
         # best_hparams['train']['epochs'] = 5
@@ -536,6 +600,19 @@ class Walker:
             val: np.ndarray,
             rets_val: np.ndarray
         ):
+        """Executes the full walk-forward for one model-loss combination.
+
+        Args:
+            train (np.ndarray): Initial training features (shape (train_days, features)).
+            rets_train (np.ndarray): Initial training returns (shape (train_days, assets)).
+            val (np.ndarray): Full validation/test features (shape (val_days, features)).
+            rets_val (np.ndarray): Full validation/test returns (shape (val_days, assets)).
+
+        Returns:
+            np.ndarray: Portfolio allocation weights for each walk-forward step,
+                stacked vertically, shape (num_steps, num_assets).
+        """
+
 
         if self.seed: # set a fixed seed if provided
             set_seed(self.seed)
@@ -593,6 +670,12 @@ class Walker:
         return self.alloc_weights
     
     def get_train_eval_losses(self) -> dict:
+        """Returns the training and evaluation loss histories for each step.
+
+        Returns:
+            dict: A dictionary where keys are step indices (or models) and values
+                are the loss dictionaries returned by _train_eval_helper.
+        """
         return self.train_eval_losses
 
 class MetricModel(BaseModel):
@@ -609,6 +692,14 @@ class MetricModel(BaseModel):
     sign: Literal['+', '-']
 
 class Tuner:
+    """Hyperparameter tuner using Optuna with a composite objective based on walk-forward performance.
+
+    The tuner runs an Optuna study for a given model-loss combination. Each trial evaluates a
+    hyperparameter configuration by running a full walk-forward simulation (via Walker),
+    computes composite scores (e.g. Information Ratio) per step, and returns a robust objective
+    (95% lower confidence bound of the mean composite score). The best hyperparameters
+    are then used for final training.
+    """
     direction = 'maximize'
     max_seed = 1000000
     n_startup_perc = 0.3
@@ -627,7 +718,24 @@ class Tuner:
             torch_device: torch.device | str,
             ba_eval_winds: np.ndarray | None
         ):
+        """Initializes the Tuner.
 
+        Args:
+            tune_metric (dict[str, MetricModel]): Dictionary mapping metric names to MetricModel
+                objects (function and sign). The composite score is a linear combination of these.
+            tune_bench_rets (np.ndarray): Benchmark returns (e.g., equal weight) used to compute
+                excess returns for each walk-forward step. Shape (n_steps, out_size).
+            eval_winds (np.ndarray): Asset returns for each walk-forward step.
+                Shape (n_steps, out_size, num_assets).
+            n_steps (int): Number of walk-forward steps.
+            n_trials (int): Number of Optuna trials.
+            n_warmup_steps (int): Warmup steps for the pruner (unused in this code).
+            n_jobs (int): Number of parallel jobs for Optuna.
+            reshaper (Reshaper): Helper for reshaping data into windows.
+            torch_device (torch.device or str): Device for training.
+            ba_eval_winds (np.ndarray | None): Bid-ask spread data for transaction costs,
+                shape (n_steps, num_assets).
+        """
         self.tune_metric = TypeAdapter(
             Dict[str, MetricModel]
         ).validate_python(tune_metric)
@@ -646,25 +754,26 @@ class Tuner:
             int(self.n_trials * self.n_startup_perc),
             self.min_n_startup
         )
-
-    # def _calc_pf_metrics_for_seed(
-    #         self, model_name: str, loss_name: str, seed: int,
-    #         alloc_weights: np.ndarray, y_val: np.ndarray
-    #     ) -> dict[str, float]:
-    #     evaluator = Evaluator(y_val, None)
-    #     evaluator.calc_pf_daily_rets(alloc_weights, f'{model_name}-{loss_name}-{seed}')
-
-    #     seed_metrics = {}
-    #     for met_name, met_dict in self.tune_metric.items():
-    #         metric_mean = evaluator.calc_metric_performance(met_dict.func, mean=True)
-    #         seed_metrics[met_name] = metric_mean.item() # .item() because we calculate only 1 value
-        
-    #     return seed_metrics
     
     def _calc_composite_scores(
             self, model_loss_name,alloc_weights: np.ndarray
         ) -> np.ndarray:
-                
+        """Computes composite scores per walk-forward step for a given set of allocation weights.
+
+        For each step, the function calculates portfolio daily returns (with transaction costs),
+        subtracts the benchmark returns to obtain excess returns, and then applies each metric
+        in `tune_metric` to the excess returns. The results are combined according to the metric
+        signs (+ or -) to produce a single composite score per step.
+
+        Args:
+            model_loss_name (str): Identifier for the current model-loss combination (used only
+                for internal logging within the Evaluator).
+            alloc_weights (np.ndarray): Portfolio allocation weights for each walk-forward step.
+                Shape (n_steps, num_assets).
+
+        Returns:
+            np.ndarray: Composite score for each step, shape (n_steps,).
+        """
         evaluator = Evaluator(self.eval_winds, self.ba_eval_winds, None)
         # Calculate daily returns for this particular portfolio
         evaluator.calc_pf_daily_rets(alloc_weights, model_loss_name)
@@ -698,7 +807,19 @@ class Tuner:
             self, seed_train_losses: list[float], seed_val_losses: list[float],
             eps: float = 1e-9
         ) -> float:
+        """Calculates a penalty based on the gap between average train and validation loss.
 
+        Penalises configurations where the average validation loss exceeds the average train loss
+        (overfitting). The penalty is the relative excess, clamped at zero for negative gaps.
+
+        Args:
+            seed_train_losses (list[float]): List of best training losses (one per seed).
+            seed_val_losses (list[float]): List of corresponding best validation losses.
+            eps (float): Small constant to avoid division by zero.
+
+        Returns:
+            float: Penalty value (≥0).
+        """
         avg_train_loss = np.mean(seed_train_losses)
         avg_val_loss = np.mean(seed_val_losses)
 
@@ -717,8 +838,19 @@ class Tuner:
             seed_val_losses: list[float]
         ) -> float:
         """
-        calculate tuing objective from statistics of composite scores across seeds
-        and gap penalty from train - val losses.
+        Computes the final tuning objective using a confidence bound and a gap penalty.
+
+        For 2 or more seeds, calculates the 95% one-sided lower confidence bound of the mean
+        composite score, then subtracts the hinge penalty. For fewer seeds, falls back to the
+        mean composite score minus the penalty.
+
+        Args:
+            composite_scores (list[float]): List of composite scores (one per seed).
+            seed_train_losses (list[float]): Best training loss per seed.
+            seed_val_losses (list[float]): Best validation loss per seed.
+
+        Returns:
+            float: Objective value to maximise (higher is better).
         """
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
@@ -744,8 +876,14 @@ class Tuner:
             self, composite_scores: np.ndarray
         ) -> float:
         """
-        calculate tuing objective from statistics of composite scores across seeds
-        and gap penalty from train - val losses.
+        Computes the 95% lower confidence bound of the mean composite score (or just the mean
+        if fewer than 2 walk steps).
+
+        Args:
+            composite_scores (np.ndarray): Composite scores per walk step, shape (steps,).
+
+        Returns:
+            float: Objective value.
         """
         mean_score = np.mean(composite_scores)
         n = len(composite_scores)
@@ -775,8 +913,31 @@ class Tuner:
             rets_val: np.ndarray,
             model_cfg: dict,
             loss_cfg: dict
-        ):
-        
+        ) -> optuna.Study:
+        """Runs an Optuna hyperparameter study for a single model-loss combination.
+
+        Creates an Optuna study, defines the objective function (which builds a Walker,
+        runs walk-forward, computes composite scores, and returns the objective value),
+        and executes the optimization.
+
+        Args:
+            model_name (str): Name of the model.
+            model_class (Type): Model class.
+            loss_name (str): Name of the loss function.
+            loss_func (Callable): Loss function.
+            train_data (np.ndarray): Training features.
+            rets_train (np.ndarray): Training returns.
+            val_data (np.ndarray): Validation features.
+            rets_val (np.ndarray): Validation returns.
+            model_cfg (dict): Model hyperparameter configuration (includes default and tuning space).
+            loss_cfg (dict): Loss hyperparameter configuration (includes lambdas and tuning).
+
+        Returns:
+            optuna.Study: Completed Optuna study containing all trials and the best parameters.
+
+        Raises:
+            ValueError: If the model configuration contains no tuning space.
+        """
         model_loss_name = f'{model_name}{MODEL_LOSS_SEP}{loss_name}'
 
         # # # Calculate equal weight portfolio & its returns as benchmark
@@ -899,10 +1060,24 @@ class Tuner:
         )
     
     def set_tuning_direction(self, direction: str):
+        """Sets the optimization direction for the study.
+
+        Args:
+            direction (str): Either 'maximize' or 'minimize'.
+        """
         self.direction = direction
 
 
 class WalkerGridUtilities(ABC):
+    """
+    Abstract class to encapsulate all common walk-forward grid functionality.
+
+    Attributes:
+        mdls_hparams_name (str): Key for the default model hyperparameters and their 
+            tuning ranges in the hparams_config
+        ls_hparams_name (str): Key for the default loss function hyperparameters and 
+            their tuning ranges in the hparams_config.
+    """
     mdls_hparams_name = 'nn_models'
     ls_hparams_name = 'losses'
 
@@ -917,6 +1092,24 @@ class WalkerGridUtilities(ABC):
             mpi: bool = False,
             temp_dir: str | None = None
         ):
+        """
+        Abstract class to encapsulate all common walk-forward grid functionality.
+
+        Args:
+            model_lib (dict[str, dict[str, Type]]): Neural network model architecture 
+                library as a dict.
+            loss_lib (dict[str, dict[str, dict[str, Callable]]]): Loss functions library 
+                as a dict.
+            hparams_config (dict[str, Any]): Dictionary containing default hyperparameters 
+                and tuning ranges.
+            num_steps: (int): Number of walk forward steps to be taken.
+            common_features (list[str]): List of common features in the dataset, eg., S&P500 returns.
+                This is used for reshaping for different types of broadcasting + reshaping.
+            torch_device (torch.device | str): Device to run the PyTorch models.
+            mpi (bool): Toggle the use of mpi for distributed evaluation of model-loss combinations.
+            temp_dir: (str | None): Directory to save temporary files after a rank has completed its
+                work.
+        """
         self.model_lib = model_lib
         self.loss_lib = loss_lib
         self.hparams_config = hparams_config # Default config. Not optimized
@@ -935,6 +1128,12 @@ class WalkerGridUtilities(ABC):
         self.train_eval_losses: dict[str, dict[str, list[float]]] = {}
 
     def _temp_dir_check(self):
+        """
+        Check for the existence of the temporaray directory.
+
+        Raises:
+            FileNotFoundError: If temporaray directory does not exist.
+        """
         if self.mpi:
             if not self.temp_dir or not os.path.exists(self.temp_dir):
                 raise FileNotFoundError(
@@ -946,36 +1145,45 @@ class WalkerGridUtilities(ABC):
     
     # -------------------- Library Searches -------------------- #
     def _search_model(self, model_name: str) -> Type | None:
-        """Search for required model"""
+        """
+        Search for required model in the NNModelLibrary registry.
+        
+        Args:
+            model_name (str): Name of the neural network architecture in the library.
+        
+        Returns:
+            Type | None: Class (not initialized) of the required model, or None if not found.
+        """
         for _, models_dict in self.model_lib.items():
             if model_name in models_dict:
                 return models_dict[model_name]
         return None
     
     def _search_loss_func(self, loss_name: str) -> Callable | None:
-        """Search for required loss function"""
+        """
+        Search for required loss function in the LossFunctionLibrary registry.
+        
+        Args:
+            loss_name (str): Name of the loss function in the library.
+        
+        Returns:
+            Callable | None: Loss function or None if not found.
+        """
         for _, cat_dict in self.loss_lib.items():
             for _, sub_cat_dict in cat_dict.items():
                 if loss_name in sub_cat_dict:
                     return sub_cat_dict[loss_name]
-        
-        # objectives = self.loss_lib['objectives']['__default__']
-        # if loss_name in objectives:
-        #     return objectives[loss_name]
-        
-        # custom_combos = self.loss_lib['custom']['__default__']
-        # if loss_name in custom_combos:
-        #     return custom_combos[loss_name]
-        
         return None
     
     # -------------------- Monitoring Methods -------------------- #
     def _memory_diagnostics(self):
-        """Print memory usage diagnostics"""
+        """
+        Print memory usage diagnostics wherever this method is called.
+        """
         process = psutil.Process(os.getpid())
         mem_gb = process.memory_info().rss / 1024 ** 3
         
-        print(f"  Process memory: {mem_gb:.2f} GB")
+        print(f'  Process memory: {mem_gb:.2f} GB')
         
         # if DEVICE == 'cuda':
         #     print(f"  GPU allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
@@ -993,12 +1201,30 @@ class WalkerGridUtilities(ABC):
     # -------------------- MPI Methods -------------------- #
     @staticmethod
     def _mpi_setup_check(mpi_items: list):
+        """
+        Check if mpi items like size, comm, rank exists
+
+        Args:
+            mpi_items list: List of mpi items to be checked before running mpi methods.
+
+        Raises:
+            ValueError: If necessary mpi items are not found.
+        """
         for i in mpi_items:
             if i is None:
                 raise ValueError(f'All necessary MPI values must be provided. {i} not provided.')
     
     @staticmethod
-    def _select_ranks_combos(all_combos: list, global_rank, size):
+    def _select_ranks_combos(
+        all_combos: list, global_rank: int, size: int
+    ) -> list[tuple[str, str]]:
+        """
+        Distribute model-loss combinations across ranks. This method calculates the indexes 
+        of the model-loss combos to run on the current rank.
+
+        Args:
+            all_combos (list[tuple[str, str]]): List of tuples containing the model and loss names.
+        """
         # Distribute combos evenly across ranks
         chunk_size = len(all_combos) // size
         remainder = len(all_combos) % size
@@ -1009,7 +1235,17 @@ class WalkerGridUtilities(ABC):
         return this_ranks_combos
 
     # -------------------- Setup Methods -------------------- #
-    def _reshaper_setup(self, common_features) -> Reshaper:
+    def _reshaper_setup(self, common_features: list[str]) -> Reshaper:
+        """
+        Set up method to initialize the Reshaper class using the rolling window sizes.
+
+        Args:
+            common_features (list[str]): List of common features that will be placed at the end 
+                of the columns or broadcasted if needed.
+        
+        Returns:
+            Reshaper: Reshaper object.
+        """
         return Reshaper(
             self.hparams_config['rolling_windows']['in_size'],
             self.hparams_config['rolling_windows']['out_size'],
@@ -1021,30 +1257,54 @@ class WalkerGridUtilities(ABC):
     def _convert_datasets_to_np(
         train_data: pd.DataFrame,
         rets_train: pd.DataFrame,
-        val_data: pd.DataFrame,
-        rets_val: pd.DataFrame
+        eval_data: pd.DataFrame,
+        rets_eval: pd.DataFrame
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Convert all dataframes to arrays"""
-        return train_data.values, rets_train.values, val_data.values, rets_val.values
+        """
+        Convert all dataframes to numpy arrays
+        
+        Args:
+            train_data (pd.DataFrame): Train data split that contain all features.
+            rets_train (pd.DataFrame): Train data split that contains only returns 
+                data for all stocks.
+            eval_data (pd.DataFrame): Validation/Test data split that contains all features.
+            rets_eval (pd.DataFrame): Validation/Test data split thay comtains only returns 
+                data for all stocks.
+        
+        Returns:
+            tuple: (train_data, rets_train, eval_data, rets_evals)
+        """
+        return train_data.values, rets_train.values, eval_data.values, rets_eval.values
     
     # -------------------- Integrity Check Methods -------------------- #
-    def _data_check(self, train: pd.DataFrame, rets_val: pd.DataFrame):
+    def _data_check(self, train: pd.DataFrame, rets_eval: pd.DataFrame):
         """
         Checks data consistency to ensure number of steps in the 
         walk forward is correctly divides given evaluation data.
+        
+        Args:
+            train (pd.DataFrame): Train data that contains all features.
+            rets_eval (pd.DataFrame): Evaluation data that contains only 
+                returns data for all stocks.
+
+        Raises:
+            ValueError: If provided number of steps does not match the length of 
+                windows in the evaulation data.
+            ValueError: If evaluation data is too short.
+            ValueError: If initial train data is too short.
         """
         walk_stride = self.hparams_config['rolling_windows']['out_size']
-        total_val_days = len(rets_val)
+        total_val_days = len(rets_eval)
         expected_steps = total_val_days // walk_stride
         if expected_steps != self.num_steps:
             raise ValueError(
                 f'Provided num_steps ({self.num_steps}) does not match actual '
-                f'number of full windows of length {walk_stride} in validation set '
+                f'number of full windows of length {walk_stride} in evaluation set '
                 f'({expected_steps}). Adjust num_steps or data.'
             )
         if total_val_days < walk_stride:
             raise ValueError(
-                f'Validation set too short: need at least {walk_stride} days, '
+                f'Evaluation data set too short: need at least {walk_stride} days, '
                 f'got {total_val_days}.'
             )
         # Eensure initial training set has at least in_size days for first inference
@@ -1058,6 +1318,9 @@ class WalkerGridUtilities(ABC):
         """
         Check if training has been run before. 
         New instance of the class must be created for every training grid.
+
+        Raises:
+            RuntimeError: If the instance reties to train models more than once.
         """
         if len(self.all_alloc_weights) != 0:
             raise RuntimeError(
@@ -1091,6 +1354,19 @@ class WalkerGridUtilities(ABC):
 
 
 class CandidatesGrid(WalkerGridUtilities):
+    """
+    Class to tune and/or train a neural network model with all available loss functions on 
+    the validation data. This can run sequentially or in parallel to tune + train model-loss 
+    combinations.
+
+    Attributes:
+        temp_wts_prefix_stem (str): This is the prefix stem to be used while saving temporary portfolio 
+            allocation weight files used during distributed tuning + training using mpi.
+        temp_losses_prefix_stem (str): This is the prefix stem to be used while saving temporary model 
+            train-eval loss curve files used during distributed tuning + training using mpi.
+        temp_hparams_prefix_stem (str): This is the prefix stem to be used while saving temporary
+        hyperparameters used during the distributed tuning + training.
+    """
     temp_wts_prefix_stem = 'temp_alloc_wts'
     temp_losses_prefix_stem = 'temp_losses'
     temp_hparams_prefix_stem = 'temp_hparams'
@@ -1111,13 +1387,33 @@ class CandidatesGrid(WalkerGridUtilities):
             enable_diagnostics: bool = False
         ):
         """
-        This runs either all models and loss functions or 
-        one model with all loss functions or all models with on loss function.
-        It should not run one model for one loss function as this class is for a grid.
+        Initialize CandidatesGrid class for tuning and training of a model with its loss functions.
 
         train_eval_* methods can be run only once with each instance
-        """
 
+        Args:
+            model_lib (dict[str, dict[str, Type]]): Neural network model architecture 
+                library as a dict.
+            loss_lib (dict[str, dict[str, dict[str, Callable]]]): Loss functions library 
+                as a dict.
+            hparams_config (dict[str, Any]): Dictionary containing default hyperparameters 
+                and tuning ranges.
+            num_steps: (int): Number of walk forward steps to be taken.
+            common_features (list[str]): List of common features in the dataset, eg., S&P500 returns.
+                This is used for reshaping for different types of broadcasting + reshaping.
+            torch_device (torch.device | str): Device to run the PyTorch models.
+            loss_mode (str): This is used to determine if we need to only custom losses or all loss 
+                functions . Default = 'custom'
+            mpi (bool): Toggle the use of mpi for distributed evaluation of model-loss combinations.
+            tune (bool): Toggle if we need to tune models before finally running them on the validation 
+                set or use default values. Default = False,
+            tuner_eval_items dict[str, dict[str, MetricModel] | np.ndarray] Dictionary containing to be 
+                passed on to the tuner object. Default = None,
+            temp_dir: (str | None): Directory to save temporary files after a rank has completed its
+                work.
+            enable_diagnostics (bool): Toggle to print statements about memory usuage during 
+                train_eval_* methods. Default = False.
+        """
         super().__init__(
             model_lib, loss_lib, hparams_config, num_steps, 
             common_features, torch_device, mpi, temp_dir
@@ -1137,6 +1433,7 @@ class CandidatesGrid(WalkerGridUtilities):
 
         self.optimized_hparams = {} # Will be filled if tuned
     
+    #### TODO: CONTINUE DOCSTRING UPDTAES FROM HERE ####
     def _tuner_setup(self, tuner_eval_items: dict) -> Tuner | None:
 
         if self.tune:

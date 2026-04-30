@@ -98,8 +98,21 @@ def serialize_np_dict(obj: dict):
     return obj
 
 def deserialize_np_dict(obj):
-    """
-    Recursively convert lists back to NumPy arrays where appropriate.
+    """Recursively converts lists in a dictionary (or list) to NumPy arrays where appropriate.
+
+    The function traverses dictionaries and lists. When a list is encountered, it attempts
+    to convert it into a NumPy array. If the list contains only numbers and can be stacked
+    into a rectangular array, it returns a NumPy array; otherwise, it recurses into
+    the list elements. Empty lists become empty arrays. Non-dict/list objects are
+    returned unchanged.
+
+    Args:
+        obj (any): Input object (usually a dictionary or list) that may contain nested
+            lists that were originally NumPy arrays but were serialised (e.g., to JSON).
+
+    Returns:
+        any: The same structure with lists replaced by NumPy arrays wherever possible,
+        otherwise the original object.
     """
     if isinstance(obj, dict):
         return {k: deserialize_np_dict(v) for k, v in obj.items()}
@@ -179,6 +192,23 @@ def reform_returns_w_dates(
         daily_returns: dict[str, list[list[float]]],
         out_win_date_cols: list[pd.DatetimeIndex]
 ) -> dict[str, dict[str, list[float]]]:
+    """Reformats daily returns by replacing window indices with date ranges.
+
+    For each model and each window, the function creates a key of the form
+    "YYYY-MM-DD_YYYY-MM-DD" (start date to end date) and stores the corresponding
+    window's list of returns.
+
+    Args:
+        daily_returns (dict[str, list[list[float]]]): Dictionary mapping model name
+            to a list of return windows (each window is a list of daily returns).
+        out_win_date_cols (list[pd.DatetimeIndex]): List of DatetimeIndex objects,
+            one per window, providing the actual dates for that window.
+
+    Returns:
+        dict[str, dict[str, list[float]]]: A nested dictionary where the outer key
+        is the model name, the inner key is a date range string (start_end), and the
+        value is the list of daily returns for that window.
+    """
     reformatted_w_dates = {}
     for model, all_winds_ls in daily_returns.items():
         reformatted_w_dates.setdefault(model, {})

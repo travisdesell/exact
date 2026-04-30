@@ -5,7 +5,16 @@ import torch.nn as nn
 from torch import Tensor
 
 class LSTMEncoder(nn.Module):
+    """LSTM Encoder Block"""
     def __init__(self, hidden_size: int, num_layers: int, dropout: float):
+        """
+        Initialize LSTM encoder block
+
+        Args:
+            hidden_size (int): Number of nodes in the hidden layers.
+            num_layers (int): Number of LSTM layers.
+            dropout (float): Dropout rate.
+        """
         super().__init__()
         # 1. LSTM Layer (Local Temporal Smoothing)
         self.lstm = nn.LSTM(
@@ -21,6 +30,15 @@ class LSTMEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for the LSTM Encoder.
+
+        Args:
+            x (Tensor): Input tensor.
+
+        Returns:
+            Tensor: Output tensor.
+        """
         x, _ = self.lstm(x) # (B, T, H)
         x = self.lstm_ln(x)
         # x = torch.relu(x)
@@ -33,6 +51,13 @@ class SinusoidalPositionalEncoding(nn.Module):
     Generates encodings of shape (1, max_seq_len, hidden_size).
     """
     def __init__(self, hidden_size: int, max_seq_len: int):
+        """
+        Initalize SinusoidalPositionalEncoding layer.
+
+        Args:
+            hidden_size (int): Number of nodes in the hidden layers.
+            max_seq_len (int): Maximum sequence length.
+        """
         super().__init__()
         pe = torch.zeros(max_seq_len, hidden_size)
         position = torch.arange(0, max_seq_len, dtype=torch.float).unsqueeze(1)
@@ -60,10 +85,25 @@ class SinusoidalPositionalEncoding(nn.Module):
         return x + self.pe[:, :x.size(1), :]
 
 class GlobalAttentionProcessor(nn.Module):
+    """GlobalAttentionProcessor Transformer Block"""
     def __init__(
             self, hidden_size: int, num_layers: int, attention_heads: int,
             expansion_factor: int, max_seq_len: int, dropout: float
         ):
+        """
+        Initialize Global Attention Processor transformer block. 
+        This uses a simple positional (temporal) encoder, whose
+        outputs are added to the tensor before the transformer layer.
+        
+        Args:
+            hidden_size (int): Number of nodes in hidden layers.
+            num_layers (int): Number of transformer encoder layers.
+            attention_heads (int): Number of attention heads.
+            expansion_factor (int): Expansion factor to calculate feedforward dimension of each
+                transformer layer.
+            max_seq_len (int): Maximum sequence length. Here, we use length of input window.
+            dropout (float): Dropout rate.
+        """
         super().__init__()
         # 1. Position Encoding (Crucial for the Transformer part)
         self.pos_embedding = nn.Parameter(torch.zeros(1, max_seq_len, hidden_size))
@@ -84,6 +124,15 @@ class GlobalAttentionProcessor(nn.Module):
         self.ln = nn.LayerNorm(hidden_size)
 
     def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward pass method for the Global Attention Processor, transformer.
+
+        Args:
+            x (Tensor): Input tensor.
+        
+        Returns:
+            Tensor: Layer normalized output tensor.
+        """
         # Add Positional Information
         x = x + self.pos_embedding[:, :x.size(1), :]
         
@@ -117,6 +166,11 @@ class DenoisingConv1d(nn.Module):
         return self.norm(x)
     
 class ConvStem(nn.Module):
+    """
+    Multi-scale convolution stem using three parallel Conv1d layers (kernel sizes 3,5,7)
+    to capture short-term micro-trends, then projects to target dimension.
+    Input: (B, T, C)  ->  Output: (B, T, out_channels).
+    """
     def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
         # Captures 3-day, 5-day, and 7-day micro-trends
@@ -135,6 +189,10 @@ class ConvStem(nn.Module):
         return self.proj(out)
     
 class AttentionPooling(nn.Module):
+    """
+    Learnable query attention pooling over the time dimension.
+    Input: (B, T, H)  ->  Output: (B, H). Uses a single-head attention to summarise the sequence.
+    """
     def __init__(self, hidden_size):
         super().__init__()
         # A learnable 'ideal' summary of a trading window
@@ -151,6 +209,10 @@ class AttentionPooling(nn.Module):
         return context.squeeze(1)
 
 class LightweightConvStem(nn.Module):
+    """
+    Depthwise separable convolution stem: depthwise Conv1d followed by pointwise Linear.
+    Input: (B, T, in_dim)  ->  Output: (B, T, out_dim). Reduces parameters while mixing features.
+    """
     def __init__(self, in_dim, out_dim):
         super().__init__()
         # Depthwise: each feature is convolved independently (very few parameters)

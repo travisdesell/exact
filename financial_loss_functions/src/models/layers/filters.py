@@ -2,7 +2,20 @@ import torch
 from torch import nn
 
 class RobustNormalization(nn.Module):
+    """
+    Robust feature normalization using median and interquartile range (IQR).
+
+    Applies (x - median) / (IQR + eps). Optionally adds learnable affine transformation.
+    """
     def __init__(self, feature_dim, median, iqr, eps: float = 1e-8):
+        """Initializes robust normalization with fixed median and IQR.
+
+        Args:
+            feature_dim (int): Number of features (last dimension of input).
+            median (torch.Tensor or list[float]): Median values for each feature (length feature_dim).
+            iqr (torch.Tensor or list[float]): Interquartile range for each feature (length feature_dim).
+            eps (float, optional): Small constant to avoid division by zero. Default = 1e-8.
+        """
         super().__init__()
         self.register_buffer('median', torch.tensor(median, dtype=torch.float32))
         self.register_buffer('iqr', torch.tensor(iqr, dtype=torch.float32))
@@ -15,6 +28,14 @@ class RobustNormalization(nn.Module):
             self.bias = nn.Parameter(torch.zeros(feature_dim))
 
     def forward(self, x):
+        """Normalizes the input tensor.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, T, F) or (B, F).
+
+        Returns:
+            torch.Tensor: Normalized tensor of the same shape.
+        """
         # x shape: (B, T, F) or (B, F)
         x = (x - self.median) / (self.iqr + self.eps)
         if self.affine:
@@ -22,7 +43,20 @@ class RobustNormalization(nn.Module):
         return x
 
 class FFTSpectralFilter(nn.Module):
+    """
+    Learnable frequency domain filter using FFT.
+
+    Applies a complex filter (real + imaginary parts) to the Fourier transform of the input,
+    then returns the time domain signal plus a residual connection.
+    """
     def __init__(self, seq_len, hidden_size):
+        """
+        Initialises the FFT spectral filter.
+
+        Args:
+            seq_len (int): Length of the input sequence (T).
+            hidden_size (int): Hidden dimension (H).
+        """
         super().__init__()
         self.seq_len = seq_len
         self.n_freq = seq_len // 2 + 1
@@ -40,6 +74,15 @@ class FFTSpectralFilter(nn.Module):
             self.filter_real.copy_(lp_prior)
 
     def forward(self, x):
+        """
+        Applies the learnable spectral filter.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, T, H).
+
+        Returns:
+            torch.Tensor: Filtered output of shape (B, T, H).
+        """
         # x: (B, T, H)
         
         # 1. Transform to Frequency Domain
@@ -59,12 +102,28 @@ class FFTSpectralFilter(nn.Module):
         return x + self.alpha * x_filtered
 
 class WaveletDenoiseLayer(nn.Module):
+    """
+    Single-level Haar wavelet denoising layer with learnable soft-threshold.
+
+    Applies Haar decomposition (approximation and detail), soft-thresholds the 
+    detail coefficients, and reconstructs the signal. The threshold is learnable.
+    """
     def __init__(self):
+        """Initialises the wavelet denoising layer with a learnable threshold."""
         super().__init__()
         # Learnable threshold for denoising
         self.threshold = nn.Parameter(torch.tensor(0.05))
 
     def forward(self, x):
+        """
+        Denoises the input using Haar wavelet transform.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (B, T, H). Sequence length T must be even.
+
+        Returns:
+            torch.Tensor: Denoised tensor of the same shape (B, T, H).
+        """
         # Simple Haar Decomposition: (Average, Difference)
         # x: (B, T, H)
         even = x[:, 0::2, :]

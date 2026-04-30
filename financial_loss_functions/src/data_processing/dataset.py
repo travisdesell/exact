@@ -43,6 +43,8 @@ class Reshaper:
             in_size (int): Size of input window in terms of time steps.
             out_size (int): Size output window in terms of time steps.
             stride (int): step stride size for the rolling windows.
+            common_features (list[str]): List of common features that will be placed at the end 
+                of the columns or broadcasted if needed.
             layout (ReshapeStyle): Enum for reshaping define the reshaping style, 
                 see `src.data_processing.preprocess.ReshapeStyle`. Default = ReshapeStyle.T_NxF.
         

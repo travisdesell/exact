@@ -1118,8 +1118,15 @@ def smooth_calmar_objective(
 # -------------------- Custom Loss Functions -------------------- #
 # @LossLibrary.register(category='custom')
 def custom_loss_1(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * smooth CVar
+    """Combines differentiable Sharpe ratio with a smooth CVaR regulariser.
+
+    Args:
+        pf_returns (Tensor): Portfolio daily returns (B, T_out).
+        lambda1 (float): Weight for the CVaR term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = differentiable_sharpe + lambda1 * smooth_CVaR.
     """
     sharpe = differentiable_sharpe_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1130,8 +1137,15 @@ def custom_loss_1(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
 
 # @LossLibrary.register(category='custom')
 def custom_loss_2(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
-    """
-    loss = RMS sharpe + lambda1 * smooth CVar
+    """Combines RMS-based Sharpe ratio with a smooth CVaR regulariser.
+
+    Args:
+        pf_returns (Tensor): Portfolio daily returns (B, T_out).
+        lambda1 (float): Weight for the CVaR term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = rms_sharpe + lambda1 * smooth_CVaR.
     """
     sharpe = rms_sharpe_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1142,8 +1156,15 @@ def custom_loss_2(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
 
 # @LossLibrary.register(category='custom')
 def custom_loss_3(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
-    """
-    loss = raw sortino + lambda1 * smooth CVaR
+    """Combines raw Sortino ratio with a smooth CVaR regulariser.
+
+    Args:
+        pf_returns (Tensor): Portfolio daily returns (B, T_out).
+        lambda1 (float): Weight for the CVaR term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = rms_sortino + lambda1 * smooth_CVaR.
     """
     sortino = rms_sortino_loss(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1152,6 +1173,16 @@ def custom_loss_3(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
 
 # @LossLibrary.register(category='custom')
 def custom_loss_4(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
+    """Combines differentiable Sortino ratio with a smooth CVaR regulariser.
+
+    Args:
+        pf_returns (Tensor): Portfolio daily returns (B, T_out).
+        lambda1 (float): Weight for the CVaR term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = differentiable_sortino + lambda1 * smooth_CVaR.
+    """
     sortino = differentiable_sortino_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
 
@@ -1161,8 +1192,17 @@ def custom_loss_4(pf_returns: Tensor, lambda1: float, **kwargs) -> Tensor:
 def custom_loss_5(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, lambda1: float, **kwargs
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * smooth CVar
+    """Combines differentiable Sharpe ratio with a risk parity regulariser.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns over the holding period (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        lambda1 (float): Weight for the risk parity term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = differentiable_sharpe + lambda1 * risk_parity.
     """
     sharpe = differentiable_sharpe_objective(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1176,7 +1216,19 @@ def custom_loss_7(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
     lambda1: float, lambda2: float, **kwargs
 ) -> Tensor: 
+    """Combines log Sharpe ratio, smooth CVaR and risk parity.
 
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        lambda1 (float): Weight for CVaR term.
+        lambda2 (float): Weight for risk parity term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = log_sharpe + lambda1 * smooth_CVaR + lambda2 * risk_parity.
+    """
     log_sharpe = log_sharpe_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1192,8 +1244,20 @@ def custom_loss_8(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, log_ret_lambda: float,
     cvar_lambda: float, risk_p_lambda: float, **kwargs
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """Combines differentiable Sharpe, log return, smooth CVaR and risk parity.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        log_ret_lambda (float): Weight for log return term.
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = differentiable_sharpe + log_ret_lambda * log_return +
+                cvar_lambda * smooth_CVaR + risk_p_lambda * risk_parity.
     """
     ### 2nd Best
     sharpe = differentiable_sharpe_objective(pf_returns)
@@ -1215,8 +1279,18 @@ def custom_loss_9(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     lambda1: float, lambda2: float, **kwargs
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """Combines log Sortino ratio, smooth CVaR and risk parity.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        lambda1 (float): Weight for CVaR term.
+        lambda2 (float): Weight for risk parity term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = log_sortino + lambda1 * smooth_CVaR + lambda2 * risk_parity.
     """
     log_sortino = log_sortino_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1232,8 +1306,19 @@ def custom_loss_6(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor, 
     cvar_lambda: float, risk_p_lambda: float, **kwargs
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * smooth CVar + lambd2 * risk_parity
+    """Combines differentiable Sharpe ratio, smooth CVaR and risk parity.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        **kwargs: Additional unused arguments.
+
+    Returns:
+        Tensor: loss = differentiable_sharpe + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity.
     """
     #### 2ND BEST
     sharpe = differentiable_sharpe_objective(pf_returns)
@@ -1251,10 +1336,20 @@ def custom_loss_10(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
+    """Combines smooth negative-log Sharpe, smooth CVaR and risk parity.
+    This is the best-performing loss according to empirical tests.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+
+    Returns:
+        Tensor: loss = smooth_neglog_sharpe + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity.
     """
-    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
-    """
-    ### BEST!
     sharpe = smooth_neglog_sharpe_loss(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1272,6 +1367,20 @@ def custom_loss_11(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
+    """Combines smooth Omega ratio, smooth CVaR and risk parity.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+
+    Returns:
+        Tensor: loss = smooth_omega + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity.
+    """
+    ### BEST!
     omega = smooth_omega_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1289,6 +1398,19 @@ def custom_loss_12(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float
 ) -> Tensor:
+    """Combines raw Omega ratio, smooth CVaR and risk parity.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+
+    Returns:
+        Tensor: loss = raw_omega + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity.
+    """
     omega = raw_omega_ratio(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1306,8 +1428,19 @@ def custom_loss_13(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """Combines smooth negative-log Sharpe, smooth CVaR, risk parity and entropy regulariser.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        ent_lambda (float): Weight for entropy regulariser.
+
+    Returns:
+        Tensor: loss = smooth_neglog_sharpe + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity + ent_lambda * entropy.
     """
     sharpe = smooth_neglog_sharpe_loss(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1330,6 +1463,20 @@ def custom_loss_14(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, ent_lambda: float
 ) -> Tensor:
+    """Combines smooth Omega ratio, smooth CVaR, risk parity and entropy regulariser.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        ent_lambda (float): Weight for entropy regulariser.
+
+    Returns:
+        Tensor: loss = smooth_omega + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity + ent_lambda * entropy.
+    """
     omega = smooth_omega_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
@@ -1349,8 +1496,19 @@ def custom_loss_15(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
 ) -> Tensor:
-    """
-    loss = differentiable sharpe + lambda1 * log returns + lambda2 * smooth CVar + lambda3 * risk_parity
+    """Combines smooth negative-log Sharpe, smooth CVaR, risk parity and HHI regulariser.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        hhi_lambda (float): Weight for Herfindahl-Hirschman Index regulariser.
+
+    Returns:
+        Tensor: loss = smooth_neglog_sharpe + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity + hhi_lambda * hhi.
     """
     sharpe = smooth_neglog_sharpe_loss(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
@@ -1373,6 +1531,20 @@ def custom_loss_16(
     weights: Tensor, all_returns: Tensor, pf_returns: Tensor,
     cvar_lambda: float, risk_p_lambda: float, hhi_lambda: float
 ) -> Tensor:
+    """Combines smooth Omega ratio, smooth CVaR, risk parity and HHI regulariser.
+
+    Args:
+        weights (Tensor): Portfolio weights (B, N).
+        all_returns (Tensor): Asset returns (B, T_out, N).
+        pf_returns (Tensor): Portfolio returns (B, T_out).
+        cvar_lambda (float): Weight for CVaR term.
+        risk_p_lambda (float): Weight for risk parity term.
+        hhi_lambda (float): Weight for Herfindahl-Hirschman Index regulariser.
+
+    Returns:
+        Tensor: loss = smooth_omega + cvar_lambda * smooth_CVaR +
+                risk_p_lambda * risk_parity + hhi_lambda * hhi.
+    """
     omega = smooth_omega_objective(pf_returns)
     cvar = smooth_rockafellar_cvar_regularizer(pf_returns)
     risk_parity = risk_parity_regularizer(weights, all_returns)
