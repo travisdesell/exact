@@ -114,7 +114,7 @@ def wfv_losses_plot(
 # -------------------- Windowed Returns Plots -------------------- #
 def plot_windowed_comparison(
     all_daily_returns: dict,
-    window_dates: list,  # Add this parameter (list of DatetimeIndex)
+    window_dates: list[pd.DatetimeIndex],  # Add this parameter (list of DatetimeIndex)
     windows_per_row: int,
     output_path: str | None = None,
     plot: bool = False
@@ -191,6 +191,77 @@ def plot_windowed_comparison(
         legend_path = f'{base}_legend{ext}'
         
         # Save with bbox_inches='tight' to crop the white space
+        fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
+
+    if plot:
+        plt.show()
+    
+    plt.close('all')
+
+def plot_wind_comparison_str_dates(
+    all_daily_returns: dict,
+    window_dates: list[str],          # list of strings: 'YYYY-MM-DD_YYYY-MM-DD'
+    windows_per_row: int,
+    output_path: str | None = None,
+    plot: bool = False
+):
+    cmap = plt.get_cmap('Set1')
+    
+    n_windows = len(next(iter(all_daily_returns.values())))
+    n_cols = min(windows_per_row, n_windows)
+    n_rows = (n_windows + n_cols - 1) // n_cols
+    
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
+    if n_rows == 1 and n_cols == 1:
+        axes = np.array([axes])
+    axes = axes.flatten()
+    
+    for window_idx in range(n_windows):
+        ax = axes[window_idx]
+        
+        # Parse the date range string
+        start_str, end_str = window_dates[window_idx].split('_')
+        start = pd.to_datetime(start_str)
+        end = pd.to_datetime(end_str)
+        
+        # Generate business day date range (assumes trading days)
+        date_range = pd.date_range(start, end, freq='B')
+        
+        for i, (pf_type, daily_returns) in enumerate(all_daily_returns.items()):
+            y_data = daily_returns[window_idx]
+            # In case date_range has more days than y_data (e.g., holidays), slice to same length
+            x_vals = date_range[:len(y_data)]
+            ax.plot(
+                x_vals, y_data,
+                label=pf_type,
+                color=cmap(i % 20),
+                alpha=0.7,
+                linewidth=1
+            )
+        
+        # Title using the original strings (already formatted)
+        ax.set_title(f'W{window_idx+1}: {start_str} to {end_str}', fontsize=10)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+        ax.grid(True, alpha=0.3)
+
+    # Hide unused subplots
+    for i in range(n_windows, len(axes)):
+        axes[i].set_visible(False)
+    
+    fig.autofmt_xdate()
+    plt.tight_layout()
+
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+
+    # Legend extraction (same as before)
+    handles, labels = ax.get_legend_handles_labels()
+    fig_leg = plt.figure(figsize=(3, len(labels)*0.2))
+    fig_leg.legend(handles, labels, loc='center', frameon=False, ncol=1)
+    plt.axis('off')
+    if output_path:
+        base, ext = os.path.splitext(output_path)
+        legend_path = f'{base}_legend{ext}'
         fig_leg.savefig(legend_path, dpi=300, bbox_inches='tight')
 
     if plot:
