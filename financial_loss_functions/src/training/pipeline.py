@@ -1,3 +1,9 @@
+"""
+Hyperparameter tuning and evaluation on the validation data.
+This file contains the entry point for the function to tune hyperparameters and 
+evaulate the models on the validation data set.
+"""
+
 import sys
 import time
 from pathlib import Path

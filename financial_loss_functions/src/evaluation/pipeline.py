@@ -1,3 +1,9 @@
+"""
+Test set evaluation pipeline.
+This file contains the entry point for the function to evaluate the selected 
+models on the test data set.
+"""
+
 import sys
 import time
 import pandas as pd

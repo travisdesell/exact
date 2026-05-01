@@ -15,6 +15,7 @@ def filter_models(
     
     Returns:
         tuple: A tuple containing,
+
             - filtered_avg_perf (pd.DataFrame): Dataframe containing only models that 
             outperformed the benchmark on the specified metric.
             - filtered_models (list[str]): List of names of the models that beat the benchmark.
@@ -60,7 +61,7 @@ def pareto_dominance(df: pd.DataFrame, columns: list[str]) -> pd.Series:
     Args:
         df (pd.DataFrame): Dataframe from which we select dominating models/methods
             in the index based on the multi-metric columns. Models/methods must be in 
-                the index and metrics must be in the columns
+            the index and metrics must be in the columns
         columns (lis[str]): List of column names from the dataframe, that must be used 
             for the pareto dominance.
     

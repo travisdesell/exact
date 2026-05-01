@@ -1,6 +1,6 @@
 """
 Data Processing Pipeline.
-This file containg the entry point for the data preprocessing pipeline.
+This file contains the entry point for the data preprocessing pipeline.
 It loads the raw CRSP data, cleans, preprocesses and saves the processed data files 
 in 'data/processed/ directory'.
 """

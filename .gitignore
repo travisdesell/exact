@@ -15,6 +15,9 @@ test_output/*
 # Cache
 */.pytest_cache
 
+# Documentation files
+financial_loss_functions/docs/build/
+financial_loss_functions/docs/source/_autosummary/
 # Environment files
 .env
 financial_loss_functions/exploration/.ipynb_checkpoints

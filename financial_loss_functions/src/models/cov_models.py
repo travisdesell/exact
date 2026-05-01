@@ -57,10 +57,10 @@ class BaseQuadraticOptimizer:
     Shared quadratic-solver utilities.
 
     Solves problems of the form:
-        minimize 0.5 x^T P x + q^T x
-        s.t. A x = b   (equality)
-             G x <= h   (inequality)
-             bounds on x (optional)
+    minimize 0.5 x^T P x + q^T x
+    s.t. A x = b   (equality)
+    G x <= h   (inequality)
+    bounds on x (optional)
     """
 
     def __init__(self, solver: str = 'auto', reg: float|str = 1e-8):
@@ -372,8 +372,8 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
     Mean-Variance Portfolio (Markowitz) that optionally computes expected returns.
 
     Solves:
-        minimize  0.5 w^T Σ w  -  risk_aversion * μ^T w
-        subject to: 1^T w = 1, w >= 0 (if allow_short=False)
+    minimize  0.5 w^T Σ w  -  risk_aversion * μ^T w
+    subject to: 1^T w = 1, w >= 0 (if allow_short=False)
     """
     def __init__(
             self,
@@ -386,9 +386,11 @@ class MeanVariancePortfolio(BaseQuadraticOptimizer):
         Args:
             expected_returns_method (str | None): 'arithmetic' or 'geometric' can be used to 
                 calculate the expected returns.
+
                 - If None -> caller must pass expected_returns to calculate_weights().
                 - If 'arithmetic' or 'geometric' -> caller must pass `returns` (obs x assets)
                     to calculate_weights() and μ will be computed from those returns.
+                    
             risk_aversion (float): Risk aversion value for the estimation.
             allow_short (bool): Allow short strategy allocation weights. (-1 to 1)
             solver (str): 'auto', 'cvxopt' or 'scipy'. Python module to be used for optimization.

@@ -15,11 +15,12 @@ class LossLibrary:
     Central registry class for loss functions.
 
     Usage pattern:
-      1) Define this class first (in a module).
-      2) Define functions in the same module (or other modules), and decorate them:
-           @LossCollection.register("regularizers", "diversification", "herfindahl")
-           def herfindahl(weights): ...
-      3) Use LossCollection.get(...) or LossCollection.items() to retrieve.
+
+    - Define this class first (in a module).
+    - Define functions in the same module (or other modules), and decorate them:
+        @LossCollection.register("regularizers", "diversification", "herfindahl")
+        def herfindahl(weights): ...
+    - Use LossCollection.get(...) or LossCollection.items() to retrieve.
     """
     _registry: Registry = {}
 
@@ -33,7 +34,8 @@ class LossLibrary:
         """
         Decorator to register a standalone function into the class registry.
 
-        Example:
+        Example::
+        
             @LossCollection.register('regularizers', 'diversification', 'herfindahl_index')
             def herfindahl_index(weights):
                 return (weights**2).sum(dim=-1).mean()

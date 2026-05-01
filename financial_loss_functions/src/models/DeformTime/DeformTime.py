@@ -86,51 +86,6 @@ class DeformTime(nn.Module):
         )
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
-        """
-        Variables
-            • x_enc
-                type: tensor of numbers
-                usage: used to store the input feature window that is passed from the
-                       trainer for DeformTime encoding
-            • x_mark_enc
-                type: tensor of numbers or empty value
-                usage: reserved encoder marker input that is accepted for interface
-                       compatibility but is not used in this runtime path
-            • x_dec
-                type: tensor of numbers or empty value
-                usage: reserved decoder input kept for compatibility with the
-                       surrounding model interface
-            • x_mark_dec
-                type: tensor of numbers or empty value
-                usage: reserved decoder marker input kept for compatibility with the
-                       surrounding model interface
-            • mean_enc
-                type: tensor of numbers
-                usage: used to store the per-window mean so the input can be
-                       stationarized before attention is applied
-            • std_enc
-                type: tensor of numbers
-                usage: used to store the per-window standard deviation so the input
-                       scaling remains numerically stable
-            • enc_out
-                type: tensor of numbers
-                usage: used to store the encoded deformable-attention representation
-                       produced by the encoder
-            • h0
-                type: tensor of numbers
-                usage: used to store the initial hidden state passed into the GRU
-            • out
-                type: tensor of numbers
-                usage: used to store the GRU sequence output before collapsing it to
-                       a single allocation context
-            • context
-                type: tensor of numbers
-                usage: used to store the last GRU state which becomes the compact
-                       portfolio-allocation context for the final head
-
-        forecast now extracts a portfolio-allocation context from the encoded sequence
-        instead of reconstructing the original feature space. @author: Atharva Vaidya
-        """
         assert x_enc.shape[-1] == self.input_size
 
         # Series Stationarization adopted from NSformer, optional
@@ -154,35 +109,6 @@ class DeformTime(nn.Module):
         return self.fc(context)
     
     def forward(self, x_enc, x_mark_enc=None, x_dec=None, x_mark_dec=None, mask=None):
-        """
-        Variables
-            • x_enc
-                type: tensor of numbers
-                usage: used to store the encoded input window passed from the trainer
-                       for a portfolio-weight prediction
-            • x_mark_enc
-                type: tensor of numbers or empty value
-                usage: reserved encoder marker input that is kept for interface
-                       compatibility
-            • x_dec
-                type: tensor of numbers or empty value
-                usage: reserved decoder input that is kept for interface compatibility
-            • x_mark_dec
-                type: tensor of numbers or empty value
-                usage: reserved decoder marker input that is kept for interface
-                       compatibility
-            • mask
-                type: tensor of numbers or empty value
-                usage: reserved mask input accepted for compatibility with the model
-                       interface
-            • logits
-                type: tensor of numbers
-                usage: used to store the raw portfolio scores returned from forecast
-                       before normalization
-
-        forward normalizes the DeformTime logits into portfolio weights expected by
-        the training and loss pipeline. @author: Atharva Vaidya
-        """
         logits = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
         # Normalize the logits so the downstream losses receive portfolio weights.
         return torch.softmax(logits, dim=-1)

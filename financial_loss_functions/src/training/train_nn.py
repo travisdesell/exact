@@ -685,8 +685,8 @@ class MetricModel(BaseModel):
     
     Tuning metric dict must be defined as:
     tune_metric = {
-            `<metric name>`: MetricModel(func=`<callable function>`, sign=`<sign>`),
-        }
+    `<metric name>`: MetricModel(func=`<callable function>`, sign=`<sign>`),
+    }
     """
     func: Callable
     sign: Literal['+', '-']
