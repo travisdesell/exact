@@ -1,4 +1,4 @@
-# Training and Loss Functions
+# Hyperparameter Optimization and Loss Functions
 [<- Back to Main README](/financial_loss_functions/README.md)
 
 ## Training

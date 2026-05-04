@@ -1,21 +1,30 @@
-# Financially Guided Neural Networks for Robust Portfolio Optimization
+# Financially Guided Deep Portfolio Optimization
 
-## Description
-This repository contains the implementation for the capstone project "Financially Guided Neural Networks for Robust Portfolio Optimization," developed by Rahul Kenneth Fernandes and Atharva Atul Vaidya under the guidance of Dr. Travis Desell at Rochester Institute of Technology. The project introduces an end-to-end deep learning framework that embeds financial principles of portfolio construction theory directly into neural network training objectives to create stable, diversified portfolios. Our models output normalized allocation weights and optimize differentiable surrogates for key metrics like Sharpe/Sortino ratios, Conditional Value-at-Risk (CVaR), Maximum Drawdown (MDD), risk parity, and concentration penalties—enabling gradient-based optimization without intermediate forecasting. The goal is to develop a custom loss function to train neural networks to generate robust, diversified portfolios that generalize across market regimes.
+## Overview
+Portfolio optimization in real‑world financial markets is notoriously difficult due to non‑stationarity, noisy data and regime changes. Standard predict‑then‑optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We introduce "Financially Guided Deep Portfolio Optimization": An end-to-end framework for robust portfolio optimization that embeds financial objectives and portfolio construction objectives in hyperparameter tuning as well as in training, allowing a neural network to learn asset allocation weights by backpropagation. The neural network models are trained to directly optimize risk-adjusted metrics while controlling tail-risk and diversification. <!-- [ADD QUICK RESULTS] -->
+   
+## Key Features
+- **End‑to‑End Learning**: Neural network outputs portfolio weights for the out-of-sample holding period directly. No intermediate forecasting.
+- **Custom Financially Guided Losses**: Combines differentiable surrogates of risk-adjusted metrics and portfolio construction objectives.
+- **Expanding Window Walk-Forward**: The strategy used in the research is: long-only, quarterly rebalancing. Models are retrained from scratch each quarter using all past data to predict portfolio weights for the next quarter, using the past 3 quarters as inference input. 
+- **Hyperparameter Optimization**: Uses Optuna for hyperparameter tuning and maximizes the 95% lower confidence bound of the mean Information Ratio across all walk steps (Maximin Optimization).
+- **Multiple Nueral Architectures**: Compares 7 models: BaseLSTM, AttentionLSTM, InvertedAttentionLSTM, TemporalTransformer, PatchTST, DeformTime, and VSN‑LSTM.
+- **Benchmark Comparisons**: Includes tradional benchmarks like Nested Clustered Optimization, Hierarchial Risk Parity, Mean Variance Portfolio Optimization and Minimum Variance Portfolio Optimization, along with the S&P 500 and Equal Weight Portfolio.
+- **Financial & Statistical Robustness**: Includes model performance analysis, pareto efficient frontiers, and statistical signficance test.
 
-**Authors:** Rahul Kenneth fernandes, Atharva Atul Vaidya  
-**Advisors:** Dr. Travis Desell   
-**Institution:** Rochester Institute of Technology    
+## Data
+This research uses daily stock data from the Center for Research in Security Prices (CRSP) for 50 constituent stocks of the S&P 500 index, spanning the period from 7 December 2007 to 29 December 2023 (only trading days). The feature set comprises five features for each stock: daily returns, daily change in volatility, bid‑ask spread (BA spread), and turnover. Also, there is an additional column providing the daily return of the S&P 500 index itself. The full timeline is split chronologically into three non‑overlapping sets:
+- Training set: 7 December 2007 - 6 February 2020
+- Validation set: 7 February 2020 - 31 December 2021
+- Test set: 3 January 2022 - 29 December 2023
 
-## Prerequisites
-- Python 3.13.5
-- Free [Fred API Key](https://fred.stlouisfed.org)
+Since the CRSP dataset cannot be distributed, we provide a synthetic sample data set stored in "data/raw/sample" for tests.
 
-## Hardware Recommendations
-- RAM: 16GB
-- GPU: CUDA compatible NVIDIA GPU or MPS MacOS GPU
 
 ## Installation
+### Prerequisites
+- Python 3.13.5
+- Miniconda (recommended)
 
 ### Clone Git Repository
 ```bash
@@ -24,17 +33,15 @@ cd exact/financial_loss_functions
 ```
 
 ### Install Dependencies
-1. Create and activate a virtual environment (optional but recommended) You can use either venv or conda.
+1. Create and activate a virtual environment. You can use either venv or conda, but Miniconda is recommended.
 
 venv:
 ```bash
-# Create and activate a virtual environment (optional but recommended)
 python -m venv <env_name>
 source <env_name>/bin/activate  # On Windows, use: <env_name>\Scripts\activate
 ```
 OR
-
-conda
+conda:
 ```bash
 conda create -n <env_name> python=3.13.5
 conda activate <env_name>
@@ -46,109 +53,59 @@ conda activate <env_name>
 pip install -r requirements.txt
 ```
 
+3. If using HPC cluster:
+```bash
+pip uninstall mpi4py
+conda install -c conda-forge mpi4py
+```
+Note: This was done to avoid any conflicts with OpenMPI versions. This project does not require high speed communication as it is an "embarrassingly parallel" distributed computing framework.
+
 ### Setting Up Environment Variables
 1. Create your local environment file:
 ```bash
 cp .env.example .env
 ```
-2. Update the .env file in root directory with your Fred API key
 
+2. If you are using a CRSP or CRSP equivalent dataset update the .env file in root directory with raw data directory name.
 
-## Project Pipeline
-The system is divided into three pipelines to ensure scalability and easier debugging. Each stage must be run sequentially:
-1. Data Collection (`scripts.run_data_collection`): Fetches raw macro-economic data from FRED API
-2. Data Processing (`scripts.run_processing`): Preprocesses raw data and places the files in data/processed/
-3. Training (`scripts.run_training_grid`): Trains a grid of models along with different loss functions on the processed data, runs classicial approaches of portfolio optimization, then compares and evaluates all methods.
-
-## Quick Start
-### 1. Run macro-economic data collection
 ```bash
-python -m scripts.run_macro_collection
+CRSP_DIR = "<equivalent-data-directory>" # change to specific name if using equivalent dataset
 ```
 
-### 2. Run data processing
+## Quick Start
+### 1. Run data processing
 ```bash
 python -m scripts.run_processing
 ```
 
-### 3. Run candidates training grid
-Run everything (Uses defaults: grid_mode='all', loss_mode='all')
+### 2. Run hyperparameter tuning and evaluation on validation data
 ```bash
-# Without tuning
-python -m scripts.run_training
-
-# With tuning
-python -m scripts.run_training -t
+python -m scripts.run_training -gm one_model -m AttentionLSTM -t
 ```
 
-### 4. Run feature selection analysis
+### 3. Run evaulation on test data
 ```bash
-python -m scripts.run_feature_selection --crsp-dir 2023_sp_500_select_50
+python -m scripts.run_evaluation -pm one_model -m AttentionLSTM
 ```
 
-## For Detailed Usage Instructions
-- [Data Collection Guide](/financial_loss_functions/src/data_collection/README.md)
-- [Training Guide](/financial_loss_functions/src/training/README.md)
-
-## Directory Structure
-```text
-financial_loss_functions                    # Root directory for this project
-├── config
-│   └── paths.json
-├── data
-│   ├── processed
-│   └── raw
-│       ├── macro                           # gitignored, since data can be acquired
-│       │   ├── Consumption_Orders_Inventories.csv
-│       │   ├── Housing.csv
-│       │   ├── Labor_Market.csv
-│       │   ├── Money_Credit.csv
-│       │   ├── Output_Income.csv
-│       │   ├── Prices.csv
-│       │   ├── Rates_FX.csv
-│       │   └── Stock_Market.csv
-│       └── sample                          # Contains synthetic CRSP-like sample data
-│           ├── combined_predictors_test.csv
-│           ├── combined_predictors_train.csv
-│           └── combined_predictors_validation.csv
-├── exploration
-│   ├── crsp_exp.ipynb                      # Exploration of the CRSP dataset
-│   └── fred_series_analysis.ipynb          # Exploration of the macro-economic data
-├── pytest.ini
-├── README.md                               # This file
-├── requirements.txt                        # Python dependecies
-├── scripts
-│   ├── run_macro_collection.py             # Data collection
-│   ├── run_processing.py                   # Data cleaning and processing
-│   ├── run_training.py                     # All model training
-│   └── utils.py
-├── src
-│   ├── __init__.py
-│   ├── data_collection
-│   │   ├── const.py                        # Contains fixed series IDs for FRED API
-│   │   └── macro_api.py                    # Collects data from FRED API
-│   ├── data_processing
-│   │   ├── loading.py
-│   │   ├── pipeline.py                     # Runs processing pipeline
-│   │   └── preprocess.py
-│   ├── models
-│   │   ├── cov_models.py                   # Covariance-based classicial models
-│   │   ├── examm.py                        # Python wrapper to run EXAMM model
-│   │   └── pipeline.py                     # Runs training pipeline for all models
-│   └── utils.py
-├── tests
-│   ├── cov_models_tests.py
-│   ├── integration
-│   │   └── test_macro_data_coll.py
-│   └── unit
-│       ├── test_cov_models.py
-│       ├── test_loading.py
-│       ├── test_macro_api.py
-│       ├── test_preprocess.py
-│       └── test_utils.py
-├── .env                                   # Environment variables
-└── .env.example                           # Template for storing environment variables
+### 4. Run unit and integration tests
+```bash
+pytest tests
 ```
+
+## For more information
+- [Hyperparameter Optimization Guide](/financial_loss_functions/src/training/README.md)
+- [Evaluation Guide](/financial_loss_functions/src/evaluation/README.md)
+
+## Hardware Recommendations
+- Minimum: 
+    - CPU: 4 Cores
+    - RAM: 16GB
+    - GPU: CUDA NVIDIA GPU (12GB VRAM) or MPS Macbook Pro GPU
+- Ideal (High Performance Computing Cluster):
+    - CPU: 8 Cores
+    - RAM: 32 GB
+    - GPU: NVIDIA H100 (40GB VRAM)
 
 ## Using CRSP Equivalent Datasets
 Currently, a sythetic CRSP-like dataset is stored in `data/raw/sample`. If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
@@ -167,12 +124,24 @@ Since we use pre-split data (train, val, test), the new files must follow the st
             - `<validation_name>.csv`
             - `<test_name>.csv`
 
-## Contact
+<!-- ## Methodology
 
+## Results
+
+## Repository Structure -->
+
+## Acknowledgments
+- We gratefully acknowledge the use of the RIT Research Computing's HPC cluster at Rochester Institute of Technology, which provided essential computational resources for this research.
+- This research uses data from the Center for Research in Security Prices (CRSP), accessed through Rochester Institute of Technology.
+- This work would not have been possible without the contributions of the open‑source software community.
+
+## Authors
 **Rahul Keneth Fernandes**  
-Email: rf4074@rit.edu  
-Github: [@rahulkfernandes](https://github.com/rahulkfernandes)  
+Email: rahulkfernandes@gmail.com  
+Github: [@rahulkfernandes](https://github.com/rahulkfernandes)   
 
-**Atharva Atul Vaidya**  
-Email: aav6986@rit.edu  
-Github: [@v-atharva](https://github.com/v-atharva)  
+**Dr. Travis Desell**  
+Email: tjdvse@rit.edu  
+Github: [@travisdesell](https://github.com/travisdesell)
+
+**Institution:** Rochester Institute of Technology, Rochester, New York 
