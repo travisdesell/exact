@@ -93,9 +93,10 @@ python -m scripts.run_evaluation -pm one_model -m AttentionLSTM
 pytest tests
 ```
 
-## For more information
+### For more information
 - [Hyperparameter Optimization Guide](/financial_loss_functions/src/training/README.md)
 - [Evaluation Guide](/financial_loss_functions/src/evaluation/README.md)
+
 
 ## Hardware Recommendations
 - Minimum: 
@@ -106,6 +107,20 @@ pytest tests
     - CPU: 8 Cores
     - RAM: 32 GB
     - GPU: NVIDIA H100 (40GB VRAM)
+
+## Documentation
+1. Generate documentation HTML
+```bash
+cd docs
+sphinx-build -b html source build
+```
+
+2. View documentation
+```bash
+cd build
+python -m http.server 8000
+```
+Go to http://localhost:8000 in the browser.
 
 ## Using CRSP Equivalent Datasets
 Currently, a sythetic CRSP-like dataset is stored in `data/raw/sample`. If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
