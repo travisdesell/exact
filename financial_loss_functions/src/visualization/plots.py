@@ -269,6 +269,59 @@ def plot_wind_comparison_str_dates(
     
     plt.close('all')
 
+# ------------------- Combined returns plot -------------------- #
+def plot_concatenated_returns(
+    all_daily_returns: dict,          # {model_name: np.array of concatenated returns}
+    window_dates: list[str],          # e.g. ['2022-01-03_2022-03-29', ...]
+    output_path: str | None = None,
+    plot: bool = False,
+    figsize: tuple = (12, 6),
+    title: str = "Daily Net Returns (2022–2023 Test Period)"
+):
+    # Generate full date index
+    full_dates = []
+    for win_str in window_dates:
+        start_str, end_str = win_str.split('_')
+        dates = pd.date_range(start_str, end_str, freq='B')
+        full_dates.extend(dates)
+    full_dates = pd.DatetimeIndex(full_dates)
+    
+    # Align lengths
+    first_returns = next(iter(all_daily_returns.values()))
+    if len(first_returns) != len(full_dates):
+        min_len = min(len(first_returns), len(full_dates))
+        full_dates = full_dates[:min_len]
+        all_daily_returns = {k: v[:min_len] for k, v in all_daily_returns.items()}
+    
+    # Plot
+    cmap = plt.get_cmap('Set1')
+    fig, ax = plt.subplots(figsize=figsize)
+    
+    for i, (model_name, returns) in enumerate(all_daily_returns.items()):
+        ax.plot(full_dates, returns,
+                label=model_name,
+                color=cmap(i % 10),
+                alpha=0.8,
+                linewidth=1.2)
+    
+    ax.set_title(title)
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Daily Return (net of transaction costs)")
+    ax.grid(True, alpha=0.3)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    fig.autofmt_xdate()
+    
+    # Legend placed inside the plot (best location)
+    ax.legend(loc='best', frameon=True, fancybox=False, shadow=False, fontsize='small')
+    
+    plt.tight_layout()
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
+    if plot:
+        plt.show()
+    plt.close(fig)
+
 # -------------------- Model vs Metric Boxplot Plots -------------------- #
 def plot_models_comparison(
         eval_metrics: pd.DataFrame,
