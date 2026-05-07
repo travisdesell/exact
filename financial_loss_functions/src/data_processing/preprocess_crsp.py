@@ -3,7 +3,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.linalg import svd
 from scipy.linalg import hankel
-from sklearn.preprocessing import RobustScaler
+# from sklearn.preprocessing import RobustScaler
 from src.utils.formatting import extract_req_cols, split_col
 
 
@@ -392,7 +392,7 @@ class Preprocessor:
         self.common_features = common_features
         self.broadcast = broadcast
 
-        self._robust_scaler = RobustScaler()
+        # self._robust_scaler = RobustScaler()
 
         self.unordered_cols = None
         self.all_tickers = None
@@ -596,7 +596,7 @@ class Preprocessor:
         # train = self.kalman_filt.kalman_transform(train)
 
         # train = self._transform(train, 'fit')
-        train = self._normalize(train, 'fit')
+        # train = self._normalize(train, 'fit')
 
         # Broadcast common features only if needed
         if self.broadcast:
@@ -654,7 +654,7 @@ class Preprocessor:
         # Kalman filter for denosining
         # split_data = self.kalman_filt.kalman_transform(split_data)
 
-        split_data = self._normalize(split_data, 'split')
+        # split_data = self._normalize(split_data, 'split')
 
         # Broadcast common features only if needed
         if self.broadcast:

@@ -25,6 +25,8 @@ from pydantic import BaseModel, TypeAdapter
 from typing import Callable, Dict, Literal
 from scipy import stats
 
+from sklearn.preprocessing import RobustScaler
+
 optuna.logging.set_verbosity(optuna.logging.INFO)
 
 class Trainer:
@@ -642,13 +644,13 @@ class Walker:
             walk_val = val[current_start : current_end] # To be added to train data later
             walk_rets_val = rets_val[current_start : current_end]
 
-            # # Median Scale at every walk step
-            # robust_scaler = RobustScaler()
-            # walk_train_scaled = robust_scaler.fit_transform(walk_train)
+            # Median Scale at every walk step
+            robust_scaler = RobustScaler()
+            walk_train_scaled = robust_scaler.fit_transform(walk_train)
             
             X_train, y_train, infer_in, infer_out = self._reshape_step_data(
-                walk_train, walk_rets_train, walk_rets_val
-            )
+                walk_train_scaled, walk_rets_train, walk_rets_val
+            ) # walk_train_scaled instead of walk_train, for adaptive norm.
 
             train_ds = WindowDataset(X_train, y_train)
             infer_ds = WindowDataset(infer_in, infer_out)
