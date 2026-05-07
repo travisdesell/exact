@@ -83,14 +83,15 @@ if __name__ == '__main__':
             '-pm',
             '--prev_mode', 
             choices=['one_model', 'one'], 
-            help='Choose, models to evaluate. This can be for selected models or a single model'
+            default='one_model',
+            help='Choose the previous grid mode used for tuning. This is used to collect artifacts'
         )
 
         parser.add_argument(
             '-m',
             '--model_losses',
             nargs='+',
-            help="Model Loss combination name must be in the format <ModelName>-<LossName>"
+            help='Model Loss combination name must be in the format <ModelName>-<LossName>'
         )
 
         parser.add_argument('-mpi', '--mpi', action='store_true', help='MPI for HPC')

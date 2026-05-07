@@ -35,7 +35,7 @@ To run this sequentially (not recommended):
 python -m scripts.run_training --model '<Model Name>' --tune
 ```
 
-2. Run specific model-loss combination with tuning (no mpi):
+2. Run specific model-loss combination with tuning (no mpi, flag will be ignored):
 ```bash
 python -m scripts.run_training --grid_mode one --model '<Model Name>' --loss_name '<Loss Name>' --tune
 ```
@@ -72,7 +72,7 @@ conda activate <ENV_NAME>
 
 srun python -m scripts.run_training -gm one_model -m <MODEL_NAME> -t -mpi
 ```
-All SBATCH examples can be found at `./scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_scripts](../../scripts/sample_batch_scripts/sample_one_model_tune.sh).
+All SBATCH examples can be found at `./scripts/sample_batch_scripts/`. The example above can be found at [sample_batch_script](../../scripts/sample_batch_scripts/sample_one_model_tune.sh).
 
 ## Available Models and Loss Functions
 ### Neural Network Models
