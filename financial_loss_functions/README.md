@@ -1,22 +1,23 @@
 # Financially Guided Deep Portfolio Optimization
 
 ## Overview
-Portfolio optimization in real‑world financial markets is notoriously difficult due to non‑stationarity, noisy data and regime changes. Standard predict‑then‑optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We introduce "Financially Guided Deep Portfolio Optimization": An end-to-end framework for robust portfolio optimization that embeds financial objectives and portfolio construction objectives in hyperparameter tuning as well as in training, allowing a neural network to learn asset allocation weights by backpropagation. The neural network models are trained to directly optimize risk-adjusted metrics while controlling tail-risk and diversification. <!-- [ADD QUICK RESULTS] -->
+Portfolio optimization in real‑world financial markets is notoriously difficult due to non‑stationarity, noisy data, and high transaction costs. Standard predict‑then‑optimize methods first forecast returns and then solve for weights, compounding prediction errors and often failing under regime shifts. We propose an end‑to‑end framework that directly optimizes differentiable surrogates of key financial metrics – Sharpe ratio, Omega ratio, Conditional Value‑at‑Risk (CVaR), and risk parity – allowing neural networks to learn portfolio weights via backpropagation. The neural network models are trained to directly optimize risk-adjusted metrics while controlling tail-risk and diversification.
    
-## Key Features
+## Highlights
 - **End‑to‑End Learning**: Neural network outputs portfolio weights for the out-of-sample holding period directly. No intermediate forecasting.
 - **Custom Financially Guided Losses**: Combines differentiable surrogates of risk-adjusted metrics and portfolio construction objectives.
+![Typical Forward Pass](/financial_loss_functions/images/forward_pass.png)
 - **Expanding Window Walk-Forward**: The strategy used in the research is: long-only, quarterly rebalancing. Models are retrained from scratch each quarter using all past data to predict portfolio weights for the next quarter, using the past 3 quarters as inference input. 
 - **Hyperparameter Optimization**: Uses Optuna for hyperparameter tuning and maximizes the 95% lower confidence bound of the mean Information Ratio across all walk steps (Maximin Optimization).
 - **Multiple Nueral Architectures**: Compares 7 models: BaseLSTM, AttentionLSTM, InvertedAttentionLSTM, TemporalTransformer, PatchTST, DeformTime, and VSN‑LSTM.
 - **Benchmark Comparisons**: Includes tradional benchmarks like Nested Clustered Optimization, Hierarchial Risk Parity, Mean Variance Portfolio Optimization and Minimum Variance Portfolio Optimization, along with the S&P 500 and Equal Weight Portfolio.
-- **Financial & Statistical Robustness**: Includes model performance analysis, pareto efficient frontiers, and statistical signficance test.
+
 
 ## Data
-This research uses daily stock data from the Center for Research in Security Prices (CRSP) for 50 constituent stocks of the S&P 500 index, spanning the period from 7 December 2007 to 29 December 2023 (only trading days). The feature set comprises five features for each stock: daily returns, daily change in volatility, bid‑ask spread (BA spread), and turnover. Also, there is an additional column providing the daily return of the S&P 500 index itself. The full timeline is split chronologically into three non‑overlapping sets:
+This research uses daily stock data from the Center for Research in Security Prices (CRSP) for 50 constituent stocks of the S&P 500 index, spanning the period from 7 December 2007 to 29 November 2023 (only trading days). The feature set comprises five features for each stock: daily returns, daily change in volatility, bid‑ask spread (BA spread), and turnover. Also, there is an additional column providing the daily return of the S&P 500 index itself. The full timeline is split chronologically into three non‑overlapping sets:
 - Training set: 7 December 2007 - 6 February 2020
 - Validation set: 7 February 2020 - 31 December 2021
-- Test set: 3 January 2022 - 29 December 2023
+- Test set: 3 January 2022 - 29 November 2023
 
 Since the CRSP dataset cannot be distributed, we provide a synthetic sample data set stored in "data/raw/sample" for tests.
 
@@ -120,7 +121,25 @@ sphinx-build -b html source build
 cd build
 python -m http.server 8000
 ```
-Go to http://localhost:8000 in the browser.
+3. Go to http://localhost:8000 in the browser.
+
+## Results
+We evaluated seven neural architectures with two custom loss functions on an out‑of‑sample test period (2022–2023). The best model, **AttentionLSTM with Omega‑CVaR‑risk‑parity loss (Custom Loss B)**, significantly outperformed all benchmarks.
+
+**Key findings:**
+- **Annualised Sharpe ratio**: +0.29 vs. S&P500 –0.02.
+- **Total compounded return**: +7.86% vs. S&P500 –4.52% (a relative improvement of >270%).
+- **Tail risk**: CVaR increased by less than 0.5 percentage points, showing higher return without additional downside exposure.
+- **Statistical robustness**: All improvements are significant across 30 random seeds (Bonferroni‑corrected p < 10^(-8)).
+
+The box plot below shows the distribution of Sharpe ratios (top) and CVaR (bottom) across 30 seeds for candidate models. The AttentionLSTM-CustomLossB has the highest median and narrowest interquartile range and negligible increase in CVaR, confirming consistent outperformance.
+![Boxplot of Sharpe & CVaR](/financial_loss_functions/images/boxplot_sharpe_cvar.png)
+
+The Pareto frontier of the 95% lower confidence bound (Sharpe vs. CVaR) places the AttentionLSTM-CustomLossB on the efficient boundary, while all other models are dominated.
+![Pareto Frontier](/financial_loss_functions/images/test_pareto.png)
+
+The daily returns plot below compares the daily returns of AttentionLSTM-CustomLossB, NestedClusteredOptimization and S&P 500. The returns for the models are net-of-transaction cost.
+![Daily Net returns](/financial_loss_functions/images/daily_net_rets.png)
 
 ## Using CRSP Equivalent Datasets
 Currently, a sythetic CRSP-like dataset is stored in `data/raw/sample`. If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
@@ -139,11 +158,6 @@ Since we use pre-split data (train, val, test), the new files must follow the st
             - `<validation_name>.csv`
             - `<test_name>.csv`
 
-<!-- ## Methodology
-
-## Results
-
-## Repository Structure -->
 
 ## Acknowledgments
 - We gratefully acknowledge the use of the RIT Research Computing's HPC cluster at Rochester Institute of Technology, which provided essential computational resources for this research.

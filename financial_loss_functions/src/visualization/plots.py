@@ -664,7 +664,8 @@ def plot_box_models_and_benchs(
     figsize: tuple = (10, 6),
     palette: str = 'Set2',
     benchmark_marker: str = 'D',
-    benchmark_markersize: int = 8
+    benchmark_markersize: int = 8,
+    output_path: str | None = None
 ):
     """
     Create a vertically stacked figure with one subplot per metric.
@@ -687,6 +688,7 @@ def plot_box_models_and_benchs(
             Marker style for benchmark points.
         benchmark_markersize : int, default 8
             Size of benchmark markers.
+        output_path (str | None) : Output path to save the image. Default = None.
     """
     # Prepare neural data: convert index to column
     df_neural = all_seed_perf.reset_index().rename(columns={'index': 'model'})
@@ -742,6 +744,8 @@ def plot_box_models_and_benchs(
         # ax.autoscale(enable=True, axis='y')
 
     plt.tight_layout()
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -769,7 +773,8 @@ def plot_2d_pareto_diff_colrs(
     annotation_alpha: float = 0.8,
     grid: bool = True,
     grid_alpha: float = 0.3,
-    colormap: str = 'Set1'   # better contrast default
+    colormap: str = 'Set1',   # better contrast default
+    output_path: str | None = None
 ) -> plt.Figure:
     """
     Plot a 2D Pareto frontier with distinct colors for each frontier model.
@@ -867,4 +872,6 @@ def plot_2d_pareto_diff_colrs(
         ax.grid(True, alpha=grid_alpha)
 
     fig.tight_layout()
+    if output_path:
+        fig.savefig(output_path, dpi=300, bbox_inches='tight')
     return fig
