@@ -138,8 +138,8 @@ The box plot below shows the distribution of Sharpe ratios (top) and CVaR (botto
 The Pareto frontier of the 95% lower confidence bound (Sharpe vs. CVaR) places the AttentionLSTM-CustomLossB on the efficient boundary, while all other models are dominated.
 ![Pareto Frontier](/financial_loss_functions/images/test_pareto.png)
 
-The daily returns plot below compares the daily returns of AttentionLSTM-CustomLossB, NestedClusteredOptimization and S&P 500. The returns for the models are net-of-transaction cost.
-![Daily Net returns](/financial_loss_functions/images/daily_net_rets.png)
+The daily cumulative returns plot below compares the returns of AttentionLSTM-CustomLossB, NestedClusteredOptimization and S&P 500. The returns for the models are net-of-transaction cost.
+![Daily Net returns](/financial_loss_functions/images/cumulative_rets.png)
 
 ## Using CRSP Equivalent Datasets
 Currently, a sythetic CRSP-like dataset is stored in `data/raw/sample`. If any other CRSP equivalent dataset is being used, place the directory in `data/raw/` and update the CRSP_DIR environment variable in the .env file with the name of the equivalent data directory.
