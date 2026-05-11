@@ -68,7 +68,10 @@ def compunded_return(returns_arr: np.ndarray) -> np.float64:
 
 @MetricLibrary.register()
 def sharpe(
-        returns_arr: np.ndarray, risk_free_rate: float = 0.0, annualized: bool = False
+        returns_arr: np.ndarray, 
+        risk_free_rate: float = 0.0, 
+        annualized: bool = False,
+        days_per_year: int = 252
     ) -> np.float64:
     """
     Calculates Sharpe ratio for for a given portfolio's returns.
@@ -78,6 +81,7 @@ def sharpe(
         risk_free_rate (float): Risk free rate for window used for returns. Default = 0.0.
         annualized (bool): Multiply the sharpe ratio by sqrt(252) to annualize the metric.
             Default = False.
+        days_per_year (int): Number of trading days. Only used if annualized=True. Default = 252
     
     Returns:
         sharpe_value (np.float64): Sharpe ratio for the given portfolio.
@@ -87,13 +91,16 @@ def sharpe(
     sharpe_value = (mean_ret - risk_free_rate) / std_ret
 
     if annualized:
-        sharpe_value = sharpe_value * np.sqrt(252)
+        sharpe_value = sharpe_value * np.sqrt(days_per_year)
 
     return sharpe_value
 
 @MetricLibrary.register()
 def sortino(
-    returns_arr: np.ndarray, target: float = 0.0, annualized: bool = False
+    returns_arr: np.ndarray, 
+    target: float = 0.0, 
+    annualized: bool = False,
+    days_per_year: int = 252
 ) -> np.float64:
     """
     Calculates Sortino ratio (downside risk only) for a given portfolio's returns.
@@ -103,6 +110,7 @@ def sortino(
         target (float): Minimum acceptable return (MAR), often 0. Default = 0.0.
         annualized (bool): Multiply the sortino ratio by sqrt(252) to annualize the metric.
             Default = False.
+        days_per_year (int): Number of trading days. Only used if annualized=True. Default = 252
     
     Returns:
         sortino_value (np.float64): Sharpe ratio for the given portfolio.
@@ -116,7 +124,7 @@ def sortino(
 
     sortino_value = (expected_return - target) / downside_std
     if annualized:
-        sortino_value = sortino_value * np.sqrt(252)
+        sortino_value = sortino_value * np.sqrt(days_per_year)
     
     return sortino_value
 
@@ -173,16 +181,33 @@ def omega(returns_arr: np.ndarray, threshold: float = 0.0) -> np.float64:
     return omega_value
 
 @MetricLibrary.register()
-def calmar(returns_arr: np.ndarray) -> np.float64:
+def calmar(
+    returns_arr: np.ndarray,
+    annualized: bool = False,
+    days_per_year: int = 252
+) -> np.float64:
     """
     Calculates the Calmar Ratio, i.e., ratio of mean returns to maximum drawdown.
     
     Args:
         returns_arr (np.array): (n,) Array of daily returns for a particular portfolio.
+        annualize (bool): Annualize the compunded return or use mean of returns. Default = False.
+        days_per_year (int): Number of trading days. Only used if annualized=True. Default = 252
     
     Returns:
         calmar_value (np.float64): Calmar ratio for thr given portfolio.
     """
     mdd = abs(max_drawdown(returns_arr))
-    calmar_value = np.mean(returns_arr) / mdd if mdd != 0 else 0.0
+    if mdd != 0:
+        if annualized:
+            T = len(returns_arr)
+            total_return = np.prod(1 + returns_arr) - 1
+            annualized_return = (1 + total_return) ** (days_per_year / T) - 1
+            calmar_value = annualized_return / mdd
+        else:
+            calmar_value = np.mean(returns_arr) / mdd
+    
+    else:
+        calmar_value = 0.0
+    
     return calmar_value

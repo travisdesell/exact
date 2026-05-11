@@ -301,7 +301,10 @@ class Evaluator:
         return combined_returns
 
     def _calc_overall_metric_perf(
-            self, metric_func: Callable, daily_rets: dict[str, np.ndarray]
+            self, 
+            metric_func: Callable, 
+            daily_rets: dict[str, np.ndarray], 
+            annualize: bool = False
         ) -> dict[str, np.float64]:
         """
         Calculate given performance metric for every portfolio over the entire evaulation period.
@@ -319,12 +322,18 @@ class Evaluator:
         """
         metric_perfomances = {}
         for model, all_rets in daily_rets.items():
-            metric_value = metric_func(all_rets)
+            if annualize:
+                # Annualize metrics
+                metric_value = metric_func(all_rets, annualized=True)
+            else:
+                metric_value = metric_func(all_rets)
             metric_perfomances[model] = round(metric_value, self.rounding_digits)
         
         return metric_perfomances
    
-    def calc_pf_performances(self) -> pd.DataFrame | None:
+    def calc_pf_performances(
+            self, annualize_metrics: list| None = None
+        ) -> pd.DataFrame | None:
         """
         Calculate the actual portfolio performances for all metrics by concatenating returns 
         from all windows and then calculating portfolio the portfolio performance metrics for one
@@ -334,6 +343,8 @@ class Evaluator:
         Returns:
             all_metric_perf (pd.DataFrame | None): Performance metrics of each portfolio optimizer 
                 model/method for the entire evaluation (out-of-sample) period.
+            annualize_metrics: List of metrics to annualize. If None, no metrics are annualized.
+                Default = None.
         """
         self._daily_rets_calcd_check()
         if self.metrics_lib:
@@ -345,7 +356,10 @@ class Evaluator:
 
             all_metric_perf = {}
             for met_name, met_func in self.metrics_lib.items():
-                met_perf = self._calc_overall_metric_perf(met_func, combined_returns)
+                if annualize_metrics and met_name in annualize_metrics:
+                    met_perf = self._calc_overall_metric_perf(met_func, combined_returns, annualize=True)
+                else:
+                    met_perf = self._calc_overall_metric_perf(met_func, combined_returns)
                 all_metric_perf[met_name] = met_perf
 
             return pd.DataFrame(all_metric_perf)
