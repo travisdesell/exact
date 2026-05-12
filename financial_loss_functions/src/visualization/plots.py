@@ -738,7 +738,10 @@ def plot_box_models_and_benchs(
         
         ax.set_title(f'{metric.upper()} Distribution')
         ax.set_xlabel('Model / Benchmark')
-        ax.set_ylabel(metric.replace('_', ' ').title())
+        if metric == 'cvar':
+            ax.set_ylabel('CVaR (%)')
+        else:
+            ax.set_ylabel(metric.replace('_', ' ').title())
         ax.grid(True, alpha=0.3)
         # Adjust y‑axis limits if needed (optional)
         # ax.autoscale(enable=True, axis='y')
