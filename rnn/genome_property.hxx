@@ -16,8 +16,11 @@ class GenomeProperty {
     string backprop_iterations_type;
     int32_t bp_min;
     int32_t bp_max;
+    int32_t bp_baseline_iterations;
     float bp_exponent;
     float bp_slope;
+    double bp_improvement_ema_alpha;
+    double bp_adaptive_improvement_reference;
     bool use_dropout;
     double dropout_probability;
     int32_t min_recurrent_depth;
@@ -53,6 +56,9 @@ class GenomeProperty {
     float get_bp_slope();
     void set_backprop_iterations_type(string _backprop_iterations_type);
     string get_backprop_iterations_type();
+    int32_t get_bp_baseline_iterations() const;
+    double get_bp_improvement_ema_alpha() const;
+    double get_bp_adaptive_improvement_reference() const;
 };
 
 #endif

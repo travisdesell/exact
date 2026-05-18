@@ -17,6 +17,9 @@ using std::setw;
 #include <iostream>
 using std::endl;
 
+#include <cmath>
+#include <limits>
+
 #include <random>
 using std::minstd_rand0;
 using std::uniform_int_distribution;
@@ -54,7 +57,8 @@ EXAMM::~EXAMM() {
 EXAMM::EXAMM(
     int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, SpeciationStrategy* _speciation_strategy,
     WeightRules* _weight_rules, GenomeProperty* _genome_property, string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio, int32_t _is_sweet
+    int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, double _harada_selection_ratio, int32_t _is_sweet,
+    string _bp_improv_filename
 )
     : island_size(_island_size),
       number_islands(_number_islands),
@@ -64,6 +68,7 @@ EXAMM::EXAMM(
       weight_rules(_weight_rules),
       genome_property(_genome_property),
       output_directory(_output_directory),
+      bp_improv_filename(_bp_improv_filename),
       save_genome_option(_save_genome_option),
       generate_op_log(_generate_op_log),
       generate_visualization_json(_generate_visualization_json),
@@ -71,6 +76,10 @@ EXAMM::EXAMM(
       reduction_phase_genomes(_reduction_phase_genomes),
       genome_size_log(_genome_size_log)
 {
+    bp_improvement_per_epoch_ema = std::numeric_limits<double>::quiet_NaN();
+    bp_improvement_auto_ref_ready = false;
+    bp_improvement_auto_ref = 0.0;
+
     total_bp_epochs = 0;
     edge_innovation_count = 0;
     node_innovation_count = 0;
@@ -147,7 +156,7 @@ void EXAMM::generate_log() {
         }
         
         // Create genome stats log file for per-genome backprop statistics
-        genome_stats_log_file = new ofstream(output_directory + "/" + "genome_stats_log.csv");
+        genome_stats_log_file = new ofstream(output_directory + "/" + bp_improv_filename);
         (*genome_stats_log_file) << "Genome Number, Initial Fitness, Final Fitness, BP Epochs, BP Time (ms)" << endl;
         Log::info("Generating genome stats log\n");
     } else {
@@ -343,7 +352,7 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
         if (!genome_stats_log_file->good()) {
             genome_stats_log_file->close();
             delete genome_stats_log_file;
-            string output_file = output_directory + "/genome_stats_log.csv";
+            string output_file = output_directory + "/" + bp_improv_filename;
             genome_stats_log_file = new ofstream(output_file, std::ios_base::app);
             if (!genome_stats_log_file->is_open()) {
                 Log::error("could not open genome stats log: '%s'\n", output_file.c_str());
@@ -367,7 +376,44 @@ bool EXAMM::insert_genome(RNN_Genome* genome) {
     Log::debug("update op size log statistics\n");
     Log::debug("update log complete\n");
 
+    if (insert_position >= 0) {
+        update_bp_improvement_schedule_from_genome(genome);
+    }
+
     return insert_position >= 0;
+}
+
+void EXAMM::update_bp_improvement_schedule_from_genome(RNN_Genome* genome) {
+    if (genome_property->get_backprop_iterations_type() != "improvement_avg") {
+        return;
+    }
+    if (!genome->get_bp_stats_valid()) {
+        return;
+    }
+    int32_t bp_iters = genome->get_bp_iterations();
+    if (bp_iters <= 0) {
+        return;
+    }
+    double init_f = genome->get_initial_fitness_before_bp();
+    double final_f = genome->get_fitness();
+    if (std::isnan(init_f) || std::isnan(final_f) || std::isinf(init_f) || std::isinf(final_f)) {
+        return;
+    }
+    double per_epoch = (init_f - final_f) / (double)bp_iters;
+    double alpha = genome_property->get_bp_improvement_ema_alpha();
+    if (std::isnan(bp_improvement_per_epoch_ema)) {
+        bp_improvement_per_epoch_ema = per_epoch;
+    } else {
+        bp_improvement_per_epoch_ema = alpha * per_epoch + (1.0 - alpha) * bp_improvement_per_epoch_ema;
+    }
+    if (genome_property->get_bp_adaptive_improvement_reference() <= 0.0 && !bp_improvement_auto_ref_ready) {
+        bp_improvement_auto_ref = std::max(per_epoch, 1e-30);
+        bp_improvement_auto_ref_ready = true;
+    }
+    Log::info(
+        "improvement_avg schedule: per_epoch=%lf ema=%lf baseline_epochs=%d\n", per_epoch, bp_improvement_per_epoch_ema,
+        genome_property->get_bp_baseline_iterations()
+    );
 }
 
 void EXAMM::add_evaluating_genome(RNN_Genome* genome) {
@@ -534,6 +580,22 @@ RNN_Genome* EXAMM::generate_genome() {
         backprop_iterations = dist(generator);
         Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", backprop_iterations, bp_min, bp_max);
 
+    } else if (type == "improvement_avg") {
+        int32_t bp_baseline = genome_property->get_bp_baseline_iterations();
+        double configured_ref = genome_property->get_bp_adaptive_improvement_reference();
+        bool need_warmup = std::isnan(bp_improvement_per_epoch_ema)
+            || (configured_ref <= 0.0 && !bp_improvement_auto_ref_ready);
+        if (need_warmup) {
+            backprop_iterations = bp_baseline;
+        } else {
+            double ref = configured_ref > 0.0 ? configured_ref : bp_improvement_auto_ref;
+            const double ema_floor = std::max(ref * 1e-6, 1e-30);
+            double denom = std::max(bp_improvement_per_epoch_ema, ema_floor);
+            backprop_iterations = (int32_t)llround((double)bp_baseline * ref / denom);
+            if (backprop_iterations < 1) {
+                backprop_iterations = 1;
+            }
+        }
     // } else if (type == "acc") {
         // backprop_iterations = floor((generated_genomes / double(slope)) + exponent) + bp_min;
     } else if (type != "const") {

@@ -70,6 +70,7 @@ class EXAMM {
     map<string, int32_t> generated_counts;
 
     string output_directory;
+    string bp_improv_filename;
     ofstream* log_file;
     ofstream* op_log_file;
     ofstream* genome_stats_log_file;
@@ -97,14 +98,19 @@ class EXAMM {
     // This is for Selection WhilE Evaluating (SWEET)
     int32_t is_sweet;
 
+    double bp_improvement_per_epoch_ema;
+    bool bp_improvement_auto_ref_ready;
+    double bp_improvement_auto_ref;
+
+    void update_bp_improvement_schedule_from_genome(RNN_Genome* genome);
 
    public:
     EXAMM(
         int32_t _island_size, int32_t _number_islands, int32_t _max_genomes, int32_t _max_wallclock_seconds, 
         SpeciationStrategy* _speciation_strategy, WeightRules* _weight_rules, GenomeProperty* _genome_property, 
         string _output_directory, string _save_genome_option, bool _generate_op_log, bool _generate_visualization_json,
-        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection, 
-        double _harada_selection_ratio, int32_t _is_sweet
+        int32_t _growth_phase_genomes, int32_t _reduction_phase_genomes, int32_t _genome_size_log, int32_t _is_harada_selection,
+        double _harada_selection_ratio, int32_t _is_sweet, string _bp_improv_filename
     );
 
     ~EXAMM();

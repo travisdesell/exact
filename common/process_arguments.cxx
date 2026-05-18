@@ -55,6 +55,8 @@ EXAMM* generate_examm_from_arguments(
     // This is for Selection WhilE Evaluating (SWEET)
     int32_t is_sweet = 0;
     get_argument(arguments, "--is_sweet", false, is_sweet);
+    string bp_improv_filename = "genome_stats_log.csv";
+    get_argument(arguments, "--bp_improv_filename", false, bp_improv_filename);
 
     if (max_genomes > 0) {
         Log::info(
@@ -99,7 +101,7 @@ EXAMM* generate_examm_from_arguments(
     EXAMM* examm = new EXAMM(
         island_size, number_islands, max_genomes, max_wallclock_seconds, speciation_strategy, weight_rules, genome_property, output_directory,
         save_genome_option, generate_op_log, generate_visualization_json, growth_phase_genomes, reduction_phase_genomes,
-        genome_size_log, is_harada_selection, harada_selection_ratio, is_sweet
+        genome_size_log, is_harada_selection, harada_selection_ratio, is_sweet, bp_improv_filename
     );
     if (possible_node_types.size() > 0) {
         examm->set_possible_node_types(possible_node_types);

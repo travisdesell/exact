@@ -5,11 +5,14 @@
 
 GenomeProperty::GenomeProperty() {
     bp_iterations = 10;
+    bp_baseline_iterations = 10;
     backprop_iterations_type = "const";
     bp_min = 0;
     bp_max = -1;
     bp_exponent = 1.0;
     bp_slope = 0.0025;
+    bp_improvement_ema_alpha = 0.1;
+    bp_adaptive_improvement_reference = 0.0;
     dropout_probability = 0.0;
     min_recurrent_depth = 1;
     max_recurrent_depth = 10;
@@ -56,8 +59,36 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
         get_argument(arguments, "--bp_exponent", true, bp_exponent);
         get_argument(arguments, "--bp_slope", true, bp_slope);
     }
+    else if (backprop_iterations_type == "improvement_avg") {
+        bool bp_min_arg = get_argument(arguments, "--bp_min", false, bp_min);
+        if (!bp_min_arg) {
+            bp_min = 1;
+        }
+        bool bp_max_arg = get_argument(arguments, "--bp_max", false, bp_max);
+        if (!bp_max_arg) {
+            bp_max = -1;
+        }
+        if (bp_max > 0 && bp_min >= bp_max) {
+            Log::fatal("ERROR: bp_max (%d) has to be bigger than bp_min (%d)", bp_max, bp_min);
+            exit(1);
+        }
+        get_argument(arguments, "--bp_iterations", true, bp_iterations);
+        bp_baseline_iterations = bp_iterations;
+        bool alpha_arg = get_argument(arguments, "--bp_improvement_ema_alpha", false, bp_improvement_ema_alpha);
+        if (!alpha_arg) {
+            bp_improvement_ema_alpha = 0.1;
+        }
+        if (bp_improvement_ema_alpha <= 0.0 || bp_improvement_ema_alpha > 1.0) {
+            Log::fatal("ERROR: --bp_improvement_ema_alpha must be in (0, 1], got %lf", bp_improvement_ema_alpha);
+            exit(1);
+        }
+        get_argument(arguments, "--bp_adaptive_improvement_reference", false, bp_adaptive_improvement_reference);
+    }
     else {
-        Log::fatal("ERROR: backprop_iterations_type is incorrectly identified. Use \"const\", \"exponentd\", \"random\", or \"acc\".");
+        Log::fatal(
+            "ERROR: backprop_iterations_type is incorrectly identified. Use \"const\", \"rand\", \"scaled\", or "
+            "\"improvement_avg\"."
+        );
     }
     
     use_dropout = get_argument(arguments, "--dropout_probability", false, dropout_probability);
@@ -72,6 +103,10 @@ void GenomeProperty::generate_genome_property_from_arguments(const vector<string
         "Use dropout is set to %s, dropout probability is %f\n", use_dropout ? "True" : "False", dropout_probability
     );
     Log::info("Min recurrent depth is %d, max recurrent depth is %d\n", min_recurrent_depth, max_recurrent_depth);
+
+    if (backprop_iterations_type != "improvement_avg") {
+        bp_baseline_iterations = bp_iterations;
+    }
 }
 
 void GenomeProperty::set_genome_properties(RNN_Genome* genome) {
@@ -146,4 +181,16 @@ void GenomeProperty::set_backprop_iterations_type(string _backprop_iterations_ty
 
 string GenomeProperty::get_backprop_iterations_type() {
     return backprop_iterations_type;
+}
+
+int32_t GenomeProperty::get_bp_baseline_iterations() const {
+    return bp_baseline_iterations;
+}
+
+double GenomeProperty::get_bp_improvement_ema_alpha() const {
+    return bp_improvement_ema_alpha;
+}
+
+double GenomeProperty::get_bp_adaptive_improvement_reference() const {
+    return bp_adaptive_improvement_reference;
 }
