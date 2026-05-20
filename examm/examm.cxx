@@ -533,9 +533,13 @@ RNN_Genome* EXAMM::generate_genome() {
         std::uniform_int_distribution<int32_t> dist(bp_min, bp_max);
         backprop_iterations = dist(generator);
         Log::info("Random int generator generated this number: %d, from range between: %d and %d\n", backprop_iterations, bp_min, bp_max);
-
-    // } else if (type == "acc") {
-        // backprop_iterations = floor((generated_genomes / double(slope)) + exponent) + bp_min;
+    } else if (type == "down_scaled") {
+        int32_t reversed_genomes = max_genomes - generated_genomes;
+        backprop_iterations = max({
+            int32_t(bp_min), 
+            int32_t(1),
+            min(bp_max, static_cast<int32_t>(floor(pow(slope * reversed_genomes, exponent))))
+        });
     } else if (type != "const") {
         Log::fatal("Unknown bp_iterations_type specified: %s\n", type.c_str());
         exit(1);
