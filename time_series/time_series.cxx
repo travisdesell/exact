@@ -591,7 +591,11 @@ void TimeSeriesSets::help_message() {
     Log::info("\t\t\t--test_indexes : array of ints (starting at 0) specifying which files are test files\n");
     Log::info("\tOR:\n");
     Log::info("\t\t\t--training_filenames : list of input CSV files for training time series\n");
-    Log::info("\t\t\t--validation_filenames : list of input CSV files for test time series\n");
+    Log::info("\t\t\t--validation_filenames : list of input CSV files for validation time series\n");
+    Log::info(
+        "\t\t\t--testing_filenames : (optional) list of input CSV files for testing time series, included in "
+        "normalization bounds when --normalize min_max_all is used\n"
+    );
 
     Log::info("\tSpecifying parameters:\n");
     Log::info("\t\t\t--input_parameter_names <name>*: parameters to be used as inputs\n");
@@ -773,6 +777,15 @@ TimeSeriesSets* TimeSeriesSets::generate_from_arguments(const vector<string>& ar
             current++;
         }
 
+        if (argument_exists(arguments, "--testing_filenames")) {
+            vector<string> testing_filenames;
+            get_argument_vector(arguments, "--testing_filenames", true, testing_filenames);
+
+            for (int32_t i = 0; i < (int32_t) testing_filenames.size(); i++) {
+                tss->filenames.push_back(testing_filenames[i]);
+            }
+        }
+
     } else {
         Log::fatal(
             "Could not find the '--filenames' or the '--training_filenames' and '--validation_filenames' command line "
@@ -929,9 +942,6 @@ void TimeSeriesSets::normalize_min_max() {
         double min = numeric_limits<double>::max();
         double max = -numeric_limits<double>::max();
 
-        // get the min of all series of the same name
-        // get the max of all series of the same name
-
         if (normalize_mins.count(parameter_name) > 0) {
             min = normalize_mins[parameter_name];
             max = normalize_maxs[parameter_name];
@@ -959,7 +969,6 @@ void TimeSeriesSets::normalize_min_max() {
 
         Log::info_no_header("%30s, min: %22.10lf, max: %22.10lf\n", parameter_name.c_str(), min, max);
 
-        // for each series, subtract min, divide by (max - min)
         for (int32_t j = 0; j < (int32_t) time_series.size(); j++) {
             time_series[j]->normalize_min_max(parameter_name, min, max);
         }
