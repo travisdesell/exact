@@ -377,6 +377,7 @@ class RNN_Genome {
     friend class EXAMM;
     friend class IslandSpeciationStrategy;
     friend class NeatSpeciationStrategy;
+    friend class SomVectorSpace;
     friend class RecDepthFrequencyTable;
     friend class GenomeProperty;
 };
