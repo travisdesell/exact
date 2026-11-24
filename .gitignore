@@ -11,3 +11,5 @@ __pycache__/*
 visualization/plots/*
 test_output/*
 new_files/*
+AI_USAGE.md
+commands_run.txt

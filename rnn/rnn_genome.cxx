@@ -1984,11 +1984,9 @@ bool RNN_Genome::add_edge(double mu, double sigma, int32_t& edge_innovation_coun
         }
     }
 
-    /*
-        if (reachable_nodes.size() == 0) {
-            return false;
-        }
-    */
+    if (reachable_nodes.size() == 0) {
+        return false;
+    }
     Log::info("\treachable_nodes.size(): %d\n", reachable_nodes.size());
 
     int32_t position = rng_0_1(generator) * reachable_nodes.size();
@@ -2673,6 +2671,25 @@ bool RNN_Genome::disable_node() {
     );
 
     return true;
+}
+
+bool RNN_Genome::set_node_enabled(int32_t innovation_number, bool enabled) {
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == innovation_number) {
+            nodes[i]->enabled = enabled;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool RNN_Genome::is_node_enabled(int32_t innovation_number) const {
+    for (int32_t i = 0; i < (int32_t) nodes.size(); i++) {
+        if (nodes[i]->get_innovation_number() == innovation_number) {
+            return nodes[i]->is_enabled();
+        }
+    }
+    return false;
 }
 
 bool RNN_Genome::split_node(

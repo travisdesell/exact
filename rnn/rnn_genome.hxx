@@ -293,6 +293,13 @@ class RNN_Genome {
 
     bool enable_node();
     bool disable_node();
+    /**
+     * Enable or disable the node with the given innovation number.
+     * Needed for non-friend callers (nodes is private); wraps find-by-innov + flag update.
+     * \return true if a matching node was found and updated.
+     */
+    bool set_node_enabled(int32_t innovation_number, bool enabled);
+    bool is_node_enabled(int32_t innovation_number) const;
     bool split_node(
         double mu, double sigma, int32_t node_type, uniform_int_distribution<int32_t> dist,
         int32_t& edge_innovation_count, int32_t& node_innovation_count
@@ -377,6 +384,7 @@ class RNN_Genome {
     friend class EXAMM;
     friend class IslandSpeciationStrategy;
     friend class NeatSpeciationStrategy;
+    friend class SomVectorSpace;
     friend class RecDepthFrequencyTable;
     friend class GenomeProperty;
 };

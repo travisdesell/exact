@@ -64,6 +64,7 @@ class RNN_Edge {
     friend class RNN_Genome;
     friend class RNN;
     friend class EXAMM;
+    friend class SomVectorSpace;
 };
 
 struct sort_RNN_Edges_by_depth {

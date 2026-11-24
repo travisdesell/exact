@@ -73,6 +73,7 @@ class RNN_Recurrent_Edge {
     friend class RNN;
     friend class EXAMM;
     friend class RecDepthFrequencyTable;
+    friend class SomVectorSpace;
 };
 
 struct sort_RNN_Recurrent_Edges_by_depth {
